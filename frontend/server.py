@@ -8,7 +8,8 @@ import os
 import sys
 from pathlib import Path
 
-PORT = 3000
+PORT = int(os.environ.get("PORT", "3000"))
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8001")
 FRONTEND_DIR = Path(__file__).parent
 
 
@@ -27,6 +28,20 @@ class LoftChatHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
         super().end_headers()
     
+    def do_GET(self):
+        # Serve dynamic env.js exposing BACKEND_URL
+        if self.path == '/env.js':
+            content = f"window.BACKEND_URL=\"{BACKEND_URL}\";\n"
+            encoded = content.encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/javascript')
+            self.send_header('Content-Length', str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+            return
+
+        return super().do_GET()
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.end_headers()
@@ -45,9 +60,9 @@ def start_server():
     try:
         with socketserver.TCPServer(("", PORT), LoftChatHandler) as httpd:
             print("🚀 LOFT Chat Frontend Server Starting...")
-            print(f"📱 Serving at: http://localhost:{PORT}")
+            print(f"📱 Serving at: http://0.0.0.0:{PORT}")
             print(f"📁 Directory: {FRONTEND_DIR}")
-            print("🔧 Backend should be running on: http://localhost:8001")
+            print(f"🔧 Backend should be running on: {BACKEND_URL}")
             print("\n🎯 Opening browser in 2 seconds...")
             print("💡 Press Ctrl+C to stop server\n")
             

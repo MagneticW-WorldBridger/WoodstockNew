@@ -72,6 +72,22 @@
         </main>
     </div>
 
+    <script src="/env.js"></script>
+    <script>
+        // override API base dynamically if BACKEND_URL provided by server
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.BACKEND_URL && typeof WoodstockChat === 'function') {
+                try {
+                    // monkey patch constructor default apiBase
+                    const orig = WoodstockChat.prototype.constructor;
+                    WoodstockChat.prototype.constructor = function() {
+                        this.apiBase = window.BACKEND_URL || this.apiBase;
+                        return orig.apply(this, arguments);
+                    }
+                } catch (e) { console.warn('env override failed', e); }
+            }
+        });
+    </script>
     <script src="script_woodstock.js"></script>
 </body>
 </html>
