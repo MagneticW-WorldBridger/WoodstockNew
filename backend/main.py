@@ -13,8 +13,8 @@ import os
 from typing import AsyncIterator
 import httpx
 
-from schemas import ChatRequest, ChatResponse, ChatMessage
-from conversation_memory import memory
+from .schemas import ChatRequest, ChatResponse, ChatMessage
+from .conversation_memory import memory
 
 # Load environment variables
 load_dotenv()
