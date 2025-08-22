@@ -1,5 +1,5 @@
 /* 
-WOODSTOCK OUTLET DESIGN LANGUAGE
+WOODSTOCK OUTLET DESIGN LANGUAGE - APPLE LIQUID GLASS STYLE
 Traditional • Trustworthy • Family-owned
 Colors: #002147 (Navy) | #E63946 (Red) | #FFFFFF (White)
 Typography: Serif for headers, Sans-serif for body
@@ -18,6 +18,14 @@ Typography: Serif for headers, Sans-serif for body
     
     --font-serif: 'Crimson Text', serif;
     --font-sans: 'Inter', sans-serif;
+    
+    /* Apple Liquid Glass Variables */
+    --glass-tint: 255, 255, 255;
+    --glass-opacity: 0.15;
+    --glass-blur: 20px;
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: 0 8px 32px rgba(0, 33, 71, 0.15);
+    --glass-highlight: rgba(255, 255, 255, 0.1);
 }
 
 /* Reset and Base */
@@ -35,46 +43,45 @@ html, body {
     line-height: 1.6;
 }
 
-/* App Container with Glassmorphism Background */
+/* App Container with Apple-style Background */
 .woodstock-app {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(0, 33, 71, 0.4) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(230, 57, 70, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
     position: relative;
     overflow: hidden;
 }
 
-.woodstock-app::before {
+/* Header - Apple Liquid Glass Style */
+.woodstock-header {
+    background: rgba(var(--glass-tint), var(--glass-opacity));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-bottom: 1px solid var(--glass-border);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--glass-shadow);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 100;
+}
+
+.woodstock-header::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    bottom: 0;
-    background: 
-        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+    height: 1px;
+    background: var(--glass-highlight);
     pointer-events: none;
-    z-index: 0;
-}
-
-/* Header - Traditional Woodstock Style */
-.woodstock-header {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border-bottom: 2px solid var(--woodstock-red);
-    padding: 1rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    flex-shrink: 0;
-    position: relative;
-    z-index: 10;
-    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .woodstock-logo {
@@ -114,6 +121,10 @@ html, body {
     font-size: 0.875rem;
     color: var(--woodstock-navy);
     font-weight: 500;
+    background: rgba(var(--glass-tint), 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
 }
 
 .status-dot {
@@ -122,13 +133,15 @@ html, body {
     border-radius: 50%;
     background: #DC2626;
     transition: all 0.3s ease;
+    box-shadow: 0 0 8px rgba(220, 38, 38, 0.5);
 }
 
 .status-dot.connected {
     background: #059669;
+    box-shadow: 0 0 8px rgba(5, 150, 105, 0.5);
 }
 
-/* Main Chat Container with Glassmorphism */
+/* Main Chat Container */
 .woodstock-chat-container {
     flex: 1;
     display: flex;
@@ -138,35 +151,46 @@ html, body {
     padding: 2rem;
     width: 100%;
     position: relative;
-    z-index: 5;
+    z-index: 10;
 }
 
-/* Messages Area with Glassmorphism */
+/* Messages Area - Apple Liquid Glass */
 .woodstock-messages {
     flex: 1;
     overflow-y: auto;
     padding: 2rem;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(var(--glass-tint), var(--glass-opacity));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
     border-radius: 24px;
     margin-bottom: 2rem;
     max-height: calc(100vh - 280px);
     min-height: 400px;
-    box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: var(--glass-shadow);
     position: relative;
 }
 
-/* Message Styling - Professional & Clean */
+.woodstock-messages::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    border-radius: 24px 24px 0 0;
+    pointer-events: none;
+}
+
+/* Message Styling - Apple Style */
 .woodstock-message {
     margin-bottom: 1.5rem;
-    padding: 1rem;
-    border-radius: 8px;
+    padding: 1.5rem;
+    border-radius: 16px;
     max-width: 85%;
     word-wrap: break-word;
+    position: relative;
 }
 
 .woodstock-message.user {
@@ -174,17 +198,30 @@ html, body {
     color: var(--woodstock-white);
     margin-left: auto;
     text-align: right;
+    box-shadow: 0 4px 16px rgba(0, 33, 71, 0.3);
 }
 
 .woodstock-message.assistant {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(var(--glass-tint), 0.2);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--glass-border);
     box-shadow: 
         0 4px 20px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        inset 0 1px 0 var(--glass-highlight);
     margin-right: auto;
+}
+
+.woodstock-message.assistant::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    border-radius: 16px 16px 0 0;
+    pointer-events: none;
 }
 
 .woodstock-message.assistant h3 {
@@ -192,7 +229,7 @@ html, body {
     color: var(--woodstock-navy);
     font-weight: 700;
     margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
 }
 
 .woodstock-message.assistant h4 {
@@ -226,13 +263,13 @@ html, body {
     font-weight: 500;
 }
 
-/* Input Area - Traditional Style with Glassmorphism */
+/* Input Area - Apple Liquid Glass Style */
 .woodstock-input-container {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 2px solid var(--woodstock-navy);
-    border-radius: 16px;
+    background: rgba(var(--glass-tint), var(--glass-opacity));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
     padding: 2rem;
     display: flex;
     gap: 1.5rem;
@@ -241,62 +278,83 @@ html, body {
     width: 100%;
     max-width: 1000px;
     margin: 0 auto;
-    box-shadow: 0 8px 32px rgba(0, 33, 71, 0.1);
+    box-shadow: var(--glass-shadow);
+    position: relative;
+}
+
+.woodstock-input-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-highlight);
+    border-radius: 24px 24px 0 0;
+    pointer-events: none;
 }
 
 .woodstock-input {
     flex: 1;
-    border: 2px solid var(--woodstock-border);
-    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
     padding: 1.5rem 2rem;
     font-family: var(--font-sans);
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: var(--woodstock-text);
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(var(--glass-tint), 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     resize: none;
     outline: none;
     transition: all 0.3s ease;
-    min-height: 72px;
+    min-height: 60px;
     max-height: 160px;
     line-height: 1.6;
     width: 100%;
     text-align: left;
     box-sizing: border-box;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.03);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.woodstock-input::placeholder {
+    color: rgba(0, 33, 71, 0.6);
+    font-weight: 400;
 }
 
 .woodstock-input:focus {
     border-color: var(--woodstock-red);
-    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.15), inset 0 2px 8px rgba(0, 0, 0, 0.05);
-    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 
+        0 0 0 3px rgba(230, 57, 70, 0.15), 
+        inset 0 2px 8px rgba(0, 0, 0, 0.05);
+    background: rgba(var(--glass-tint), 0.2);
 }
 
 .woodstock-send-button {
     background: var(--woodstock-red);
     color: var(--woodstock-white);
     border: none;
-    border-radius: 6px;
-    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    padding: 1rem 2rem;
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(230, 57, 70, 0.3);
 }
 
 .woodstock-send-button:hover {
     background: #D32535;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(230, 57, 70, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(230, 57, 70, 0.4);
 }
 
 .woodstock-send-button:disabled {
-    background: #CCC;
+    background: rgba(0, 0, 0, 0.2);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -327,12 +385,14 @@ html, body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: var(--woodstock-white);
-    border: 1px solid var(--woodstock-border);
-    border-radius: 8px;
+    background: rgba(var(--glass-tint), 0.2);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
     padding: 1rem;
     margin-bottom: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--glass-shadow);
 }
 
 .typing-dots {
@@ -364,7 +424,7 @@ html, body {
 /* Character Counter */
 .char-counter {
     font-size: 0.75rem;
-    color: #666;
+    color: rgba(0, 33, 71, 0.6);
     font-family: var(--font-sans);
 }
 
@@ -374,10 +434,12 @@ html, body {
 
 /* HTML Components Styling */
 .customer-card {
-    background: var(--woodstock-white);
-    border: 1px solid var(--woodstock-border);
+    background: rgba(var(--glass-tint), 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
     border-left: 4px solid var(--woodstock-red);
-    border-radius: 6px;
+    border-radius: 12px;
     padding: 1rem;
     margin: 0.5rem 0;
 }
@@ -390,17 +452,19 @@ html, body {
 }
 
 .order-summary {
-    background: rgba(0, 33, 71, 0.03);
-    border: 1px solid var(--woodstock-border);
-    border-radius: 6px;
+    background: rgba(0, 33, 71, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
     padding: 1rem;
     margin: 0.5rem 0;
 }
 
 .order-item {
-    background: var(--woodstock-white);
-    border: 1px solid var(--woodstock-border);
-    border-radius: 4px;
+    background: rgba(var(--glass-tint), 0.1);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
     padding: 0.75rem;
     margin: 0.5rem 0;
     display: flex;
@@ -412,9 +476,10 @@ html, body {
     background: var(--woodstock-red);
     color: var(--woodstock-white);
     padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 8px;
     font-weight: 600;
     font-size: 0.875rem;
+    box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
 }
 
 /* Mobile Responsiveness */
@@ -439,12 +504,13 @@ html, body {
     
     .woodstock-input-container {
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 1rem;
+        padding: 1.5rem;
     }
     
     .woodstock-send-button {
-        align-self: flex-end;
-        padding: 0.75rem 2rem;
+        align-self: stretch;
+        padding: 1rem;
     }
 }
 
@@ -452,7 +518,7 @@ html, body {
 .error-message {
     background: rgba(230, 57, 70, 0.1);
     border: 1px solid var(--woodstock-red);
-    border-radius: 6px;
+    border-radius: 12px;
     padding: 1rem;
     color: var(--woodstock-red);
     font-weight: 500;
@@ -462,7 +528,7 @@ html, body {
 .success-message {
     background: rgba(5, 150, 105, 0.1);
     border: 1px solid #059669;
-    border-radius: 6px;
+    border-radius: 12px;
     padding: 1rem;
     color: #059669;
     font-weight: 500;
@@ -474,16 +540,16 @@ html, body {
 }
 
 .woodstock-messages::-webkit-scrollbar-track {
-    background: var(--woodstock-border);
+    background: rgba(0, 0, 0, 0.1);
     border-radius: 4px;
 }
 
 .woodstock-messages::-webkit-scrollbar-thumb {
-    background: var(--woodstock-navy);
+    background: rgba(0, 33, 71, 0.3);
     border-radius: 4px;
     transition: background 0.3s ease;
 }
 
 .woodstock-messages::-webkit-scrollbar-thumb:hover {
-    background: var(--woodstock-red);
+    background: rgba(230, 57, 70, 0.5);
 }
