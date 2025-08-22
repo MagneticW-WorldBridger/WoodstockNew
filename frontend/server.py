@@ -10,6 +10,8 @@ from pathlib import Path
 
 PORT = int(os.environ.get("PORT", "3000"))
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8001")
+if BACKEND_URL and not BACKEND_URL.startswith(("http://", "https://")):
+    BACKEND_URL = f"https://{BACKEND_URL}"
 FRONTEND_DIR = Path(__file__).parent
 
 
