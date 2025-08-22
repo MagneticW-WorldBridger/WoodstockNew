@@ -195,25 +195,25 @@ html, body {
 
 /* Input Area - Traditional Style */
 .woodstock-input-container {
-    /* Glassmorphism container */
+    /* Glassmorphism container - FULL WIDTH */
     background: rgba(255, 255, 255, 0.65);
     -webkit-backdrop-filter: saturate(180%) blur(14px);
     backdrop-filter: saturate(180%) blur(14px);
     border: 1px solid rgba(0, 33, 71, 0.15);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     border-radius: 12px;
-    padding: 1.5rem; /* generous padding */
+    padding: 1.5rem;
     display: flex;
     gap: 1rem;
     align-items: center;
-    justify-content: space-between;
     flex-shrink: 0;
-    width: 100%;
-    max-width: 100%; /* span the full chat width */
-    margin: 0 auto;
-    position: sticky; /* keep visible */
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0;
+    position: sticky;
     bottom: 0;
     z-index: 100;
+    box-sizing: border-box;
 }
 
 .woodstock-input {
