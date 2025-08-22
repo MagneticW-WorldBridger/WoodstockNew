@@ -38,8 +38,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve frontend static files
-app.mount("/static", StaticFiles(directory="../frontend"), name="static")
+# Frontend static files will be served by serve_frontend.py
+# Removing mount to avoid Railway path errors
 
 # Serve frontend CSS and JS
 @app.get("/style.css")

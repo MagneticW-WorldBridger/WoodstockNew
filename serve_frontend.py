@@ -18,8 +18,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, Response
 from fastapi import HTTPException
 
-# Mount frontend static files
+# Frontend directory path
 frontend_dir = Path(__file__).parent / "frontend"
+print(f"🔧 Frontend directory: {frontend_dir}")
+print(f"🔧 Frontend exists: {frontend_dir.exists()}")
+if frontend_dir.exists():
+    print(f"🔧 Frontend files: {list(frontend_dir.glob('*'))}")
+
+# Only mount if directory exists
 if frontend_dir.exists():
     app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 
@@ -51,27 +57,47 @@ async def get_js():
 async def serve_chat():
     """Serve the main chat interface"""
     html_path = frontend_dir / "index.html"
+    print(f"🔧 Looking for HTML at: {html_path}")
+    print(f"🔧 HTML exists: {html_path.exists()}")
+    
     if html_path.exists():
         with open(html_path, "r") as f:
             return f.read()
     
-    return """
+    # Debug info for troubleshooting
+    current_dir = Path(__file__).parent
+    all_files = list(current_dir.rglob("*"))
+    
+    return f"""
     <html>
         <head>
-            <title>🚀 LOFT Chat - Production</title>
+            <title>🚀 LOFT Chat - Production Debug</title>
             <style>
-                body { font-family: Arial, sans-serif; margin: 40px; background: #002147; color: white; text-align: center; }
-                .container { max-width: 600px; margin: 0 auto; padding: 30px; }
-                h1 { color: #E63946; }
-                .status { background: #28a745; color: white; padding: 10px; border-radius: 5px; margin: 20px 0; }
+                body {{ font-family: Arial, sans-serif; margin: 20px; background: #002147; color: white; }}
+                .container {{ max-width: 800px; margin: 0 auto; padding: 20px; }}
+                h1 {{ color: #E63946; }}
+                .status {{ background: #28a745; color: white; padding: 10px; border-radius: 5px; margin: 20px 0; }}
+                .debug {{ background: #333; padding: 15px; border-radius: 5px; margin: 10px 0; font-family: monospace; }}
             </style>
         </head>
         <body>
             <div class="container">
-                <h1>🚀 LOFT Chat v2.0</h1>
+                <h1>🚀 LOFT Chat v2.0 - Debug</h1>
                 <div class="status">✅ Backend API is running!</div>
-                <p>Frontend files not found. Check deployment.</p>
+                
+                <div class="debug">
+                    <h3>🔧 Debug Info:</h3>
+                    <p><strong>Current Dir:</strong> {current_dir}</p>
+                    <p><strong>Frontend Dir:</strong> {frontend_dir}</p>
+                    <p><strong>Frontend Exists:</strong> {frontend_dir.exists()}</p>
+                    <p><strong>All Files:</strong><br>
+                    {'<br>'.join([str(f) for f in all_files[:20]])}
+                    {f'<br>... and {len(all_files)-20} more files' if len(all_files) > 20 else ''}
+                    </p>
+                </div>
+                
                 <p><strong>API Docs:</strong> <a href="/docs" style="color: #E63946;">/docs</a></p>
+                <p><strong>Chat API:</strong> <a href="/v1/chat/completions" style="color: #E63946;">/v1/chat/completions</a></p>
             </div>
         </body>
     </html>
