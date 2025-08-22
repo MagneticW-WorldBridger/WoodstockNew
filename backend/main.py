@@ -950,77 +950,8 @@ async def get_session_info(user_identifier: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Root endpoint
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>LOFT Chat Backend v2.0 - WITH MEMORY!</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; }
-            .container { max-width: 800px; margin: auto; background: rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px); }
-            h1 { text-align: center; font-size: 2.5em; margin-bottom: 10px; }
-            .status { text-align: center; font-size: 1.3em; color: #FFD700; margin-bottom: 30px; }
-            .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0; }
-            .feature { background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2); }
-            .feature h3 { color: #FFD700; margin-bottom: 10px; }
-            code { background: rgba(0, 0, 0, 0.3); padding: 4px 8px; border-radius: 4px; }
-            a { color: #FFD700; text-decoration: none; }
-            a:hover { text-decoration: underline; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🧠 LOFT Chat Backend v2.0</h1>
-            <div class="status">
-                ✅ NOW WITH CONVERSATION MEMORY! ✅
-            </div>
-            
-            <div class="features">
-                <div class="feature">
-                    <h3>🔧 Backend Features</h3>
-                    <ul>
-                        <li>✅ FastAPI + PydanticAI</li>
-                        <li>✅ PostgreSQL Memory (Existing Tables)</li>
-                        <li>✅ Conversation History</li>
-                        <li>✅ Context Preservation</li>
-                        <li>✅ User Identification</li>
-                    </ul>
-                </div>
-                
-                <div class="feature">
-                    <h3>🎯 LOFT Functions</h3>
-                    <ul>
-                        <li>📱 Customer search by phone</li>
-                        <li>📦 Order history lookup</li>
-                        <li>🛍️ Product search</li>
-                        <li>🧠 Conversation memory</li>
-                        <li>🤖 Context awareness</li>
-                    </ul>
-                </div>
-                
-                <div class="feature">
-                    <h3>🚀 Test Memory</h3>
-                    <p><strong>Frontend:</strong> <a href="http://localhost:3000">http://localhost:3000</a></p>
-                    <p><strong>Example conversation:</strong></p>
-                    <ol>
-                        <li>Say: <code>407-288-6040</code></li>
-                        <li>Then: <code>What are my orders?</code></li>
-                        <li>AI remembers you're Janice! 🎉</li>
-                    </ol>
-                </div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 30px; font-size: 1.2em;">
-                <p>💡 <strong>The AI now remembers who you are!</strong></p>
-                <p>✨ Uses existing PostgreSQL tables ✨</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+# Root endpoint REMOVED - handled by serve_frontend.py
+# This backend only provides API endpoints (/v1/*, /docs, /redoc)
 
 if __name__ == "__main__":
     import uvicorn
