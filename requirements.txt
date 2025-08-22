@@ -18,7 +18,6 @@ sqlite-utils==3.38
 
 # Database (PostgreSQL)
 asyncpg==0.29.0
-requests==2.32.3
 
 # Core dependencies (auto-installed)
 pydantic>=2.11.7
