@@ -1,0 +1,449 @@
+/* 
+WOODSTOCK OUTLET DESIGN LANGUAGE
+Traditional • Trustworthy • Family-owned
+Colors: #002147 (Navy) | #E63946 (Red) | #FFFFFF (White)
+Typography: Serif for headers, Sans-serif for body
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* CSS Variables - Woodstock Design System */
+:root {
+    --woodstock-navy: #002147;
+    --woodstock-red: #E63946;
+    --woodstock-white: #FFFFFF;
+    --woodstock-text: #000000;
+    --woodstock-light-bg: #F5F5F5;
+    --woodstock-border: #E0E0E0;
+    
+    --font-serif: 'Crimson Text', serif;
+    --font-sans: 'Inter', sans-serif;
+}
+
+/* Reset and Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    font-family: var(--font-sans);
+    background: var(--woodstock-white);
+    color: var(--woodstock-text);
+    line-height: 1.6;
+}
+
+/* App Container */
+.woodstock-app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--woodstock-white);
+}
+
+/* Header - Traditional Woodstock Style */
+.woodstock-header {
+    background: var(--woodstock-white);
+    border-bottom: 2px solid var(--woodstock-red);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.woodstock-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.woodstock-logo img {
+    height: 40px;
+    width: auto;
+}
+
+.woodstock-logo-text {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--woodstock-navy);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.woodstock-subtitle {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--woodstock-red);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--woodstock-navy);
+    font-weight: 500;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #DC2626;
+    transition: all 0.3s ease;
+}
+
+.status-dot.connected {
+    background: #059669;
+}
+
+/* Main Chat Container */
+.woodstock-chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    width: 100%;
+    background: var(--woodstock-white);
+}
+
+/* Messages Area */
+.woodstock-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: var(--woodstock-light-bg);
+    border: 1px solid var(--woodstock-border);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    max-height: calc(100vh - 250px);
+    min-height: 400px;
+}
+
+/* Message Styling - Professional & Clean */
+.woodstock-message {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    max-width: 85%;
+    word-wrap: break-word;
+}
+
+.woodstock-message.user {
+    background: var(--woodstock-navy);
+    color: var(--woodstock-white);
+    margin-left: auto;
+    text-align: right;
+}
+
+.woodstock-message.assistant {
+    background: var(--woodstock-white);
+    border: 1px solid var(--woodstock-border);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-right: auto;
+}
+
+.woodstock-message.assistant h3 {
+    font-family: var(--font-serif);
+    color: var(--woodstock-navy);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.woodstock-message.assistant h4 {
+    font-family: var(--font-serif);
+    color: var(--woodstock-red);
+    font-weight: 600;
+    margin: 1rem 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+.woodstock-message.assistant ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.woodstock-message.assistant li {
+    margin-bottom: 0.25rem;
+    color: var(--woodstock-text);
+}
+
+.woodstock-message.assistant strong {
+    color: var(--woodstock-navy);
+    font-weight: 600;
+}
+
+.woodstock-message.assistant .highlight {
+    background: rgba(230, 57, 70, 0.1);
+    padding: 2px 4px;
+    border-radius: 4px;
+    color: var(--woodstock-red);
+    font-weight: 500;
+}
+
+/* Input Area - Traditional Style */
+.woodstock-input-container {
+    background: var(--woodstock-white);
+    border: 2px solid var(--woodstock-navy);
+    border-radius: 8px;
+    padding: 1.5rem; /* MORE PADDING */
+    display: flex;
+    gap: 1.5rem; /* MORE GAP */
+    align-items: center; /* CENTER ALIGN */
+    flex-shrink: 0;
+    width: 100%; /* FULL WIDTH */
+    max-width: 1000px; /* MAX WIDTH */
+    margin: 0 auto; /* CENTER THE CONTAINER */
+}
+
+.woodstock-input {
+    flex: 1;
+    border: 2px solid var(--woodstock-border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem; /* EVEN MORE PADDING */
+    font-family: var(--font-sans);
+    font-size: 1.2rem; /* EVEN LARGER FONT */
+    color: var(--woodstock-text);
+    background: var(--woodstock-white);
+    resize: none;
+    outline: none;
+    transition: all 0.2s ease;
+    min-height: 64px; /* EVEN BIGGER MIN HEIGHT */
+    max-height: 160px;
+    line-height: 1.6;
+    width: 100%; /* FULL WIDTH */
+    text-align: left; /* ENSURE LEFT ALIGN FOR TEXT */
+    box-sizing: border-box;
+}
+
+.woodstock-input:focus {
+    border-color: var(--woodstock-red);
+    box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.1);
+}
+
+.woodstock-send-button {
+    background: var(--woodstock-red);
+    color: var(--woodstock-white);
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.woodstock-send-button:hover {
+    background: #D32535;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(230, 57, 70, 0.3);
+}
+
+.woodstock-send-button:disabled {
+    background: #CCC;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Function Call Indicators */
+.function-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0, 33, 71, 0.1);
+    border: 1px solid var(--woodstock-navy);
+    padding: 0.25rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--woodstock-navy);
+    margin: 0.25rem 0;
+}
+
+.function-indicator.active {
+    background: var(--woodstock-navy);
+    color: var(--woodstock-white);
+}
+
+/* Loading/Typing Indicator */
+.woodstock-typing {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--woodstock-white);
+    border: 1px solid var(--woodstock-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.typing-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    background: var(--woodstock-red);
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* Character Counter */
+.char-counter {
+    font-size: 0.75rem;
+    color: #666;
+    font-family: var(--font-sans);
+}
+
+.char-counter.warning {
+    color: var(--woodstock-red);
+}
+
+/* HTML Components Styling */
+.customer-card {
+    background: var(--woodstock-white);
+    border: 1px solid var(--woodstock-border);
+    border-left: 4px solid var(--woodstock-red);
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+}
+
+.customer-card h4 {
+    font-family: var(--font-serif);
+    color: var(--woodstock-navy);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.order-summary {
+    background: rgba(0, 33, 71, 0.03);
+    border: 1px solid var(--woodstock-border);
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+}
+
+.order-item {
+    background: var(--woodstock-white);
+    border: 1px solid var(--woodstock-border);
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.price-tag {
+    background: var(--woodstock-red);
+    color: var(--woodstock-white);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .woodstock-header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .woodstock-logo-text {
+        font-size: 1.25rem;
+    }
+    
+    .woodstock-chat-container {
+        padding: 1rem;
+    }
+    
+    .woodstock-message {
+        max-width: 95%;
+    }
+    
+    .woodstock-input-container {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .woodstock-send-button {
+        align-self: flex-end;
+        padding: 0.75rem 2rem;
+    }
+}
+
+/* Error Styling */
+.error-message {
+    background: rgba(230, 57, 70, 0.1);
+    border: 1px solid var(--woodstock-red);
+    border-radius: 6px;
+    padding: 1rem;
+    color: var(--woodstock-red);
+    font-weight: 500;
+}
+
+/* Success Styling */
+.success-message {
+    background: rgba(5, 150, 105, 0.1);
+    border: 1px solid #059669;
+    border-radius: 6px;
+    padding: 1rem;
+    color: #059669;
+    font-weight: 500;
+}
+
+/* Custom Scrollbar */
+.woodstock-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.woodstock-messages::-webkit-scrollbar-track {
+    background: var(--woodstock-border);
+    border-radius: 4px;
+}
+
+.woodstock-messages::-webkit-scrollbar-thumb {
+    background: var(--woodstock-navy);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.woodstock-messages::-webkit-scrollbar-thumb:hover {
+    background: var(--woodstock-red);
+}

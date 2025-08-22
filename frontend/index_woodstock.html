@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Woodstock Outlet - Customer Support</title>
+    <link rel="stylesheet" href="style_woodstock.css">
+    <link rel="icon" type="image/png" href="http://woodstockfurniture.net/skin/frontend/default/exp/images/logo.png">
+</head>
+<body>
+    <div class="woodstock-app">
+        <!-- Header -->
+        <header class="woodstock-header">
+            <div class="woodstock-logo">
+                <img src="http://woodstockfurniture.net/skin/frontend/default/exp/images/logo.png" 
+                     alt="Woodstock Outlet" 
+                     onerror="this.style.display='none'">
+                <div>
+                    <div class="woodstock-logo-text">WOODSTOCK OUTLET</div>
+                    <div class="woodstock-subtitle">AI Customer Support</div>
+                </div>
+            </div>
+            
+            <div class="connection-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Chat Area -->
+        <main class="woodstock-chat-container">
+            <!-- Messages Container -->
+            <div class="woodstock-messages" id="messagesContainer">
+                <!-- Welcome Message -->
+                <div class="woodstock-message assistant">
+                    <h3>Welcome to Woodstock Outlet Support</h3>
+                    <p>I'm your AI assistant, ready to help with:</p>
+                    <ul>
+                        <li><strong>Customer Lookup:</strong> Find by phone or email</li>
+                        <li><strong>Order History:</strong> View complete purchase records</li>
+                        <li><strong>Order Details:</strong> Get specific item information</li>
+                        <li><strong>Product Recommendations:</strong> Personalized suggestions</li>
+                        <li><strong>Support Issues:</strong> Escalate problems to our team</li>
+                    </ul>
+                    <p style="margin-top: 1rem; color: var(--woodstock-red); font-weight: 500;">
+                        Try: "Find customer with phone 407-288-6040"
+                    </p>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="woodstock-input-container">
+                <form id="chatForm" style="display: flex; width: 100%; gap: 1rem; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <textarea 
+                            id="messageInput" 
+                            class="woodstock-input" 
+                            placeholder="Ask about customers, orders, or products..."
+                            rows="1"
+                            maxlength="1000"></textarea>
+                        <div class="char-counter" id="charCount" style="margin-top: 0.25rem;">0/1000</div>
+                    </div>
+                    <button 
+                        type="submit" 
+                        id="sendButton" 
+                        class="woodstock-send-button"
+                        disabled>
+                        Send
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="script_woodstock.js"></script>
+</body>
+</html>

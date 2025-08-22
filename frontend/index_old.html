@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOFT Chat - Woodstock Outlet</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'loft-primary': '#8B5CF6',
+                        'loft-secondary': '#06B6D4',
+                        'loft-accent': '#F59E0B',
+                        'loft-dark': '#1F2937',
+                        'loft-light': '#F9FAFB'
+                    },
+                    fontFamily: {
+                        'loft': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    backdropBlur: {
+                        'xs': '2px',
+                        'glass': '12px',
+                        'liquid': '20px'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 font-loft">
+    <!-- Background Animated Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="floating-orb orb-1"></div>
+        <div class="floating-orb orb-2"></div>
+        <div class="floating-orb orb-3"></div>
+        <div class="floating-orb orb-4"></div>
+    </div>
+
+    <!-- Main Chat Container -->
+    <div class="flex flex-col h-full max-w-full mx-auto relative z-10">
+        
+        <!-- Header -->
+        <header class="glass-header p-4 md:p-6 text-center">
+            <h1 class="text-2xl md:text-4xl font-bold text-white mb-2">
+                ✨ LOFT Chat
+            </h1>
+            <p class="text-purple-200 text-sm md:text-base">
+                Powered by AI • Woodstock Outlet Support
+            </p>
+            
+            <!-- Status Indicator -->
+            <div class="flex items-center justify-center mt-3">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="text-xs md:text-sm text-white/70 ml-2" id="statusText">
+                    Connecting...
+                </span>
+            </div>
+        </header>
+
+        <!-- Chat Container -->
+        <div class="flex-1 flex flex-col max-h-full">
+            
+            <!-- Messages Area -->
+            <div class="flex-1 overflow-hidden p-4 md:p-6">
+                <div class="glass-chat-container h-full">
+                    <div class="messages-container" id="messagesContainer">
+                        <!-- Welcome Message -->
+                        <div class="message-bubble assistant-message">
+                            <div class="message-content">
+                                <i class="fas fa-robot text-purple-400 mr-2"></i>
+                                <span>Hello! I'm your LOFT assistant. I can help you:</span>
+                                <ul class="mt-2 text-sm space-y-1">
+                                    <li>📱 Find customers by phone or email</li>
+                                    <li>📦 Look up order details and history</li>
+                                    <li>🛍️ Search products in our catalog</li>
+                                    <li>💬 Answer questions about Woodstock Outlet</li>
+                                </ul>
+                                <p class="mt-3 text-xs text-purple-200">
+                                    Try: "Find customer with phone 407-288-6040"
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 md:p-6">
+                <div class="glass-input-container">
+                    <form id="chatForm" class="flex items-end space-x-3">
+                        <div class="flex-1 relative">
+                            <textarea 
+                                id="messageInput" 
+                                placeholder="Type your message..." 
+                                class="glass-input w-full resize-none"
+                                rows="1"
+                                maxlength="1000"
+                            ></textarea>
+                            <div class="absolute bottom-2 right-2 text-xs text-white/50" id="charCount">
+                                0/1000
+                            </div>
+                        </div>
+                        
+                        <button 
+                            type="submit" 
+                            id="sendButton"
+                            class="glass-send-button"
+                            disabled
+                        >
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <div class="loading-text">AI is thinking...</div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
