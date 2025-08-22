@@ -1,0 +1,2 @@
+# Frontend runtime only; using Python simple HTTP server
+# No Python packages required
