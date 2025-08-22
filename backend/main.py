@@ -5,8 +5,7 @@ import asyncio
 import re
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse, Response
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
 from dotenv import load_dotenv
@@ -14,8 +13,8 @@ import os
 from typing import AsyncIterator
 import httpx
 
-from .schemas import ChatRequest, ChatResponse, ChatMessage
-from .conversation_memory import memory
+from schemas import ChatRequest, ChatResponse, ChatMessage
+from conversation_memory import memory
 
 # Load environment variables
 load_dotenv()
@@ -37,29 +36,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Frontend static files will be served by serve_frontend.py
-# Removing mount to avoid Railway path errors
-
-# Serve frontend CSS and JS
-@app.get("/style.css")
-async def get_css():
-    try:
-        with open("../frontend/style.css", "r") as f:
-            return Response(content=f.read(), media_type="text/css")
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="CSS file not found")
-
-@app.get("/script.js")
-async def get_js():
-    try:
-        with open("../frontend/script.js", "r") as f:
-            js_content = f.read()
-            # Fix API_BASE for production
-            js_content = js_content.replace("const API_BASE = 'http://localhost:8001';", "const API_BASE = window.location.origin;")
-            return Response(content=js_content, media_type="application/javascript")
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="JS file not found")
 
 # Initialize PydanticAI agent
 print("🔧 Initializing PydanticAI agent with memory...")
@@ -950,345 +926,77 @@ async def get_session_info(user_identifier: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Root endpoint
 @app.get("/", response_class=HTMLResponse)
-async def serve_chat_frontend():
-    """Serve the chat frontend directly from backend"""
-    html_content = '''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Woodstock Outlet - AI Customer Support</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #002147;
-            color: #FFFFFF;
-            overflow-x: hidden;
-        }
-        
-        .woodstock-header {
-            background: #002147;
-            padding: 20px 0;
-            border-bottom: 2px solid #E63946;
-            text-align: center;
-        }
-        
-        .woodstock-logo {
-            font-family: "Crimson Text", serif;
-            font-size: 2rem;
-            font-weight: 600;
-            color: #FFFFFF;
-            margin-bottom: 5px;
-        }
-        
-        .woodstock-tagline {
-            font-size: 0.9rem;
-            color: #E63946;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .woodstock-chat-container {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 140px);
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 0;
-            height: calc(100vh - 200px);
-            max-height: calc(100vh - 200px);
-        }
-        
-        .woodstock-message {
-            margin-bottom: 20px;
-            padding: 15px 20px;
-            border-radius: 12px;
-            max-width: 85%;
-            line-height: 1.6;
-        }
-        
-        .user-message {
-            background: linear-gradient(135deg, #E63946, #c62d39);
-            margin-left: auto;
-            color: white;
-            text-align: right;
-        }
-        
-        .assistant-message {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #FFFFFF;
-        }
-        
-        .woodstock-input-container {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            padding: 20px 0;
-            position: sticky;
-            bottom: 0;
-            background: #002147;
-            z-index: 100;
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .woodstock-input {
-            flex: 1;
-            padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            color: #FFFFFF;
-            font-size: 16px;
-            font-family: "Inter", sans-serif;
-            outline: none;
-            transition: all 0.3s ease;
-            min-height: 55px;
-            text-align: left;
-            width: 100%;
-            margin: 0 auto;
-        }
-        
-        .woodstock-input:focus {
-            border-color: #E63946;
-            background: rgba(255, 255, 255, 0.15);
-        }
-        
-        .woodstock-input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-        
-        .woodstock-send-button {
-            background: linear-gradient(135deg, #E63946, #c62d39);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 15px 25px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 16px;
-            min-width: 100px;
-        }
-        
-        .woodstock-send-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(230, 57, 70, 0.4);
-        }
-        
-        .woodstock-send-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        @media (max-width: 768px) {
-            .woodstock-chat-container {
-                padding: 15px;
-                height: calc(100vh - 120px);
-            }
+async def root():
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>LOFT Chat Backend v2.0 - WITH MEMORY!</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; }
+            .container { max-width: 800px; margin: auto; background: rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px); }
+            h1 { text-align: center; font-size: 2.5em; margin-bottom: 10px; }
+            .status { text-align: center; font-size: 1.3em; color: #FFD700; margin-bottom: 30px; }
+            .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0; }
+            .feature { background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2); }
+            .feature h3 { color: #FFD700; margin-bottom: 10px; }
+            code { background: rgba(0, 0, 0, 0.3); padding: 4px 8px; border-radius: 4px; }
+            a { color: #FFD700; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🧠 LOFT Chat Backend v2.0</h1>
+            <div class="status">
+                ✅ NOW WITH CONVERSATION MEMORY! ✅
+            </div>
             
-            .woodstock-message {
-                max-width: 95%;
-            }
+            <div class="features">
+                <div class="feature">
+                    <h3>🔧 Backend Features</h3>
+                    <ul>
+                        <li>✅ FastAPI + PydanticAI</li>
+                        <li>✅ PostgreSQL Memory (Existing Tables)</li>
+                        <li>✅ Conversation History</li>
+                        <li>✅ Context Preservation</li>
+                        <li>✅ User Identification</li>
+                    </ul>
+                </div>
+                
+                <div class="feature">
+                    <h3>🎯 LOFT Functions</h3>
+                    <ul>
+                        <li>📱 Customer search by phone</li>
+                        <li>📦 Order history lookup</li>
+                        <li>🛍️ Product search</li>
+                        <li>🧠 Conversation memory</li>
+                        <li>🤖 Context awareness</li>
+                    </ul>
+                </div>
+                
+                <div class="feature">
+                    <h3>🚀 Test Memory</h3>
+                    <p><strong>Frontend:</strong> <a href="http://localhost:3000">http://localhost:3000</a></p>
+                    <p><strong>Example conversation:</strong></p>
+                    <ol>
+                        <li>Say: <code>407-288-6040</code></li>
+                        <li>Then: <code>What are my orders?</code></li>
+                        <li>AI remembers you're Janice! 🎉</li>
+                    </ol>
+                </div>
+            </div>
             
-            .woodstock-input-container {
-                padding: 15px 0;
-            }
-            
-            .woodstock-input {
-                padding: 12px 15px;
-                font-size: 16px;
-            }
-            
-            .woodstock-send-button {
-                padding: 12px 20px;
-                min-width: 80px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="woodstock-header">
-        <div class="woodstock-logo">Woodstock Outlet</div>
-        <div class="woodstock-tagline">AI Customer Support</div>
-    </div>
-    
-    <div class="woodstock-chat-container">
-        <div class="messages-container" id="messagesContainer">
-            <div class="assistant-message woodstock-message">
-                <strong>Welcome to Woodstock Outlet Support</strong><br><br>
-                I\\'m your AI assistant, ready to help with:<br>
-                • <strong>Customer Lookup:</strong> Find by phone or email<br>
-                • <strong>Order History:</strong> View complete purchase records<br>
-                • <strong>Order Details:</strong> Get specific item information<br>
-                • <strong>Product Recommendations:</strong> Personalized suggestions<br>
-                • <strong>Support Issues:</strong> Escalate problems to our team<br><br>
-                <em>Try: "Find customer with phone 678-283-8235"</em>
+            <div style="text-align: center; margin-top: 30px; font-size: 1.2em;">
+                <p>💡 <strong>The AI now remembers who you are!</strong></p>
+                <p>✨ Uses existing PostgreSQL tables ✨</p>
             </div>
         </div>
-        
-        <div class="woodstock-input-container">
-            <input 
-                type="text" 
-                id="messageInput" 
-                class="woodstock-input" 
-                placeholder="Type your message here..."
-                maxlength="1000"
-            >
-            <button id="sendButton" class="woodstock-send-button">Send</button>
-        </div>
-    </div>
-
-    <script>
-        class WoodstockChat {
-            constructor() {
-                this.apiBase = window.location.origin;
-                this.isConnected = false;
-                this.isThinking = false;
-                
-                this.sessionId = localStorage.getItem('woodstock-session') || this.generateSessionId();
-                this.userIdentifier = localStorage.getItem('woodstock-user') || null;
-                this.messageHistory = [];
-                
-                this.messagesContainer = document.getElementById('messagesContainer');
-                this.messageInput = document.getElementById('messageInput');
-                this.sendButton = document.getElementById('sendButton');
-                
-                this.init();
-            }
-
-            generateSessionId() {
-                const id = 'woodstock_' + Math.random().toString(36).substr(2, 16);
-                localStorage.setItem('woodstock-session', id);
-                return id;
-            }
-
-            init() {
-                this.sendButton.addEventListener('click', () => this.sendMessage());
-                this.messageInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.sendMessage();
-                    }
-                });
-                console.log('🚀 Woodstock Chat initialized');
-            }
-
-            async sendMessage() {
-                const message = this.messageInput.value.trim();
-                if (!message || this.isThinking) return;
-                
-                this.addMessage(message, 'user');
-                this.messageInput.value = '';
-                this.setThinking(true);
-                
-                await this.sendToAI(message);
-                this.setThinking(false);
-            }
-
-            addMessage(content, role) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = \`\${role}-message woodstock-message\`;
-                messageDiv.innerHTML = content;
-                this.messagesContainer.appendChild(messageDiv);
-                this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
-            }
-
-            setThinking(thinking) {
-                this.isThinking = thinking;
-                this.sendButton.disabled = thinking;
-                this.sendButton.textContent = thinking ? 'Thinking...' : 'Send';
-            }
-
-            async sendToAI(message) {
-                try {
-                    this.messageHistory.push({ role: 'user', content: message });
-                    
-                    const response = await fetch(\`\${this.apiBase}/v1/chat/completions\`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            messages: this.messageHistory.slice(-10),
-                            stream: true,
-                            model: 'loft-chat',
-                            session_id: this.sessionId,
-                            user_identifier: this.userIdentifier
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(\`HTTP \${response.status}\`);
-                    }
-
-                    let fullResponse = '';
-                    const reader = response.body.getReader();
-                    const tempDiv = document.createElement('div');
-                    tempDiv.className = 'assistant-message woodstock-message';
-                    this.messagesContainer.appendChild(tempDiv);
-
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-
-                        const chunk = new TextDecoder().decode(value);
-                        const lines = chunk.split('\\n');
-
-                        for (const line of lines) {
-                            if (line.startsWith('data: ')) {
-                                const data = line.slice(6);
-                                if (data === '[DONE]') continue;
-                                
-                                try {
-                                    const parsed = JSON.parse(data);
-                                    if (parsed.choices?.[0]?.delta?.content) {
-                                        fullResponse += parsed.choices[0].delta.content;
-                                        tempDiv.innerHTML = fullResponse;
-                                        this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
-                                    }
-                                } catch (e) {
-                                    console.warn('Parse error:', e);
-                                }
-                            }
-                        }
-                    }
-                    
-                    this.messageHistory.push({ role: 'assistant', content: fullResponse });
-                    
-                } catch (error) {
-                    console.error('API Error:', error);
-                    this.addMessage(\`❌ Error: \${error.message}\`, 'assistant');
-                }
-            }
-        }
-
-        // Initialize chat when DOM loads
-        document.addEventListener('DOMContentLoaded', () => {
-            window.woodstockChat = new WoodstockChat();
-        });
-    </script>
-</body>
-</html>
-    '''
-    return html_content
+    </body>
+    </html>
+    """
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,7 +1,7 @@
 // Woodstock Outlet Chat - Professional Implementation
 class WoodstockChat {
     constructor() {
-        this.apiBase = window.location.origin;
+        this.apiBase = 'http://localhost:8001';
         this.isConnected = false;
         this.isThinking = false;
         
