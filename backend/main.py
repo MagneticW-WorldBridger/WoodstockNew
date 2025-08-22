@@ -5,7 +5,8 @@ import asyncio
 import re
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
 from dotenv import load_dotenv
@@ -36,6 +37,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve frontend static files
+app.mount("/static", StaticFiles(directory="../frontend"), name="static")
+
+# Serve frontend CSS and JS
+@app.get("/style.css")
+async def get_css():
+    try:
+        with open("../frontend/style.css", "r") as f:
+            return Response(content=f.read(), media_type="text/css")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="CSS file not found")
+
+@app.get("/script.js")
+async def get_js():
+    try:
+        with open("../frontend/script.js", "r") as f:
+            js_content = f.read()
+            # Fix API_BASE for production
+            js_content = js_content.replace("const API_BASE = 'http://localhost:8001';", "const API_BASE = window.location.origin;")
+            return Response(content=js_content, media_type="application/javascript")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="JS file not found")
 
 # Initialize PydanticAI agent
 print("🔧 Initializing PydanticAI agent with memory...")

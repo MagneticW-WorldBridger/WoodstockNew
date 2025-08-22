@@ -1,5 +1,5 @@
 # Let Nixpacks auto-detect Python and handle requirements.txt automatically
-# Only override the start command
+# Use combined server for frontend + backend
 
 [start]
-cmd = "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+cmd = "python serve_frontend.py"
