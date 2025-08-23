@@ -48,14 +48,19 @@ agent = Agent(
         "3. When user mentions phone/email, call get_customer_by_phone/get_customer_by_email\n"
         "4. When they ask about orders, call get_orders_by_customer with customer_id\n"
         "5. When they ask order details, call get_order_details with order_id\n"
-        "6. When they ask patterns/analytics, call analyze_customer_patterns\n"
-        "7. When they ask recommendations, call get_product_recommendations\n"
-        "8. For loyalty/cross-sell/support, use the handle_ functions\n\n"
+        "6. When they ask patterns/analytics, call analyze_customer_patterns with ANY identifier (phone/email/customerid)\n"
+        "7. When they ask recommendations, call get_product_recommendations with ANY identifier\n"
+        "8. For loyalty/cross-sell/support, use handle_ functions with ANY identifier\n\n"
+        "SMART PARAMETER HANDLING:\n"
+        "- All analysis functions now support HYBRID parameters (phone/email/customerid)\n"
+        "- When user says 'analyze patterns for customer 9318667506', pass '9318667506' directly\n"
+        "- When user says 'for this customer' after a lookup, use the customer ID from previous results\n"
+        "- Functions automatically detect parameter type and handle internal lookups\n\n"
         "WORKFLOW:\n"
         "- Phone/Email query → call get_customer_by_phone/email\n"
         "- Orders query → call get_orders_by_customer\n"
         "- Details query → call get_order_details\n"
-        "- Analysis query → call analyze_customer_patterns\n"
+        "- Analysis query → call analyze_customer_patterns (supports customerid now!)\n"
         "- Complete overview → call get_customer_journey\n\n"
         "ALWAYS use exact function results. Return function output exactly as received."
     )
@@ -355,50 +360,62 @@ async def analyze_customer_patterns(ctx: RunContext, customer_identifier: str) -
     try:
         print(f"🔧 DATABASE Function: analyzeCustomerPatterns({customer_identifier})")
         
+        # Initialize variables
+        customer_id = None
+        orders_result = None
+        
         # Determine if it's phone, email, or customer ID
         if "@" in customer_identifier:
             # It's an email
             customer_result = await get_customer_by_email(ctx, customer_identifier)
+            # Extract customer ID from email result
+            import re
+            customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
+            if customer_id_match:
+                customer_id = customer_id_match.group(1)
+                orders_result = await get_orders_by_customer(ctx, customer_id)
+            else:
+                return f"❌ Could not extract customer ID from email lookup"
+                
         elif len(customer_identifier) == 10 and customer_identifier.isdigit():
-            # It's a customer ID
+            # It's a customer ID - use directly
             customer_id = customer_identifier
             orders_result = await get_orders_by_customer(ctx, customer_id)
+            print(f"🔍 Direct customer ID lookup: {customer_id}, orders result: {orders_result[:100]}...")
+            
         else:
             # Assume it's a phone
             customer_result = await get_customer_by_phone(ctx, customer_identifier)
-            # Extract customer ID from result (handle both JSON and text format)
-            import re, json
-            try:
-                # Try to parse as JSON first
-                if "{" in customer_result and "customerid" in customer_result:
-                    json_match = re.search(r'\{[^}]*"customerid"[^}]*\}', customer_result)
-                    if json_match:
-                        json_data = json.loads(json_match.group())
-                        customer_id = json_data.get('customerid')
-                    else:
-                        # Fallback to text regex
-                        customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
-                        customer_id = customer_id_match.group(1) if customer_id_match else None
-                else:
-                    # Text format
-                    customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
-                    customer_id = customer_id_match.group(1) if customer_id_match else None
-                
-                if not customer_id:
-                    return f"❌ Could not extract customer ID from {customer_identifier}"
-            except Exception as e:
-                return f"❌ Error parsing customer result: {str(e)}"
-            orders_result = await get_orders_by_customer(ctx, customer_id)
+            # Extract customer ID from phone result
+            import re
+            customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
+            if customer_id_match:
+                customer_id = customer_id_match.group(1)
+                orders_result = await get_orders_by_customer(ctx, customer_id)
+            else:
+                return f"❌ Could not extract customer ID from phone lookup"
         
         if "❌" in orders_result:
-            return f"❌ Cannot analyze patterns - no orders found for customer {customer_id}"
+            return f"There are currently no purchase patterns available to analyze for customer {customer_id}, likely because there are no recorded orders in the system. If you would like to check again, search by another method, or need assistance with something else, please let me know!"
         
         # Extract order details for analysis
-        import re
-        order_ids = re.findall(r'Order ID: ([A-Z0-9]+)', orders_result)
+        import re, json
+        order_ids = []
+        
+        # Try to parse JSON first (new format)
+        try:
+            if orders_result.startswith('{'):
+                orders_data = json.loads(orders_result)
+                if orders_data.get('status') == 'success' and orders_data.get('data', {}).get('orders'):
+                    order_ids = [order.get('orderid') for order in orders_data['data']['orders'] if order.get('orderid')]
+                    print(f"🔍 Extracted order IDs from JSON: {order_ids}")
+        except:
+            # Fallback to regex for text format
+            order_ids = re.findall(r'Order ID: ([A-Z0-9]+)', orders_result)
+            print(f"🔍 Extracted order IDs from text: {order_ids}")
         
         if not order_ids:
-            return f"❌ No order IDs found to analyze patterns for customer {customer_id}"
+            return f"No order IDs were found for customer {customer_id}, so their purchase patterns cannot be analyzed at this time. If you have a different phone number, email, or customer ID, please provide it for further assistance."
         
         # Analyze patterns from order details
         patterns_info = []
@@ -439,13 +456,13 @@ async def analyze_customer_patterns(ctx: RunContext, customer_identifier: str) -
         return f"❌ Error analyzing patterns: {str(error)}"
 
 @agent.tool
-async def get_product_recommendations(ctx: RunContext, customer_id: str) -> str:
-    """Generate product recommendations based on customer patterns"""
+async def get_product_recommendations(ctx: RunContext, identifier: str, type: str = "auto") -> str:
+    """Generate product recommendations - supports phone, email, or customerid"""
     try:
-        print(f"🔧 DATABASE Function: getProductRecommendations({customer_id})")
+        print(f"🔧 HYBRID Function: getProductRecommendations({identifier}, {type})")
         
-        # Get patterns first
-        patterns_result = await analyze_customer_patterns(ctx, customer_id)
+        # Get patterns first using the hybrid analyze function
+        patterns_result = await analyze_customer_patterns(ctx, identifier)
         
         if "❌" in patterns_result:
             return patterns_result
@@ -517,12 +534,12 @@ async def get_customer_analytics(ctx: RunContext, identifier: str, type: str = "
         return f"❌ Error getting analytics: {str(error)}"
 
 @agent.tool
-async def handle_order_confirmation_cross_sell(ctx: RunContext, identifier: str, type: str = "phone") -> str:
-    """Handle order confirmation with cross-selling opportunities - PROACTIVE"""
+async def handle_order_confirmation_cross_sell(ctx: RunContext, identifier: str, type: str = "auto") -> str:
+    """Handle order confirmation with cross-selling opportunities - supports phone, email, or customerid"""
     try:
         print(f"🔧 PROACTIVE Function: handleOrderConfirmationAndCrossSell({identifier}, {type})")
         
-        # Get customer journey to find recent orders
+        # Use the customer journey function which already handles smart parameter detection
         journey_result = await get_customer_journey(ctx, identifier, type)
         
         if "❌" in journey_result:
@@ -531,7 +548,7 @@ async def handle_order_confirmation_cross_sell(ctx: RunContext, identifier: str,
         # Extract customer name and recent order info
         import re
         name_match = re.search(r'Name: ([^\\n]+)', journey_result)
-        customer_name = name_match.group(1) if name_match else "Customer"
+        customer_name = name_match.group(1) if name_match else f"Customer {identifier}"
         
         order_ids = re.findall(r'Order ID: ([A-Z0-9]+)', journey_result)
         
@@ -563,24 +580,48 @@ async def handle_order_confirmation_cross_sell(ctx: RunContext, identifier: str,
         return f"❌ Error with order confirmation: {str(error)}"
 
 @agent.tool
-async def handle_support_escalation(ctx: RunContext, identifier: str, issue_description: str, type: str = "phone") -> str:
-    """Handle support escalation with ticket creation - PROACTIVE"""
+async def handle_support_escalation(ctx: RunContext, identifier: str, issue_description: str, type: str = "auto") -> str:
+    """Handle support escalation with ticket creation - supports phone, email, or customerid"""
     try:
         print(f"🔧 PROACTIVE Function: handleSupportEscalation({identifier}, {issue_description}, {type})")
         
-        # Get customer info first
-        if type == "phone":
+        # SMART PARAMETER DETECTION
+        customer_result = None
+        customer_name = "Customer"
+        
+        # If it's already a customer ID (numeric), get customer info via orders
+        if identifier.isdigit() and len(identifier) >= 7:
+            print(f"🆔 Detected customerid: {identifier}")
+            customer_name = f"Customer ID {identifier}"
+            customer_result = f"✅ Customer ID: {identifier} (from previous lookup)"
+        
+        # If it looks like a phone number
+        elif any(char.isdigit() for char in identifier) and ('-' in identifier or len(identifier.replace('-', '').replace(' ', '')) >= 10):
+            print(f"📱 Detected phone: {identifier}")
             customer_result = await get_customer_by_phone(ctx, identifier)
-        else:
+        
+        # If it looks like an email
+        elif '@' in identifier:
+            print(f"📧 Detected email: {identifier}")
             customer_result = await get_customer_by_email(ctx, identifier)
         
-        if "❌" in customer_result:
-            return customer_result
+        # If type is explicitly specified
+        elif type == "phone":
+            customer_result = await get_customer_by_phone(ctx, identifier)
+        elif type == "email":
+            customer_result = await get_customer_by_email(ctx, identifier)
+        elif type == "customerid":
+            customer_name = f"Customer ID {identifier}"
+            customer_result = f"✅ Customer ID: {identifier} (from previous lookup)"
+        else:
+            return f"❌ Could not determine identifier type for: {identifier}. Please specify phone, email, or customerid."
         
-        # Extract customer name
-        import re
-        name_match = re.search(r'Name: ([^\\n]+)', customer_result)
-        customer_name = name_match.group(1) if name_match else "Customer"
+        # Extract customer name if available
+        if customer_result and "❌" not in customer_result:
+            import re
+            name_match = re.search(r'Name: ([^\\n]+)', customer_result)
+            if name_match:
+                customer_name = name_match.group(1)
         
         escalation = []
         escalation.append(f"🚨 SUPPORT ESCALATION for {customer_name}:")
@@ -603,30 +644,59 @@ async def handle_support_escalation(ctx: RunContext, identifier: str, issue_desc
         return f"❌ Error escalating support: {str(error)}"
 
 @agent.tool
-async def handle_loyalty_upgrade(ctx: RunContext, identifier: str, type: str = "phone") -> str:
-    """Handle loyalty tier upgrades and notifications - PROACTIVE"""
+async def handle_loyalty_upgrade(ctx: RunContext, identifier: str, type: str = "auto") -> str:
+    """Handle loyalty tier upgrades and notifications - supports phone, email, or customerid"""
     try:
         print(f"🔧 PROACTIVE Function: handleLoyaltyUpgrade({identifier}, {type})")
         
-        # Get customer patterns to determine loyalty status
-        if type == "phone":
+        # SMART PARAMETER DETECTION
+        customer_result = None
+        customer_name = "Customer"
+        customer_id = None
+        
+        # If it's already a customer ID (numeric), use it directly
+        if identifier.isdigit() and len(identifier) >= 7:
+            print(f"🆔 Detected customerid: {identifier}")
+            customer_id = identifier
+            customer_name = f"Customer ID {identifier}"
+        
+        # If it looks like a phone number
+        elif any(char.isdigit() for char in identifier) and ('-' in identifier or len(identifier.replace('-', '').replace(' ', '')) >= 10):
+            print(f"📱 Detected phone: {identifier}")
             customer_result = await get_customer_by_phone(ctx, identifier)
-        else:
+        
+        # If it looks like an email
+        elif '@' in identifier:
+            print(f"📧 Detected email: {identifier}")
             customer_result = await get_customer_by_email(ctx, identifier)
         
-        if "❌" in customer_result:
-            return customer_result
-        
-        # Extract customer info
-        import re
-        name_match = re.search(r'Name: ([^\\n]+)', customer_result)
-        customer_name = name_match.group(1) if name_match else "Customer"
-        
-        customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
-        if customer_id_match:
-            patterns_result = await analyze_customer_patterns(ctx, customer_id_match.group(1))
+        # If type is explicitly specified
+        elif type == "phone":
+            customer_result = await get_customer_by_phone(ctx, identifier)
+        elif type == "email":
+            customer_result = await get_customer_by_email(ctx, identifier)
+        elif type == "customerid":
+            customer_id = identifier
+            customer_name = f"Customer ID {identifier}"
         else:
-            patterns_result = "❌ No customer ID found"
+            return f"❌ Could not determine identifier type for: {identifier}. Please specify phone, email, or customerid."
+        
+        # Extract customer info if we got customer_result
+        if customer_result and "❌" not in customer_result:
+            import re
+            name_match = re.search(r'Name: ([^\\n]+)', customer_result)
+            if name_match:
+                customer_name = name_match.group(1)
+            
+            customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
+            if customer_id_match:
+                customer_id = customer_id_match.group(1)
+        
+        if not customer_id:
+            return f"❌ Could not find customer ID for: {identifier}"
+        
+        # Get patterns for loyalty analysis
+        patterns_result = await analyze_customer_patterns(ctx, customer_id)
         
         loyalty = []
         loyalty.append(f"🏆 LOYALTY STATUS for {customer_name}:")
@@ -655,31 +725,59 @@ async def handle_loyalty_upgrade(ctx: RunContext, identifier: str, type: str = "
         return f"❌ Error with loyalty upgrade: {str(error)}"
 
 @agent.tool
-async def handle_product_recommendations(ctx: RunContext, identifier: str, type: str = "phone") -> str:
-    """Handle personalized product recommendations - PROACTIVE"""
+async def handle_product_recommendations(ctx: RunContext, identifier: str, type: str = "auto") -> str:
+    """Handle personalized product recommendations - supports phone, email, or customerid"""
     try:
         print(f"🔧 PROACTIVE Function: handleProductRecommendations({identifier}, {type})")
         
-        # Get customer ID first
-        if type == "phone":
+        # SMART PARAMETER DETECTION
+        customer_result = None
+        customer_name = "Customer"
+        customer_id = None
+        
+        # If it's already a customer ID (numeric), use it directly
+        if identifier.isdigit() and len(identifier) >= 7:
+            print(f"🆔 Detected customerid: {identifier}")
+            customer_id = identifier
+            customer_name = f"Customer ID {identifier}"
+        
+        # If it looks like a phone number
+        elif any(char.isdigit() for char in identifier) and ('-' in identifier or len(identifier.replace('-', '').replace(' ', '')) >= 10):
+            print(f"📱 Detected phone: {identifier}")
             customer_result = await get_customer_by_phone(ctx, identifier)
-        else:
+        
+        # If it looks like an email
+        elif '@' in identifier:
+            print(f"📧 Detected email: {identifier}")
             customer_result = await get_customer_by_email(ctx, identifier)
         
-        if "❌" in customer_result:
-            return customer_result
+        # If type is explicitly specified
+        elif type == "phone":
+            customer_result = await get_customer_by_phone(ctx, identifier)
+        elif type == "email":
+            customer_result = await get_customer_by_email(ctx, identifier)
+        elif type == "customerid":
+            customer_id = identifier
+            customer_name = f"Customer ID {identifier}"
+        else:
+            return f"❌ Could not determine identifier type for: {identifier}. Please specify phone, email, or customerid."
         
-        # Extract customer ID and get recommendations
-        import re
-        customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
-        if not customer_id_match:
-            return "❌ Cannot generate recommendations - no customer ID found"
+        # Extract customer info if we got customer_result
+        if customer_result and "❌" not in customer_result:
+            import re
+            name_match = re.search(r'Name: ([^\\n]+)', customer_result)
+            if name_match:
+                customer_name = name_match.group(1)
+            
+            customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
+            if customer_id_match:
+                customer_id = customer_id_match.group(1)
         
-        customer_id = customer_id_match.group(1)
+        if not customer_id:
+            return f"❌ Cannot generate recommendations - no customer ID found for: {identifier}"
+        
+        # Get recommendations using the updated function
         recommendations_result = await get_product_recommendations(ctx, customer_id)
-        
-        name_match = re.search(r'Name: ([^\\n]+)', customer_result)
-        customer_name = name_match.group(1) if name_match else "Customer"
         
         proactive_recs = []
         proactive_recs.append(f"🎯 PERSONALIZED RECOMMENDATIONS for {customer_name}:")
