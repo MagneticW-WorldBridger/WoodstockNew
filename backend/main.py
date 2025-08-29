@@ -13,6 +13,7 @@ import os
 from typing import AsyncIterator
 import httpx
 from pydantic_ai.mcp import MCPServerSSE, MCPServerStreamableHTTP
+import sys
 
 from schemas import ChatRequest, ChatResponse, ChatMessage
 from conversation_memory import memory
@@ -1307,10 +1308,11 @@ app.router.lifespan_context = lifespan
 @app.get("/health")
 async def health_check():
     """Health check endpoint that verifies MCP connection"""
+    mcp_tools = []
+    mcp_status = "disconnected"
+    native_tool_count = 15  # We now have 15 @agent.tool decorated functions
+    
     try:
-        mcp_tools = []
-        mcp_status = "disconnected"
-        
         # Test MCP connection dynamically
         try:
             # Try SSE first with a short timeout
@@ -1318,8 +1320,6 @@ async def health_check():
                 sse_server = MCPServerSSE(url=mcp_calendar_url, http_client=http_client)
                 async with sse_server:
                     tools_list = await sse_server.list_tools()
-                    print(f"🔍 MCP tools_list type: {type(tools_list)}")
-                    print(f"🔍 MCP tools_list content: {tools_list}")
                     # Handle different response structures
                     if hasattr(tools_list, 'tools'):
                         mcp_tools.extend([t.name for t in tools_list.tools])
@@ -1328,7 +1328,7 @@ async def health_check():
                     else:
                         mcp_tools.append(str(tools_list))
             mcp_status = "connected_sse" if mcp_tools else "connected_sse_but_no_tools_found"
-        except Exception as e:
+        except Exception:
             # Fallback to Streamable HTTP
             try:
                 http_server = MCPServerStreamableHTTP(url=mcp_calendar_url)
@@ -1346,14 +1346,11 @@ async def health_check():
                 mcp_status = f"error: {str(e2)[:100]}..."
                 print(f"❌ MCP Connection Error: {e2}")
 
-                # Count native agent tools (15 LOFT functions)
-        native_tool_count = 15  # We now have 15 @agent.tool decorated functions
-
-    return {
-        "status": "ok",
+        return {
+            "status": "ok",
             "message": "LOFT Chat Backend with Memory + MCP is running!",
-        "model": os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
-            "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}",
+            "model": os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
+            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
             "native_functions": native_tool_count,
             "memory": "PostgreSQL (Existing Tables)",
             "mcp_calendar_status": mcp_status,
@@ -1363,7 +1360,7 @@ async def health_check():
         return {
             "status": "error", 
             "message": f"Health check failed: {str(e)}"
-    }
+        }
 
 def extract_user_identifier(message: str) -> str:
     """Extract phone or email from message"""
