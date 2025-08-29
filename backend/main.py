@@ -1349,10 +1349,10 @@ async def health_check():
         # Count native agent tools (15 LOFT functions)
         native_tool_count = 15  # We now have 15 @agent.tool decorated functions
 
-    return {
-        "status": "ok",
+        return {
+            "status": "ok",
             "message": "LOFT Chat Backend with Memory + MCP is running!",
-        "model": os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
+            "model": os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
             "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}",
             "native_functions": native_tool_count,
             "memory": "PostgreSQL (Existing Tables)",
@@ -1363,7 +1363,7 @@ async def health_check():
         return {
             "status": "error", 
             "message": f"Health check failed: {str(e)}"
-    }
+        }
 
 def extract_user_identifier(message: str) -> str:
     """Extract phone or email from message"""
