@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
+import pydantic_ai
+print("🔥 pydantic_ai version:", getattr(pydantic_ai, "__version__", "unknown"))
 from dotenv import load_dotenv
 import os
 from typing import AsyncIterator
@@ -62,15 +64,25 @@ if MCP_AVAILABLE and MCPServerSSE is not None:
 else:
     print("ℹ️ Skipping MCP Calendar (module not installed/compatible)")
 
-# Initialize PydanticAI agent with safe parameters
+# Initialize PydanticAI agent with version-adaptive parameters
 print("🔧 Initializing PydanticAI agent with memory...")
 
+# Detect Agent capabilities
+import inspect
+agent_signature = inspect.signature(Agent.__init__)
+agent_params = agent_signature.parameters
+
+print(f"🔍 Agent supports: {list(agent_params.keys())}")
+
+# Build agent kwargs based on what's supported
 agent_kwargs = {
     "model": f"openai:{os.getenv('OPENAI_MODEL', 'gpt-4.1')}",
-    "toolsets": [calendar_server] if calendar_server else [],
-    "instructions": (
-        # UNIFIED WOODSTOCK FURNISHINGS AI ASSISTANT PROMPT
-        """
+}
+
+# Add instructions (or system_prompt for older versions)
+prompt_content = (
+    # UNIFIED WOODSTOCK FURNISHINGS AI ASSISTANT PROMPT
+    """
 # CORE IDENTITY & PRIMARY GOAL
 
 You are "AiPRL," the lead AI assistant for Woodstock's Furnishings & Mattress. Your persona is that of a 40-year-old veteran interior designer specialist—helpful, friendly, professional, and deeply knowledgeable about our products and services.
@@ -438,18 +450,47 @@ If any user asks any questions that are not related to Woodstock Furniture in an
 - You must NOT do any web searches at all.
 - Since you are Woodstock's furniture Assistant, you will answer queries related to ONLY Woodstock's furniture and its products.
         """
-    ),
-}
+)
+
+# Add prompt with version-adaptive parameter name
+if 'instructions' in agent_params:
+    agent_kwargs['instructions'] = prompt_content
+    print("✅ Using 'instructions' parameter (modern PydanticAI)")
+elif 'system_prompt' in agent_params:
+    agent_kwargs['system_prompt'] = prompt_content
+    print("✅ Using 'system_prompt' parameter (older PydanticAI)")
+else:
+    print("⚠️ No prompt parameter found, using default")
+
+# Add toolsets if supported
+if 'toolsets' in agent_params and calendar_server:
+    agent_kwargs['toolsets'] = [calendar_server]
+    print("✅ Adding MCP toolsets to Agent constructor")
+elif calendar_server:
+    print("ℹ️ Will add MCP toolsets after Agent creation (older version)")
 
 # Add defer_model_check if supported
-try:
-    import inspect
-    if 'defer_model_check' in inspect.signature(Agent.__init__).parameters:
-        agent_kwargs['defer_model_check'] = True
-except Exception:
-    pass
+if 'defer_model_check' in agent_params:
+    agent_kwargs['defer_model_check'] = True
+    print("✅ Adding defer_model_check=True")
 
+# Create the Agent
+print(f"🤖 Creating Agent with: {list(agent_kwargs.keys())}")
 agent = Agent(**agent_kwargs)
+
+# Add toolsets after creation if not supported in constructor
+if 'toolsets' not in agent_params and calendar_server:
+    try:
+        if hasattr(agent, 'add_toolset'):
+            agent.add_toolset(calendar_server)
+            print("✅ MCP toolset added via add_toolset method")
+        elif hasattr(agent, 'toolsets'):
+            agent.toolsets.append(calendar_server)
+            print("✅ MCP toolset added via toolsets attribute")
+        else:
+            print("⚠️ No method to add toolsets found")
+    except Exception as e:
+        print(f"⚠️ Could not add MCP toolset: {e}")
 
 # LOFT Function Definitions with @agent.tool decorators
 print("🔧 Adding LOFT functions to agent...")

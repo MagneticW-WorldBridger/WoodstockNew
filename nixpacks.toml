@@ -3,7 +3,9 @@ nixPkgs = ["python311", "nodejs_20", "npm"]
 
 [phases.install]
 cmds = [
-  "pip install -r requirements.txt",
+  "pip install --no-cache-dir --upgrade pip",
+  "pip install --no-cache-dir --upgrade pydantic-ai[openai,mcp]==0.0.49",
+  "pip install --no-cache-dir -r requirements.txt",
   "npm install -g supergateway"
 ]
 
