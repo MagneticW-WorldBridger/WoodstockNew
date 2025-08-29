@@ -3,7 +3,7 @@
 import json
 import asyncio
 import re
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from pydantic_ai import Agent, RunContext
@@ -12,8 +12,7 @@ from dotenv import load_dotenv
 import os
 from typing import AsyncIterator
 import httpx
-from pydantic_ai.mcp import MCPServerHTTP # Correct import for v0.0.49
-import sys
+from pydantic_ai.mcp import MCPServerSSE, MCPServerStreamableHTTP
 
 from schemas import ChatRequest, ChatResponse, ChatMessage
 from conversation_memory import memory
@@ -47,7 +46,7 @@ print(f"🔌 MCP Calendar URL configured: {mcp_calendar_url}")
 # Initialize MCP Calendar Server for agent toolset
 calendar_server = None
 try:
-    calendar_server = MCPServerHTTP(url=mcp_calendar_url)
+    calendar_server = MCPServerSSE(url=mcp_calendar_url)
     print(f"🔌 MCP Calendar server initialized for agent toolset")
 except Exception as e:
     print(f"⚠️ MCP Calendar server failed to initialize: {e}")
@@ -1308,41 +1307,63 @@ app.router.lifespan_context = lifespan
 @app.get("/health")
 async def health_check():
     """Health check endpoint that verifies MCP connection"""
-    mcp_tools = []
-    mcp_status = "disconnected"
-    native_tool_count = 15  # We now have 15 @agent.tool decorated functions
-    
     try:
+        mcp_tools = []
+        mcp_status = "disconnected"
+        
         # Test MCP connection dynamically
-        # In v0.0.49, there was only MCPServerHTTP, no separate SSE/StreamableHTTP clients
-        http_server = MCPServerHTTP(url=mcp_calendar_url)
-        # The older version might not have async context managers for this class
-        # and might not have a list_tools method. We'll attempt a basic connection check.
-        async with httpx.AsyncClient(timeout=httpx.Timeout(6.0)) as client:
-            response = await client.get(mcp_calendar_url)
-            if response.status_code == 200:
-                mcp_status = "connected_http (basic check)"
-                # Cannot list tools in this version, so we'll assume they are available
-                mcp_tools = ["Assumed available based on successful connection"]
-            else:
-                mcp_status = f"error: status_code {response.status_code}"
+        try:
+            # Try SSE first with a short timeout
+            async with httpx.AsyncClient(timeout=httpx.Timeout(6.0)) as http_client:
+                sse_server = MCPServerSSE(url=mcp_calendar_url, http_client=http_client)
+                async with sse_server:
+                    tools_list = await sse_server.list_tools()
+                    print(f"🔍 MCP tools_list type: {type(tools_list)}")
+                    print(f"🔍 MCP tools_list content: {tools_list}")
+                    # Handle different response structures
+                    if hasattr(tools_list, 'tools'):
+                        mcp_tools.extend([t.name for t in tools_list.tools])
+                    elif isinstance(tools_list, list):
+                        mcp_tools.extend([t.name if hasattr(t, 'name') else str(t) for t in tools_list])
+                    else:
+                        mcp_tools.append(str(tools_list))
+            mcp_status = "connected_sse" if mcp_tools else "connected_sse_but_no_tools_found"
+        except Exception as e:
+            # Fallback to Streamable HTTP
+            try:
+                http_server = MCPServerStreamableHTTP(url=mcp_calendar_url)
+                async with http_server:
+                    tools_list = await http_server.list_tools()
+                    # Handle different response structures
+                    if hasattr(tools_list, 'tools'):
+                        mcp_tools.extend([t.name for t in tools_list.tools])
+                    elif isinstance(tools_list, list):
+                        mcp_tools.extend([t.name if hasattr(t, 'name') else str(t) for t in tools_list])
+                    else:
+                        mcp_tools.append(str(tools_list))
+                mcp_status = "connected_http" if mcp_tools else "connected_http_but_no_tools_found"
+            except Exception as e2:
+                mcp_status = f"error: {str(e2)[:100]}..."
+                print(f"❌ MCP Connection Error: {e2}")
+
+        # Count native agent tools (15 LOFT functions)
+        native_tool_count = 15  # We now have 15 @agent.tool decorated functions
 
         return {
             "status": "ok",
             "message": "LOFT Chat Backend with Memory + MCP is running!",
             "model": os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
-            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
+            "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}",
             "native_functions": native_tool_count,
             "memory": "PostgreSQL (Existing Tables)",
             "mcp_calendar_status": mcp_status,
             "mcp_calendar_tools": mcp_tools,
         }
     except Exception as e:
-        print(f"❌ Health Check MCP Error: {e}")
         return {
             "status": "error", 
             "message": f"Health check failed: {str(e)}"
-        }
+    }
 
 def extract_user_identifier(message: str) -> str:
     """Extract phone or email from message"""
