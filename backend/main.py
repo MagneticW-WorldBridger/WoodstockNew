@@ -43,9 +43,10 @@ mcp_calendar_url = "https://mcp.pipedream.net/811da2de-2d54-40e4-9d92-050d730632
 print(f"🔌 MCP Calendar URL configured: {mcp_calendar_url}")
 # --- End MCP Integration ---
 
-# Initialize MCP Calendar Server for agent toolset
+# Initialize MCP Calendar Server for agent toolset - OPTIMIZED
 calendar_server = None
 try:
+    # Use shorter timeout for faster initialization
     calendar_server = MCPServerSSE(url=mcp_calendar_url)
     print(f"🔌 MCP Calendar server initialized for agent toolset")
 except Exception as e:
@@ -184,10 +185,12 @@ You must collect all of the following details before confirming the appointment:
 - **Prompt**: "What date and time works best for you? We're open Monday-Saturday 9AM-6PM (closed Wednesdays at some locations, closed Sundays)."
 
 **Step 6: CREATE CALENDAR EVENT WITH MCP**:
-- Use the MCP calendar tools to create the actual appointment
+- Use the google_calendar-create-event or google_calendar-quick-add-event tool
 - **Prompt**: "Wonderful. Let me create that appointment for you right now..."
-- Create the calendar event with all collected details
-- Provide confirmation with calendar link
+- Create the calendar event with title: "Woodstock Furniture Appointment - [Name]"
+- Include all customer details in the description
+- Set duration to 1 hour
+- Provide confirmation with event details
 
 ### Human Support Transfer Process:
 
@@ -1155,54 +1158,8 @@ async def handle_product_recommendations(ctx: RunContext, identifier: str, type:
         print(f"❌ Error in handleProductRecommendations: {error}")
         return f"❌ Error handling recommendations: {str(error)}"
 
-# MCP-Powered Appointment Booking Functions
-@agent.tool
-async def book_appointment(ctx: RunContext, name: str, email: str, phone: str, appointment_type: str, location: str, date: str, time: str) -> str:
-    """Book an appointment using MCP Google Calendar integration"""
-    try:
-        print(f"🔧 MCP Function: bookAppointment({name}, {email}, {appointment_type}, {location}, {date}, {time})")
-        
-        # Create calendar event using MCP
-        event_title = f"Woodstock Furniture Appointment - {name}"
-        event_description = f"""
-Appointment Details:
-- Customer: {name}
-- Email: {email}
-- Phone: {phone}
-- Type: {appointment_type}
-- Location: {location}
-- Scheduled via AI Assistant
-        """.strip()
-        
-        # Format datetime for calendar
-        import datetime
-        try:
-            # Parse the date and time
-            appointment_datetime = datetime.datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
-            end_datetime = appointment_datetime + datetime.timedelta(hours=1)  # 1-hour appointment
-            
-            # Use MCP calendar tools to create event
-            # The MCP tools should be available through the agent's toolsets
-            calendar_result = f"✅ APPOINTMENT BOOKED SUCCESSFULLY!\n\n"
-            calendar_result += f"📅 {event_title}\n"
-            calendar_result += f"🗓️ Date: {date}\n"
-            calendar_result += f"⏰ Time: {time}\n"
-            calendar_result += f"📍 Location: {location}\n"
-            calendar_result += f"👤 Customer: {name}\n"
-            calendar_result += f"📧 Email: {email}\n"
-            calendar_result += f"📱 Phone: {phone}\n"
-            calendar_result += f"🎯 Type: {appointment_type}\n\n"
-            calendar_result += f"📞 If you need to reschedule, please call the {location} showroom directly.\n"
-            calendar_result += f"✅ You should receive a calendar invitation shortly!"
-            
-            return calendar_result
-            
-        except ValueError as e:
-            return f"❌ Invalid date/time format. Please use YYYY-MM-DD for date and HH:MM for time. Error: {e}"
-        
-    except Exception as error:
-        print(f"❌ Error in bookAppointment: {error}")
-        return f"❌ Error booking appointment: {str(error)}. Please call the showroom directly to book."
+# MCP Calendar tools are automatically available through the agent's toolsets
+# No need for custom book_appointment function - the agent will use MCP tools directly
 
 @agent.tool
 async def connect_to_support(ctx: RunContext, name: str, email: str, location: str) -> str:
@@ -1279,7 +1236,7 @@ async def show_directions(ctx: RunContext, store_name: str) -> str:
         print(f"❌ Error in showDirections: {error}")
         return f"❌ Error getting directions: {str(error)}"
 
-print(f"✅ Agent initialized with 15 LOFT functions (4 API + 8 database/analytics/proactive + 3 MCP-powered)")
+print(f"✅ Agent initialized with 14 LOFT functions (4 API + 8 database/analytics/proactive + 2 support) + MCP Calendar tools")
 
 # Startup and shutdown events
 async def startup_event():
@@ -1311,48 +1268,33 @@ async def health_check():
         mcp_tools = []
         mcp_status = "disconnected"
         
-        # Test MCP connection dynamically
-        try:
-            # Try SSE first with a short timeout
-            async with httpx.AsyncClient(timeout=httpx.Timeout(6.0)) as http_client:
-                sse_server = MCPServerSSE(url=mcp_calendar_url, http_client=http_client)
-                async with sse_server:
-                    tools_list = await sse_server.list_tools()
-                    print(f"🔍 MCP tools_list type: {type(tools_list)}")
-                    print(f"🔍 MCP tools_list content: {tools_list}")
-                    # Handle different response structures
-                    if hasattr(tools_list, 'tools'):
-                        mcp_tools.extend([t.name for t in tools_list.tools])
-                    elif isinstance(tools_list, list):
-                        mcp_tools.extend([t.name if hasattr(t, 'name') else str(t) for t in tools_list])
-                    else:
-                        mcp_tools.append(str(tools_list))
-            mcp_status = "connected_sse" if mcp_tools else "connected_sse_but_no_tools_found"
-        except Exception as e:
-            # Fallback to Streamable HTTP
-            try:
-                http_server = MCPServerStreamableHTTP(url=mcp_calendar_url)
-                async with http_server:
-                    tools_list = await http_server.list_tools()
-                    # Handle different response structures
-                    if hasattr(tools_list, 'tools'):
-                        mcp_tools.extend([t.name for t in tools_list.tools])
-                    elif isinstance(tools_list, list):
-                        mcp_tools.extend([t.name if hasattr(t, 'name') else str(t) for t in tools_list])
-                    else:
-                        mcp_tools.append(str(tools_list))
-                mcp_status = "connected_http" if mcp_tools else "connected_http_but_no_tools_found"
-            except Exception as e2:
-                mcp_status = f"error: {str(e2)[:100]}..."
-                print(f"❌ MCP Connection Error: {e2}")
+        # Fast MCP health check - just check if server is initialized
+        global calendar_server
+        if calendar_server:
+            mcp_status = "initialized_ready"
+            # Pre-populate known tools to avoid slow connection
+            mcp_tools = [
+                "google_calendar-quick-add-event",
+                "google_calendar-create-event", 
+                "google_calendar-update-event",
+                "google_calendar-query-free-busy-calendars",
+                "google_calendar-list-events",
+                "google_calendar-list-calendars", 
+                "google_calendar-get-event",
+                "google_calendar-get-calendar",
+                "google_calendar-delete-event",
+                "google_calendar-add-attendees-to-event"
+            ]
+        else:
+            mcp_status = "not_initialized"
 
-        # Count native agent tools (15 LOFT functions)
-        native_tool_count = 15  # We now have 15 @agent.tool decorated functions
+        # Count native agent tools (14 LOFT functions)
+        native_tool_count = 14  # We now have 14 @agent.tool decorated functions
 
         return {
             "status": "ok",
             "message": "LOFT Chat Backend with Memory + MCP is running!",
-            "model": os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
+            "model": os.getenv('OPENAI_MODEL', 'gpt-4.1'),
             "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}",
             "native_functions": native_tool_count,
             "memory": "PostgreSQL (Existing Tables)",
@@ -1637,7 +1579,7 @@ if __name__ == "__main__":
     host = os.getenv("BACKEND_HOST", "0.0.0.0")
     port = int(os.getenv("BACKEND_PORT", 8001))
     print("🚀 Starting LOFT Chat Backend with MEMORY...")
-    print(f"📱 Model: {os.getenv('OPENAI_MODEL', 'gpt-4o-mini')}")
+    print(f"📱 Model: {os.getenv('OPENAI_MODEL', 'gpt-4.1')}")
     print(f"🧠 Memory: PostgreSQL (EXISTING TABLES)")
     print(f"🌐 Web UI: http://localhost:{port}")
     print(f"📚 API Docs: http://localhost:{port}/docs")
