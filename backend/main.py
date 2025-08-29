@@ -57,7 +57,7 @@ print("🔧 Initializing PydanticAI agent with memory...")
 agent = Agent(
     model=f"openai:{os.getenv('OPENAI_MODEL', 'gpt-4.1')}",
     toolsets=[calendar_server] if calendar_server else [],
-    system_prompt=(
+    instructions=(
         # UNIFIED WOODSTOCK FURNISHINGS AI ASSISTANT PROMPT
         """
 # CORE IDENTITY & PRIMARY GOAL
@@ -427,8 +427,9 @@ If any user asks any questions that are not related to Woodstock Furniture in an
 - You must NOT do any web searches at all.
 - Since you are Woodstock's furniture Assistant, you will answer queries related to ONLY Woodstock's furniture and its products.
         """
-    )
-    # MCP toolsets will be added dynamically when needed
+    ),
+    # Optional but recommended to avoid model validation at import time
+    defer_model_check=True,
 )
 
 # LOFT Function Definitions with @agent.tool decorators
@@ -459,6 +460,10 @@ async def get_customer_by_phone(ctx: RunContext, phone: str) -> str:
             # LOFT API returns data in 'entry' array
             if data and data.get('entry') and len(data['entry']) > 0:
                 customer_data = data['entry'][0]
+                
+                # Initialize safe defaults before conditionals
+                name = ""
+                address = ""
                 
                 customer_info = []
                 customer_info.append(f"📱 Phone: {phone}")
@@ -1303,9 +1308,9 @@ async def health_check():
         }
     except Exception as e:
         return {
-            "status": "error", 
+            "status": "error",
             "message": f"Health check failed: {str(e)}"
-    }
+        }
 
 def extract_user_identifier(message: str) -> str:
     """Extract phone or email from message"""
