@@ -12,7 +12,14 @@ from dotenv import load_dotenv
 import os
 from typing import AsyncIterator
 import httpx
-from pydantic_ai.mcp import MCPServerSSE, MCPServerStreamableHTTP
+# Import MCP optionally to prevent Railway crashes
+try:
+    from pydantic_ai.mcp import MCPServerSSE
+    MCP_AVAILABLE = True
+except Exception as _e:
+    MCPServerSSE = None
+    MCP_AVAILABLE = False
+    print(f"⚠️ MCP no disponible: {type(_e).__name__}: {_e}")
 
 from schemas import ChatRequest, ChatResponse, ChatMessage
 from conversation_memory import memory
@@ -38,26 +45,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- MCP Integration (Lazy Loading) ---
-mcp_calendar_url = "https://mcp.pipedream.net/811da2de-2d54-40e4-9d92-050d7306328d/google_calendar"
+# --- MCP Integration via Supergateway ---
+# Connect to local supergateway instead of Pipedream directly
+mcp_calendar_url = os.getenv("MCP_CALENDAR_LOCAL_URL", "http://localhost:3333")
 print(f"🔌 MCP Calendar URL configured: {mcp_calendar_url}")
 # --- End MCP Integration ---
 
-# Initialize MCP Calendar Server for agent toolset - OPTIMIZED
+# Initialize MCP Calendar Server for agent toolset - SAFE
 calendar_server = None
-try:
-    # Use shorter timeout for faster initialization
-    calendar_server = MCPServerSSE(url=mcp_calendar_url)
-    print(f"🔌 MCP Calendar server initialized for agent toolset")
-except Exception as e:
-    print(f"⚠️ MCP Calendar server failed to initialize: {e}")
+if MCP_AVAILABLE and MCPServerSSE is not None:
+    try:
+        calendar_server = MCPServerSSE(url=mcp_calendar_url)
+        print(f"🔌 MCP Calendar server initialized for agent toolset")
+    except Exception as e:
+        print(f"⚠️ MCP Calendar server failed to initialize: {e}")
+else:
+    print("ℹ️ Skipping MCP Calendar (module not installed/compatible)")
 
-# Initialize PydanticAI agent
+# Initialize PydanticAI agent with safe parameters
 print("🔧 Initializing PydanticAI agent with memory...")
-agent = Agent(
-    model=f"openai:{os.getenv('OPENAI_MODEL', 'gpt-4.1')}",
-    toolsets=[calendar_server] if calendar_server else [],
-    instructions=(
+
+agent_kwargs = {
+    "model": f"openai:{os.getenv('OPENAI_MODEL', 'gpt-4.1')}",
+    "toolsets": [calendar_server] if calendar_server else [],
+    "instructions": (
         # UNIFIED WOODSTOCK FURNISHINGS AI ASSISTANT PROMPT
         """
 # CORE IDENTITY & PRIMARY GOAL
@@ -428,9 +439,17 @@ If any user asks any questions that are not related to Woodstock Furniture in an
 - Since you are Woodstock's furniture Assistant, you will answer queries related to ONLY Woodstock's furniture and its products.
         """
     ),
-    # Optional but recommended to avoid model validation at import time
-    defer_model_check=True,
-)
+}
+
+# Add defer_model_check if supported
+try:
+    import inspect
+    if 'defer_model_check' in inspect.signature(Agent.__init__).parameters:
+        agent_kwargs['defer_model_check'] = True
+except Exception:
+    pass
+
+agent = Agent(**agent_kwargs)
 
 # LOFT Function Definitions with @agent.tool decorators
 print("🔧 Adding LOFT functions to agent...")
