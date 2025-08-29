@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import os
 from typing import AsyncIterator
 import httpx
-from pydantic_ai.mcp import MCPServerSSE, MCPServerStreamableHTTP
+from pydantic_ai.mcp.client import MCPServerSSE, MCPServerStreamableHTTP
 import sys
 
 from schemas import ChatRequest, ChatResponse, ChatMessage
