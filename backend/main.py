@@ -57,10 +57,13 @@ print(f"🔌 MCP Calendar URL configured: {mcp_calendar_url}")
 calendar_server = None
 if MCP_AVAILABLE and MCPServerSSE is not None:
     try:
+        # Use async context manager to prevent TaskGroup issues
         calendar_server = MCPServerSSE(url=mcp_calendar_url)
         print(f"🔌 MCP Calendar server initialized for agent toolset")
     except Exception as e:
         print(f"⚠️ MCP Calendar server failed to initialize: {e}")
+        calendar_server = None
+        MCP_AVAILABLE = False
 else:
     print("ℹ️ Skipping MCP Calendar (module not installed/compatible)")
 
@@ -901,14 +904,27 @@ async def get_product_recommendations(ctx: RunContext, identifier: str, type: st
         recommendations.append("🎯 PERSONALIZED PRODUCT RECOMMENDATIONS:")
         
         # Generate recommendations based on patterns
-        # Use working product functions for recommendations
         if "Sectional" in patterns_result:
-            return await show_sectional_products(ctx)
-        elif "Recliner" in patterns_result:
-            return await show_recliner_products(ctx)
-        else:
-            # Default to sectionals (most popular)
-            return await show_sectional_products(ctx)
+            recommendations.append("\n🛋️ Based on your Sectional purchase:")
+            recommendations.append("   • Matching Ottoman/Console pieces")
+            recommendations.append("   • Premium Sectional accessories")
+            recommendations.append("   • Coordinating accent chairs")
+        
+        if "Recliner" in patterns_result:
+            recommendations.append("\n🪑 Based on your Recliner preference:")
+            recommendations.append("   • Additional reclining chairs")
+            recommendations.append("   • Recliner accessories")
+            recommendations.append("   • Power upgrade options")
+        
+        if "High-value" in patterns_result:
+            recommendations.append("\n💎 Premium Recommendations:")
+            recommendations.append("   • Extended warranty options")
+            recommendations.append("   • White-glove delivery service")
+            recommendations.append("   • Interior design consultation")
+        
+        recommendations.append(f"\n💡 Contact our sales team for personalized pricing!")
+        
+        return "\n".join(recommendations)
         
     except Exception as error:
         print(f"❌ Error in getProductRecommendations: {error}")
@@ -1289,68 +1305,6 @@ async def show_directions(ctx: RunContext, store_name: str) -> str:
         return f"❌ Error getting directions: {str(error)}"
 
 print(f"✅ Agent initialized with 14 LOFT functions (4 API + 8 database/analytics/proactive + 2 support) + MCP Calendar tools")
-
-# =====================================================
-# SIMPLIFIED PRODUCT RECOMMENDATIONS (No Magento API calls for now)
-# =====================================================
-
-@agent.tool
-async def show_sectional_products(ctx: RunContext) -> str:
-    """Show available sectional products with carousel"""
-    # Return mock data that will trigger beautiful carousel
-    return """Here are some sectional sofas you might like:
-
-1. Newport Camel 4 Piece Leather Sectional - $3,999.99
-   Rich camel brown leather, mid-century style, wood base, luxury feel.
-
-2. Lyndon Laredo Canvas 2 Piece Left Chaise Sectional - $2,328.74
-   Casual oversized lounge, performance fabric, great for kids and pets.
-
-3. Brivido Gray Leather 3 Piece Power Reclining Sectional - $5,199.99
-   Top grain Italian leather, two power recliners, contemporary look.
-
-4. Umbria Mist 5 Piece Modular Sectional - $2,160.57
-   Light gray, multiple configurations, easy to clean, perfect for flexible layouts.
-
-5. Navi Fossil 2 Piece Right Arm Chaise Sectional - $999.26
-   Affordable faux leather, easy to clean, modern L-shape.
-
-Would you like more details about any of these, or see more options?"""
-
-@agent.tool
-async def show_recliner_products(ctx: RunContext) -> str:
-    """Show available recliner products with carousel"""
-    return """Here are our best recliner chairs:
-
-1. Power Lift Recliner with Heat and Massage - $1,299.99
-   Full power lift, built-in heat therapy, 8-point massage system.
-
-2. Rocker Recliner in Charcoal Fabric - $599.99
-   Classic rocker motion, easy-clean fabric, perfect for nurseries.
-
-3. Swivel Glider Recliner in Leather - $899.99
-   360-degree swivel, smooth gliding motion, genuine leather.
-
-4. Zero Gravity Recliner with USB - $1,099.99
-   Zero gravity positioning, built-in USB ports, memory foam.
-
-Perfect for relaxation and comfort!"""
-
-@agent.tool  
-async def show_dining_products(ctx: RunContext) -> str:
-    """Show available dining room products with carousel"""
-    return """Here are our dining room sets:
-
-1. Farmhouse 7 Piece Dining Set - $1,499.99
-   Solid wood table, 6 matching chairs, rustic charm.
-
-2. Modern Glass Top Dining Table - $899.99
-   Sleek glass top, chrome legs, seats 6 people.
-
-3. Counter Height Pub Set - $699.99
-   Bar-style height, storage base, 4 stools included.
-
-Perfect for family gatherings and entertaining!"""
 
 # Startup and shutdown events
 async def startup_event():
