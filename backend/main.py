@@ -1365,11 +1365,11 @@ async def search_magento_products(ctx: RunContext, query: str, page_size: int = 
             # Extract image from existing product data
             image_url = 'https://via.placeholder.com/400x300/002147/FFFFFF?text=Woodstock+Furniture'
             
-            # Try to get image from media_gallery_entries
+            # Try to get image from media_gallery_entries (FIXED: Use correct URL pattern)
             if product.get('media_gallery_entries'):
                 media_entries = product['media_gallery_entries']
                 if len(media_entries) > 0 and media_entries[0].get('file'):
-                    image_url = f"https://woodstockoutlet.com/pub/media/catalog/product{media_entries[0]['file']}"
+                    image_url = f"https://www.woodstockoutlet.com/media/catalog/product{media_entries[0]['file']}"
             
             formatted_products.append({
                 'name': product.get('name', 'Product'),

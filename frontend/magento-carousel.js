@@ -166,19 +166,19 @@ class WoodstockMagentoCarousel {
             return product.image_url;
         }
         
-        // PRIORITY 2: Try media gallery entries
+        // PRIORITY 2: Try media gallery entries (FIXED: Correct URL pattern from original)
         if (product.media_gallery_entries && product.media_gallery_entries.length > 0) {
-            const mediaBase = 'https://woodstockoutlet.com/pub/media/catalog/product';
+            const mediaBase = 'https://www.woodstockoutlet.com/media/catalog/product';
             return mediaBase + product.media_gallery_entries[0].file;
         }
         
-        // PRIORITY 3: Try custom attributes
+        // PRIORITY 3: Try custom attributes (FIXED: Correct URL pattern)
         if (product.custom_attributes) {
             const imageAttr = product.custom_attributes.find(attr => 
                 attr.attribute_code === 'image' || attr.attribute_code === 'small_image'
             );
             if (imageAttr && imageAttr.value) {
-                return 'https://woodstockoutlet.com/pub/media/catalog/product' + imageAttr.value;
+                return 'https://www.woodstockoutlet.com/media/catalog/product' + imageAttr.value;
             }
         }
 
