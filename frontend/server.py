@@ -65,18 +65,23 @@ def start_server():
             print(f"📱 Serving at: http://0.0.0.0:{PORT}")
             print(f"📁 Directory: {FRONTEND_DIR}")
             print(f"🔧 Backend should be running on: {BACKEND_URL}")
-            print("\n🎯 Opening browser in 2 seconds...")
-            print("💡 Press Ctrl+C to stop server\n")
-            
-            # Open browser after a short delay
-            import threading
-            def open_browser():
-                import time
-                time.sleep(2)
-                webbrowser.open(f'http://localhost:{PORT}')
-            
-            browser_thread = threading.Thread(target=open_browser, daemon=True)
-            browser_thread.start()
+            # Only open browser in local development
+            if os.environ.get('RAILWAY_ENVIRONMENT') != 'production':
+                print("\n🎯 Opening browser in 2 seconds...")
+                print("💡 Press Ctrl+C to stop server\n")
+                
+                # Open browser after a short delay
+                import threading
+                def open_browser():
+                    import time
+                    time.sleep(2)
+                    webbrowser.open(f'http://localhost:{PORT}')
+                
+                browser_thread = threading.Thread(target=open_browser, daemon=True)
+                browser_thread.start()
+            else:
+                print("\n🚀 Production mode - server ready!")
+                print("💡 Press Ctrl+C to stop server\n")
             
             # Start server
             httpd.serve_forever()

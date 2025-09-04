@@ -41,11 +41,20 @@ html, body {
     background: var(--woodstock-white);
     color: var(--woodstock-text);
     line-height: 1.6;
+    /* Mobile-first: Prevent horizontal scrolling */
+    overflow-x: hidden;
+    /* Improve touch scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent zoom on input focus */
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
 }
 
 /* App Container with Apple-style Background */
 .woodstock-app {
-    height: 100vh;
+    /* Mobile-first: Use dynamic viewport height to handle mobile browsers */
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for modern browsers */
     display: flex;
     flex-direction: column;
     background: 
@@ -54,7 +63,9 @@ html, body {
         radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
         linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
     position: relative;
-    overflow: hidden;
+    /* Mobile-first: Allow vertical scrolling, prevent horizontal */
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* Header - Apple Liquid Glass Style */
@@ -63,14 +74,18 @@ html, body {
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border-bottom: 1px solid var(--glass-border);
-    padding: 1.5rem 2rem;
+    padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     box-shadow: var(--glass-shadow);
     flex-shrink: 0;
-    position: relative;
+    position: sticky;
+    top: 0;
     z-index: 100;
+    /* Mobile-first: Ensure header doesn't break layout */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .woodstock-header::before {
@@ -148,27 +163,37 @@ html, body {
     flex-direction: column;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1rem;
     width: 100%;
     position: relative;
     z-index: 10;
+    /* Mobile-first: Ensure proper sizing */
+    box-sizing: border-box;
+    min-height: 0; /* Allow flex child to shrink */
 }
 
 /* Messages Area - Apple Liquid Glass */
 .woodstock-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem;
+    padding: 1.5rem;
     background: rgba(var(--glass-tint), var(--glass-opacity));
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    margin-bottom: 2rem;
-    max-height: calc(100vh - 280px);
-    min-height: 400px;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+    /* Mobile-first: Dynamic height calculation */
+    height: calc(100vh - 200px);
+    height: calc(100dvh - 200px); /* Dynamic viewport for mobile */
+    min-height: 300px;
+    max-height: calc(100vh - 200px);
+    max-height: calc(100dvh - 200px);
     box-shadow: var(--glass-shadow);
     position: relative;
+    /* Mobile-first: Smooth scrolling */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
 }
 
 .woodstock-messages::before {
@@ -269,17 +294,19 @@ html, body {
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    padding: 2rem;
+    border-radius: 20px;
+    padding: 1rem;
     display: flex;
-    gap: 1.5rem;
-    align-items: center;
+    gap: 0.75rem;
+    align-items: flex-end;
     flex-shrink: 0;
     width: 100%;
-    max-width: 1000px;
-    margin: 0 auto;
     box-shadow: var(--glass-shadow);
     position: relative;
+    /* Mobile-first: Ensure input area stays at bottom */
+    box-sizing: border-box;
+    /* Mobile-first: Prevent input zoom on iOS */
+    transform: translateZ(0);
 }
 
 .woodstock-input-container::before {
@@ -294,13 +321,49 @@ html, body {
     pointer-events: none;
 }
 
+/* Form Structure */
+.woodstock-form {
+    display: flex;
+    width: 100%;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+.woodstock-input-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.char-counter {
+    margin-top: 0.25rem;
+    text-align: right;
+}
+
+/* Mobile Keyboard Handling */
+.keyboard-open .woodstock-messages {
+    height: calc(50vh - 100px);
+    max-height: calc(50vh - 100px);
+}
+
+.keyboard-open .woodstock-input-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    border-radius: 0;
+    z-index: 1000;
+}
+
 .woodstock-input {
     flex: 1;
     border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
     font-family: var(--font-sans);
-    font-size: 1.1rem;
+    /* Mobile-first: Prevent zoom on iOS */
+    font-size: 16px;
     color: var(--woodstock-text);
     background: rgba(var(--glass-tint), 0.1);
     backdrop-filter: blur(10px);
@@ -308,13 +371,16 @@ html, body {
     resize: none;
     outline: none;
     transition: all 0.3s ease;
-    min-height: 60px;
-    max-height: 160px;
-    line-height: 1.6;
+    min-height: 44px; /* iOS minimum touch target */
+    max-height: 120px;
+    line-height: 1.4;
     width: 100%;
     text-align: left;
     box-sizing: border-box;
     box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+    /* Mobile-first: Improve touch experience */
+    -webkit-appearance: none;
+    -webkit-border-radius: 12px;
 }
 
 .woodstock-input::placeholder {
@@ -335,16 +401,22 @@ html, body {
     color: var(--woodstock-white);
     border: none;
     border-radius: 12px;
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
     box-shadow: 0 4px 16px rgba(230, 57, 70, 0.3);
+    /* Mobile-first: Ensure minimum touch target */
+    min-height: 44px;
+    min-width: 80px;
+    /* Mobile-first: Improve touch experience */
+    -webkit-appearance: none;
+    touch-action: manipulation;
 }
 
 .woodstock-send-button:hover {
@@ -482,35 +554,125 @@ html, body {
     box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
 }
 
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
+/* Mobile Responsiveness - Mobile-First Approach */
+@media (max-width: 480px) {
     .woodstock-header {
-        padding: 1rem;
-        flex-direction: column;
+        padding: 0.75rem 1rem;
+        flex-direction: row;
         gap: 0.5rem;
+        min-height: 60px;
+    }
+    
+    .woodstock-logo {
+        gap: 8px;
+    }
+    
+    .woodstock-logo img {
+        height: 32px;
     }
     
     .woodstock-logo-text {
-        font-size: 1.25rem;
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+    
+    .woodstock-subtitle {
+        font-size: 0.65rem;
+    }
+    
+    .connection-status {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .woodstock-chat-container {
+        padding: 0.75rem;
+    }
+    
+    .woodstock-messages {
+        padding: 1rem;
+        border-radius: 16px;
+        margin-bottom: 0.75rem;
+        /* Mobile-first: Better height calculation for small screens */
+        height: calc(100vh - 180px);
+        height: calc(100dvh - 180px);
+        max-height: calc(100vh - 180px);
+        max-height: calc(100dvh - 180px);
+        min-height: 250px;
+    }
+    
+    .woodstock-message {
+        max-width: 92%;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+    }
+    
+    .woodstock-message.assistant h3 {
+        font-size: 1.1rem;
+    }
+    
+    .woodstock-input-container {
+        padding: 0.75rem;
+        gap: 0.5rem;
+        border-radius: 16px;
+        /* Mobile-first: Ensure input container doesn't interfere with viewport */
+        position: relative;
+        bottom: 0;
+    }
+    
+    .woodstock-input {
+        padding: 0.875rem 1rem;
+        font-size: 16px; /* Prevent zoom on iOS */
+        min-height: 44px;
+        border-radius: 10px;
+    }
+    
+    .woodstock-send-button {
+        padding: 0.875rem 1.25rem;
+        font-size: 12px;
+        min-height: 44px;
+        min-width: 70px;
+        border-radius: 10px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .woodstock-header {
+        padding: 1rem 1.25rem;
     }
     
     .woodstock-chat-container {
         padding: 1rem;
     }
     
+    .woodstock-messages {
+        height: calc(100vh - 190px);
+        height: calc(100dvh - 190px);
+        max-height: calc(100vh - 190px);
+        max-height: calc(100dvh - 190px);
+    }
+    
     .woodstock-message {
-        max-width: 95%;
+        max-width: 90%;
     }
     
     .woodstock-input-container {
-        flex-direction: column;
-        gap: 1rem;
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .woodstock-chat-container {
         padding: 1.5rem;
     }
     
-    .woodstock-send-button {
-        align-self: stretch;
-        padding: 1rem;
+    .woodstock-messages {
+        height: calc(100vh - 200px);
+        height: calc(100dvh - 200px);
+        max-height: calc(100vh - 200px);
+        max-height: calc(100dvh - 200px);
     }
 }
 
@@ -552,4 +714,42 @@ html, body {
 
 .woodstock-messages::-webkit-scrollbar-thumb:hover {
     background: rgba(230, 57, 70, 0.5);
+}
+
+/* DUAL MODE STYLES */
+
+/* Admin Mode Styles */
+.admin-mode {
+    --admin-accent: #ff6b35;
+}
+
+.admin-mode .woodstock-header {
+    background: linear-gradient(135deg, var(--woodstock-navy) 0%, #1a365d 100%);
+    border-bottom: 3px solid var(--admin-accent);
+}
+
+.admin-mode .woodstock-logo-text {
+    color: var(--admin-accent);
+}
+
+.admin-mode .woodstock-subtitle {
+    color: rgba(255, 107, 53, 0.8);
+}
+
+.admin-mode .woodstock-send-button {
+    background: linear-gradient(135deg, var(--admin-accent) 0%, #e55a2b 100%);
+}
+
+.admin-mode .woodstock-send-button:hover {
+    background: linear-gradient(135deg, #e55a2b 0%, var(--admin-accent) 100%);
+}
+
+.admin-mode .woodstock-message.assistant {
+    border-left: 4px solid var(--admin-accent);
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.05) 0%, rgba(255, 107, 53, 0.02) 100%);
+}
+
+/* Customer Mode Styles */
+.customer-mode .woodstock-header {
+    background: linear-gradient(135deg, var(--woodstock-navy) 0%, #2c5282 100%);
 }

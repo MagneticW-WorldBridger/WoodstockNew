@@ -18,6 +18,10 @@ class ChatRequest(BaseModel):
     # Session management for conversation memory
     session_id: Optional[str] = Field(default=None, description="Session ID for conversation tracking")
     user_identifier: Optional[str] = Field(default=None, description="User identifier (phone, email, etc.)")
+    
+    # Dual mode support
+    user_type: Optional[str] = Field(default="customer", description="User type (customer/admin)")
+    admin_mode: Optional[bool] = Field(default=False, description="Enable admin mode with full function access")
 
 class ChatResponse(BaseModel):
     """Chat response model"""

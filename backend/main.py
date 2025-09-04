@@ -1450,7 +1450,15 @@ async def chat_completions(request: ChatRequest):
         else:
             user_identifier = extract_user_identifier(user_message)
         
+        # Check for admin mode
+        is_admin_mode = False
+        if hasattr(request, 'admin_mode'):
+            is_admin_mode = request.admin_mode
+        elif hasattr(request, 'user_type'):
+            is_admin_mode = request.user_type == 'admin'
+        
         print(f"👤 User identifier: {user_identifier}")
+        print(f"🔧 Admin mode: {is_admin_mode}")
         
         # SMART SESSION MANAGEMENT - cuando usar memoria vs nueva sesión
         use_memory = should_use_memory(user_message, user_identifier)
@@ -1483,11 +1491,22 @@ async def chat_completions(request: ChatRequest):
         
         print(f"📚 Using {len(message_history)} historical messages")
         
+        # Modify user message with admin mode context if needed
+        final_user_message = user_message
+        if is_admin_mode:
+            final_user_message = f"""[ADMIN MODE] {user_message}
+
+Admin Context: You have full access to all 12 LOFT functions and can look up any customer data. Use technical language and provide comprehensive responses."""
+        else:
+            final_user_message = f"""[CUSTOMER MODE] {user_message}
+
+Customer Context: Provide friendly, helpful responses focused on customer self-service. Only access customer's own data when appropriate."""
+        
         if request.stream:
             print("🤖 Running streaming response with memory...")
             async def generate_stream():
                 try:
-                    async with agent.run_stream(user_message, message_history=message_history) as result:
+                    async with agent.run_stream(final_user_message, message_history=message_history) as result:
                         # Save user message to EXISTING table
                         await memory.save_user_message(conversation_id, user_message)
                         
@@ -1517,7 +1536,7 @@ async def chat_completions(request: ChatRequest):
         
         else:
             print("🤖 Running non-streaming response with memory...")
-            result = await agent.run(user_message, message_history=message_history)
+            result = await agent.run(final_user_message, message_history=message_history)
             
             # Save user message to EXISTING table
             await memory.save_user_message(conversation_id, user_message)

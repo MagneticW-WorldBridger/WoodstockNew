@@ -1,9 +1,14 @@
-// Woodstock Outlet Chat - Professional Implementation
+// Woodstock Outlet Chat - Dual Mode Implementation (Customer + Admin)
 class WoodstockChat {
     constructor() {
-        this.apiBase = (typeof window !== 'undefined' && window.BACKEND_URL) ? window.BACKEND_URL : 'http://localhost:8001';
+        this.apiBase = (typeof window !== 'undefined' && window.BACKEND_URL) ? window.BACKEND_URL : 'http://localhost:8000';
         this.isConnected = false;
         this.isThinking = false;
+        
+        // Dual Mode Detection
+        this.isAdminMode = this.detectAdminMode();
+        this.isAuthenticated = false;
+        this.customerData = null;
         
         // Session management
         this.sessionId = localStorage.getItem('woodstock-session') || this.generateSessionId();
@@ -22,8 +27,21 @@ class WoodstockChat {
         this.init();
     }
 
+    detectAdminMode() {
+        // Check URL parameters for admin mode
+        const urlParams = new URLSearchParams(window.location.search);
+        const isAdmin = urlParams.get('admin') === 'true' || 
+                       urlParams.get('mode') === 'admin' ||
+                       window.location.hostname.includes('admin') ||
+                       window.location.pathname.includes('/admin');
+        
+        console.log('🔧 Admin mode detected:', isAdmin);
+        return isAdmin;
+    }
+
     generateSessionId() {
-        const id = 'woodstock_' + Math.random().toString(36).substr(2, 16);
+        const prefix = this.isAdminMode ? 'admin_' : 'customer_';
+        const id = prefix + Math.random().toString(36).substr(2, 16);
         localStorage.setItem('woodstock-session', id);
         console.log('🆔 Generated session ID:', id);
         return id;
@@ -51,10 +69,55 @@ class WoodstockChat {
         return null;
     }
 
+    isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               window.innerWidth <= 768;
+    }
+
+    addMobileEventListeners() {
+        // Handle viewport changes on mobile (keyboard show/hide)
+        if (this.isMobile()) {
+            let initialViewportHeight = window.innerHeight;
+            
+            window.addEventListener('resize', () => {
+                const currentHeight = window.innerHeight;
+                const heightDifference = initialViewportHeight - currentHeight;
+                
+                // If keyboard is likely open (significant height reduction)
+                if (heightDifference > 150) {
+                    document.body.classList.add('keyboard-open');
+                } else {
+                    document.body.classList.remove('keyboard-open');
+                }
+            });
+
+            // Handle touch events for better mobile experience
+            this.messageInput.addEventListener('touchstart', () => {
+                // Scroll to input when touched on mobile
+                setTimeout(() => {
+                    this.messageInput.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                }, 300);
+            });
+
+            // Prevent double-tap zoom on buttons
+            this.sendButton.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                this.sendButton.click();
+            });
+        }
+    }
+
     init() {
         console.log('🚀 Initializing Woodstock Chat...');
+        console.log('🎯 Mode:', this.isAdminMode ? 'ADMIN' : 'CUSTOMER');
         console.log('🆔 Session ID:', this.sessionId);
         console.log('👤 User Identifier:', this.userIdentifier);
+        
+        // Setup UI based on mode
+        this.setupUI();
         
         // Event Listeners
         this.chatForm.addEventListener('submit', (e) => this.handleSubmit(e));
@@ -64,13 +127,110 @@ class WoodstockChat {
         // Auto-resize textarea
         this.messageInput.addEventListener('input', () => this.autoResize());
         
+        // Mobile-specific event listeners
+        this.addMobileEventListeners();
+        
         // Test connection
         this.testConnection();
         
-        // Focus input
-        setTimeout(() => this.messageInput.focus(), 500);
+        // Focus input (delayed for mobile)
+        setTimeout(() => {
+            if (!this.isMobile()) {
+                this.messageInput.focus();
+            }
+        }, 500);
         
         console.log('✅ Woodstock Chat initialized!');
+    }
+
+    setupUI() {
+        // Update UI based on mode
+        if (this.isAdminMode) {
+            this.setupAdminUI();
+        } else {
+            this.setupCustomerUI();
+        }
+    }
+
+    setupAdminUI() {
+        // Update header for admin mode
+        const logoText = document.querySelector('.woodstock-logo-text');
+        const subtitle = document.querySelector('.woodstock-subtitle');
+        
+        if (logoText) logoText.textContent = 'WOODSTOCK FURNITURE - ADMIN';
+        if (subtitle) subtitle.textContent = 'Staff Dashboard';
+        
+        // Update welcome message for admin
+        this.updateWelcomeMessage('admin');
+        
+        // Add admin indicator
+        document.body.classList.add('admin-mode');
+        
+        console.log('🔧 Admin UI configured');
+    }
+
+    setupCustomerUI() {
+        // Ensure customer UI is set up correctly
+        const logoText = document.querySelector('.woodstock-logo-text');
+        const subtitle = document.querySelector('.woodstock-subtitle');
+        
+        if (logoText) logoText.textContent = 'WOODSTOCK FURNITURE';
+        if (subtitle) subtitle.textContent = 'AI Customer Support';
+        
+        // Update welcome message for customer
+        this.updateWelcomeMessage('customer');
+        
+        // Add customer indicator
+        document.body.classList.add('customer-mode');
+        
+        console.log('👤 Customer UI configured');
+    }
+
+    updateWelcomeMessage(mode) {
+        const welcomeMsg = document.querySelector('.woodstock-message.assistant');
+        if (!welcomeMsg) return;
+
+        if (mode === 'admin') {
+            welcomeMsg.innerHTML = `
+                <h3>🔧 Admin Dashboard - All Functions Available</h3>
+                <p>You have access to all 12 LOFT functions:</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
+                    <div>
+                        <strong>Customer Lookup:</strong><br>
+                        • getCustomerByPhone<br>
+                        • getCustomerByEmail<br><br>
+                        <strong>Order Management:</strong><br>
+                        • getOrdersByCustomer<br>
+                        • getDetailsByOrder<br>
+                    </div>
+                    <div>
+                        <strong>Analytics:</strong><br>
+                        • analyzeCustomerPatterns<br>
+                        • getCustomerAnalytics<br>
+                        • getCustomerJourney<br><br>
+                        <strong>Proactive Actions:</strong><br>
+                        • All support & loyalty functions<br>
+                    </div>
+                </div>
+                <p style="color: var(--woodstock-red); font-weight: 500;">
+                    Try: "Look up customer 407-288-6040" or "Analyze patterns for customer 9318667506"
+                </p>
+            `;
+        } else {
+            welcomeMsg.innerHTML = `
+                <h3>👋 Welcome to Woodstock Furniture Support</h3>
+                <p>I'm your AI assistant, ready to help with:</p>
+                <ul>
+                    <li><strong>Order Status:</strong> Check your order progress</li>
+                    <li><strong>Product Questions:</strong> Get recommendations</li>
+                    <li><strong>Returns & Exchanges:</strong> Easy return process</li>
+                    <li><strong>Store Information:</strong> Hours, locations, contact</li>
+                </ul>
+                <p style="margin-top: 1rem; color: var(--woodstock-red); font-weight: 500;">
+                    Try: "Check my order status" or "I need help with a return"
+                </p>
+            `;
+        }
     }
 
     async testConnection() {
@@ -148,8 +308,21 @@ class WoodstockChat {
 
     autoResize() {
         const textarea = this.messageInput;
+        // Reset height to auto to get the correct scrollHeight
         textarea.style.height = 'auto';
-        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        
+        // Calculate new height with mobile-friendly limits
+        const maxHeight = this.isMobile() ? 100 : 120;
+        const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+        
+        textarea.style.height = newHeight + 'px';
+        
+        // Scroll to bottom if on mobile and textarea is focused
+        if (this.isMobile() && document.activeElement === textarea) {
+            setTimeout(() => {
+                textarea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
     }
 
     async handleSubmit(e) {
@@ -199,7 +372,9 @@ class WoodstockChat {
             messages: this.messageHistory.slice(-10), // Send last 10 messages for context
             stream: true,
             session_id: this.sessionId,
-            user_identifier: this.userIdentifier
+            user_identifier: this.userIdentifier,
+            user_type: this.isAdminMode ? 'admin' : 'customer',
+            admin_mode: this.isAdminMode
         };
 
         const response = await fetch(`${this.apiBase}/v1/chat/completions`, {
@@ -258,9 +433,16 @@ class WoodstockChat {
                             
                             if (delta?.content) {
                                 // Accumulate delta text
-                                fullResponse += delta.content;
-                                contentDiv.textContent = fullResponse;
-                                this.scrollToBottom();
+                                                            fullResponse += delta.content;
+                            
+                            // Check if this looks like a function result
+                            const functionMatch = fullResponse.match(/🔧\s*(\w+)\s*called/i);
+                            if (functionMatch) {
+                                this.lastFunctionCalled = functionMatch[1];
+                            }
+                            
+                            contentDiv.innerHTML = this.formatAsHTML(fullResponse);
+                            this.scrollToBottom();
                             }
                             
                         } catch (parseError) {
@@ -275,7 +457,18 @@ class WoodstockChat {
         }
     }
 
-    formatAsHTML(text) {
+    formatAsHTML(text, functionName = null, functionData = null) {
+        // Check if this is a function result that should use amazing components
+        if (functionName && functionData && window.woodstockComponents) {
+            try {
+                console.log('🎨 Using amazing components for:', functionName);
+                return window.woodstockComponents.renderFunctionResult(functionName, functionData);
+            } catch (error) {
+                console.error('❌ Component rendering failed, falling back to text:', error);
+                // Fall through to text formatting
+            }
+        }
+
         // Convert Woodstock-style responses to clean HTML
         let html = text;
         
@@ -317,6 +510,7 @@ class WoodstockChat {
         messageDiv.appendChild(contentDiv);
         this.messagesContainer.appendChild(messageDiv);
         
+        // Mobile-friendly scroll to bottom
         this.scrollToBottom();
         return messageDiv;
     }
@@ -362,7 +556,19 @@ class WoodstockChat {
 
     scrollToBottom() {
         requestAnimationFrame(() => {
-            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            const container = this.messagesContainer;
+            const scrollOptions = {
+                top: container.scrollHeight,
+                behavior: 'smooth'
+            };
+            
+            // Use smooth scrolling for better mobile experience
+            if (container.scrollTo) {
+                container.scrollTo(scrollOptions);
+            } else {
+                // Fallback for older browsers
+                container.scrollTop = container.scrollHeight;
+            }
         });
     }
 }
