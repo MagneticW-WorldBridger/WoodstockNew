@@ -713,15 +713,41 @@ class WoodstockChat {
             const lines = text.split('\n');
             
             lines.forEach(line => {
-                // Look for numbered items with prices
-                const match = line.match(/^\s*\d+\.\s*(.+?)\s*-\s*\$([0-9,]+\.?\d*)/);
-                if (match) {
-                    const name = match[1].trim();
-                    const price = match[2].replace(',', '');
+                // FIXED: Look for the ACTUAL format from your logs
+                // "1. Lyndon Laredo Canvas 2 Piece Left Chaise Sectional"
+                // "   Price: $2,328.74"
+                
+                const nameMatch = line.match(/^\s*\d+\.\s*(.+)$/);
+                if (nameMatch) {
+                    const name = nameMatch[1].trim();
+                    
+                    // Look for price in next lines or same line
+                    const priceMatch = text.match(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*?Price:\\s*\\$([0-9,]+\\.?\\d*)'));
+                    if (priceMatch) {
+                        const price = priceMatch[1].replace(',', '');
+                        
+                        products.push({
+                            name: name,
+                            sku: name.replace(/\s+/g, '-').toUpperCase().substring(0, 20),
+                            price: parseFloat(price),
+                            status: 2,
+                            media_gallery_entries: [],
+                            custom_attributes: [
+                                { attribute_code: 'brand', value: 'Woodstock Furniture' }
+                            ]
+                        });
+                    }
+                }
+                
+                // ALSO try simple pattern for "Product - $price" format
+                const simpleMatch = line.match(/^\s*\d+\.\s*(.+?)\s*[-–]\s*\$([0-9,]+\.?\d*)/);
+                if (simpleMatch) {
+                    const name = simpleMatch[1].trim();
+                    const price = simpleMatch[2].replace(',', '');
                     
                     products.push({
                         name: name,
-                        sku: name.replace(/\s+/g, '-').toUpperCase(),
+                        sku: name.replace(/\s+/g, '-').toUpperCase().substring(0, 20),
                         price: parseFloat(price),
                         status: 2,
                         media_gallery_entries: [],
