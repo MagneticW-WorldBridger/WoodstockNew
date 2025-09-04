@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 CAROUSEL DEBUG TEST</title>
+    <link rel="stylesheet" href="style_woodstock.css">
+    <link rel="stylesheet" href="components.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="woodstock-app">
+        <header class="woodstock-header">
+            <h1>🔥 CAROUSEL DEBUG - TEST FIRST APPROACH</h1>
+        </header>
+        
+        <main style="padding: 2rem;">
+            <div style="margin-bottom: 2rem;">
+                <h2>🧪 TEST 1: Component Loading</h2>
+                <button onclick="testComponentLoading()" style="padding: 1rem; background: var(--woodstock-red); color: white; border: none; border-radius: 8px;">
+                    Test Component Loading
+                </button>
+                <div id="loading-test-result"></div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h2>🧪 TEST 2: Direct Carousel Render</h2>
+                <button onclick="testDirectCarousel()" style="padding: 1rem; background: var(--woodstock-navy); color: white; border: none; border-radius: 8px;">
+                    Test Direct Carousel
+                </button>
+                <div id="carousel-test-result"></div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h2>🧪 TEST 3: Component Routing</h2>
+                <button onclick="testComponentRouting()" style="padding: 1rem; background: var(--woodstock-red); color: white; border: none; border-radius: 8px;">
+                    Test Component Routing
+                </button>
+                <div id="routing-test-result"></div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h2>🧪 TEST 4: Data Extraction</h2>
+                <button onclick="testDataExtraction()" style="padding: 1rem; background: var(--woodstock-navy); color: white; border: none; border-radius: 8px;">
+                    Test Data Extraction
+                </button>
+                <div id="extraction-test-result"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="html-components.js"></script>
+    <script src="magento-carousel.js"></script>
+    <script>
+        // TEST 1: Component Loading
+        function testComponentLoading() {
+            const result = document.getElementById('loading-test-result');
+            
+            const tests = [
+                { name: 'woodstockComponents', obj: window.woodstockComponents },
+                { name: 'woodstockCarousel', obj: window.woodstockCarousel },
+                { name: 'createRecommendationsCard', obj: window.woodstockComponents?.createRecommendationsCard },
+                { name: 'createProductCarousel', obj: window.woodstockCarousel?.createProductCarousel }
+            ];
+            
+            const results = tests.map(test => 
+                `${test.obj ? '✅' : '❌'} ${test.name}: ${test.obj ? 'LOADED' : 'MISSING'}`
+            ).join('<br>');
+            
+            result.innerHTML = `<div style="margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 8px;">${results}</div>`;
+        }
+
+        // TEST 2: Direct Carousel
+        function testDirectCarousel() {
+            const result = document.getElementById('carousel-test-result');
+            
+            const testProducts = [
+                {
+                    name: "Newport Camel 4 Piece Leather Sectional",
+                    sku: "NEWPORT-CAMEL-4-PIEC",
+                    price: 3999.99,
+                    status: 2,
+                    media_gallery_entries: [],
+                    custom_attributes: [{ attribute_code: 'brand', value: 'Woodstock Furniture' }]
+                },
+                {
+                    name: "Lyndon Laredo Canvas 2 Piece Left Chaise Sectional",
+                    sku: "LYNDON-LAREDO-CANVAS",
+                    price: 2326.74,
+                    status: 2,
+                    media_gallery_entries: [],
+                    custom_attributes: [{ attribute_code: 'brand', value: 'Woodstock Furniture' }]
+                }
+            ];
+
+            try {
+                const carouselHTML = window.woodstockCarousel.createProductCarousel(testProducts, 'Test Products');
+                result.innerHTML = carouselHTML;
+                console.log('✅ Direct carousel test successful');
+            } catch (error) {
+                result.innerHTML = `<div style="color: red;">❌ Direct carousel failed: ${error.message}</div>`;
+                console.error('❌ Direct carousel test failed:', error);
+            }
+        }
+
+        // TEST 3: Component Routing
+        function testComponentRouting() {
+            const result = document.getElementById('routing-test-result');
+            
+            const testData = {
+                data: {
+                    products: [
+                        {
+                            name: "Test Sectional",
+                            sku: "TEST-SKU",
+                            price: 1999.99,
+                            status: 2,
+                            media_gallery_entries: [],
+                            custom_attributes: [{ attribute_code: 'brand', value: 'Test Brand' }]
+                        }
+                    ]
+                }
+            };
+
+            try {
+                const componentHTML = window.woodstockComponents.renderFunctionResult('search_magento_products', testData);
+                result.innerHTML = componentHTML;
+                console.log('✅ Component routing test successful');
+            } catch (error) {
+                result.innerHTML = `<div style="color: red;">❌ Component routing failed: ${error.message}</div>`;
+                console.error('❌ Component routing test failed:', error);
+            }
+        }
+
+        // TEST 4: Data Extraction
+        function testDataExtraction() {
+            const result = document.getElementById('extraction-test-result');
+            
+            const testText = `Here are some sectional sofas you might like:
+
+1. Newport Camel 4 Piece Leather Sectional
+   Price: $3,999.99
+2. Lyndon Laredo Canvas 2 Piece Left Chaise Sectional  
+   Price: $2,326.74`;
+
+            // Simulate the extraction logic
+            const products = [];
+            const lines = testText.split('\n');
+            
+            lines.forEach(line => {
+                const nameMatch = line.match(/^\s*\d+\.\s*(.+)$/);
+                if (nameMatch) {
+                    const name = nameMatch[1].trim();
+                    const priceMatch = testText.match(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*?Price:\\s*\\$([0-9,]+\\.?\\d*)'));
+                    if (priceMatch) {
+                        products.push({
+                            name: name,
+                            price: parseFloat(priceMatch[1].replace(',', ''))
+                        });
+                    }
+                }
+            });
+            
+            result.innerHTML = `
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 8px;">
+                    <strong>Extracted ${products.length} products:</strong><br>
+                    ${products.map(p => `• ${p.name} - $${p.price}`).join('<br>')}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
