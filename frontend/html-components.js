@@ -45,11 +45,13 @@ class WoodstockComponents {
                 case 'getCustomerJourney':
                     return this.createCustomerJourneyCard(data);
                 
-                // Product Recommendation Functions (2)
+                // Product Recommendation Functions (2) + Magento Search
                 case 'get_product_recommendations':
                 case 'getProductRecommendations':
                 case 'handle_product_recommendations':
                 case 'handleProductRecommendations':
+                case 'search_magento_products':
+                case 'searchMagentoProducts':
                     return this.createRecommendationsCard(data);
                 
                 // Proactive Functions (3)
@@ -479,32 +481,45 @@ class WoodstockComponents {
      * Recommendations Card Component
      */
     createRecommendationsCard(data) {
+        console.log('🎨 createRecommendationsCard called with:', data);
+        
         const recommendations = data.data || {};
         const products = recommendations.products || [];
 
-        // If we have Magento product data, use the carousel
-        if (products.length > 0 && window.woodstockCarousel) {
-            return window.woodstockCarousel.createProductCarousel(products, 'Recommended Products');
+        console.log('🛒 Products found:', products.length);
+
+        // FORCE CAROUSEL RENDERING
+        if (products.length > 0) {
+            console.log('🎨 Rendering carousel with products:', products);
+            
+            if (window.woodstockCarousel) {
+                const carouselHTML = window.woodstockCarousel.createProductCarousel(products, 'Sectional Products');
+                console.log('🎨 Carousel HTML generated:', carouselHTML.substring(0, 100) + '...');
+                return carouselHTML;
+            } else {
+                console.error('❌ woodstockCarousel not available!');
+            }
         }
 
-        // Fallback to simple grid
+        // Enhanced fallback with product cards
         const productsHtml = products.slice(0, 4).map(product => `
-            <div class="recommendation-item">
+            <div class="product-card-simple">
                 <div class="product-name">${product.name || 'Product'}</div>
-                <div class="product-price">$${product.price || '0.00'}</div>
-                <div class="product-reason">${product.reason || 'Recommended for you'}</div>
+                <div class="product-sku">SKU: ${product.sku || 'N/A'}</div>
+                <div class="product-price">$${(product.price || 0).toLocaleString()}</div>
+                <div class="product-status">● In Stock</div>
             </div>
         `).join('');
 
         return `
             <div class="function-result recommendations">
                 <div class="card-header">
-                    <i class="fas fa-star"></i>
-                    <span>Product Recommendations</span>
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Sectional Products (${products.length} found)</span>
                 </div>
                 <div class="recommendations-content">
-                    <div class="recommendations-grid">
-                        ${productsHtml || '<div class="no-data">No recommendations available at this time</div>'}
+                    <div class="products-grid">
+                        ${productsHtml || '<div class="no-data">No products available at this time</div>'}
                     </div>
                 </div>
             </div>
