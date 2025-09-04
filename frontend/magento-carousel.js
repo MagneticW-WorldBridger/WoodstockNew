@@ -40,7 +40,7 @@ class WoodstockMagentoCarousel {
                     <span>${title} (${products.length} items)</span>
                 </div>
                 <div class="carousel-container">
-                    <div class="swiffy-slider slider-nav-round slider-nav-dark" id="${carouselId}">
+                    <div class="swiffy-slider slider-nav-round slider-nav-dark slider-item-show2-sm slider-item-show3-md slider-item-show4-lg" id="${carouselId}">
                         <ul class="slider-container">
                             ${products.map(product => `<li>${this.createProductCard(product)}</li>`).join('')}
                         </ul>
@@ -161,12 +161,18 @@ class WoodstockMagentoCarousel {
      * Extract product image from Magento data
      */
     getProductImage(product) {
-        // Try various image sources from Magento
+        // PRIORITY 1: Use real image URL from backend (if provided)
+        if (product.image_url) {
+            return product.image_url;
+        }
+        
+        // PRIORITY 2: Try media gallery entries
         if (product.media_gallery_entries && product.media_gallery_entries.length > 0) {
             const mediaBase = 'https://woodstockoutlet.com/pub/media/catalog/product';
             return mediaBase + product.media_gallery_entries[0].file;
         }
         
+        // PRIORITY 3: Try custom attributes
         if (product.custom_attributes) {
             const imageAttr = product.custom_attributes.find(attr => 
                 attr.attribute_code === 'image' || attr.attribute_code === 'small_image'
@@ -176,8 +182,9 @@ class WoodstockMagentoCarousel {
             }
         }
 
-        // Fallback to Woodstock branded placeholder (HTTPS)
-        return 'https://via.placeholder.com/300x200/002147/FFFFFF?text=Woodstock+Furniture';
+        // FALLBACK: High-quality furniture placeholder
+        const productName = encodeURIComponent(product.name || 'Furniture');
+        return `https://via.placeholder.com/400x300/002147/FFFFFF?text=${productName}`;
     }
 
     /**

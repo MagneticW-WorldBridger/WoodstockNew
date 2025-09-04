@@ -1359,17 +1359,47 @@ async def search_magento_products(ctx: RunContext, query: str, page_size: int = 
         if not products:
             return f"No {query} products found in our catalog"
         
-        # Format for frontend carousel
+        # Format for frontend carousel with REAL IMAGES
         formatted_products = []
         for product in products[:page_size]:
+            # Get product media for real images
+            sku = product.get('sku', 'N/A')
+            image_url = await get_product_image(token, sku)
+            
             formatted_products.append({
                 'name': product.get('name', 'Product'),
-                'sku': product.get('sku', 'N/A'),
+                'sku': sku,
                 'price': product.get('price', 0),
                 'status': product.get('status', 1),
+                'image_url': image_url,  # REAL IMAGE URL
                 'media_gallery_entries': product.get('media_gallery_entries', []),
                 'custom_attributes': product.get('custom_attributes', [])
             })
+
+async def get_product_image(token, sku):
+    """Get real product image from Magento media endpoint"""
+    try:
+        url = f'https://woodstockoutlet.com/rest/V1/products/{sku}/media'
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=5.0
+            )
+        
+        if response.status_code == 200:
+            media_data = response.json()
+            if media_data and len(media_data) > 0:
+                # Get first image
+                image_file = media_data[0].get('file', '')
+                if image_file:
+                    return f'https://woodstockoutlet.com/pub/media/catalog/product{image_file}'
+        
+        return 'https://via.placeholder.com/300x200/002147/FFFFFF?text=Woodstock+Furniture'
+        
+    except Exception as e:
+        print(f"⚠️ Image fetch failed for {sku}: {e}")
+        return 'https://via.placeholder.com/300x200/002147/FFFFFF?text=Woodstock+Furniture'
         
         print(f"✅ Found {len(formatted_products)} {query} products")
         

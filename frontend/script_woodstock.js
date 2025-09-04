@@ -762,6 +762,7 @@ class WoodstockChat {
                             sku: name.replace(/\s+/g, '-').toUpperCase().substring(0, 20),
                             price: parseFloat(price),
                             status: 2,
+                            image_url: null, // Will be set by backend
                             media_gallery_entries: [],
                             custom_attributes: [
                                 { attribute_code: 'brand', value: 'Woodstock Furniture' }

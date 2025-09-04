@@ -431,10 +431,57 @@ Beautiful, rich UI components for function results
     }
 }
 
-/* Product Carousel Styles */
+/* Product Carousel Styles - Swiffy Slider */
 .product-carousel .carousel-container {
     position: relative;
     padding: 1rem;
+}
+
+/* Swiffy Slider Responsive Configuration */
+.product-carousel .swiffy-slider {
+    --slider-nav-color: var(--woodstock-navy);
+    --slider-nav-color-hover: var(--woodstock-red);
+}
+
+/* Show multiple cards per view */
+.product-carousel .slider-item-show2-sm li {
+    width: calc(100% / 2);
+}
+
+.product-carousel .slider-item-show3-md li {
+    width: calc(100% / 3);
+}
+
+.product-carousel .slider-item-show4-lg li {
+    width: calc(100% / 4);
+}
+
+/* Mobile: 1 card */
+@media (max-width: 479px) {
+    .product-carousel .swiffy-slider li {
+        width: 100%;
+    }
+}
+
+/* Small: 2 cards */
+@media (min-width: 480px) and (max-width: 767px) {
+    .product-carousel .swiffy-slider li {
+        width: calc(100% / 2);
+    }
+}
+
+/* Medium: 3 cards */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .product-carousel .swiffy-slider li {
+        width: calc(100% / 3);
+    }
+}
+
+/* Large: 4 cards */
+@media (min-width: 1024px) {
+    .product-carousel .swiffy-slider li {
+        width: calc(100% / 4);
+    }
 }
 
 .product-carousel .carousel-controls {
