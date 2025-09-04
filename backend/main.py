@@ -1718,7 +1718,7 @@ Customer Context: Provide friendly, helpful responses focused on customer self-s
                     "index": 0,
                     "message": {
                         "role": "assistant",
-                        "content": result.output
+                        "content": str(result.output) if result is not None else ""
                     },
                     "finish_reason": "stop"
                 }],
