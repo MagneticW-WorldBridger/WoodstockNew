@@ -50,6 +50,12 @@ app.add_middleware(
 # --- MCP Integration via Supergateway ---
 # Connect to local supergateway instead of Pipedream directly
 mcp_calendar_url = os.getenv("MCP_CALENDAR_LOCAL_URL", "http://localhost:3333")
+
+# Disable MCP on Railway to prevent TaskGroup errors
+RAILWAY_ENVIRONMENT = os.getenv("RAILWAY_ENVIRONMENT") == "production"
+if RAILWAY_ENVIRONMENT:
+    MCP_AVAILABLE = False
+    print("🚨 MCP disabled on Railway to prevent TaskGroup errors")
 print(f"🔌 MCP Calendar URL configured: {mcp_calendar_url}")
 # --- End MCP Integration ---
 
