@@ -17,7 +17,9 @@ import httpx
 # Import MCP optionally to prevent Railway crashes
 try:
     from pydantic_ai.mcp import MCPServerSSE
-    MCP_AVAILABLE = True
+    # TEMPORARILY DISABLE MCP TO FIX TASKGROUP ERROR
+    MCP_AVAILABLE = False  # Will re-enable after carousel is working
+    print("⚠️ MCP temporarily disabled to fix TaskGroup error - carousel priority")
 except Exception as _e:
     MCPServerSSE = None
     MCP_AVAILABLE = False
