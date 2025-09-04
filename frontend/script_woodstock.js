@@ -708,29 +708,29 @@ class WoodstockChat {
             // Extract Magento product data from numbered list format
             const products = [];
             
-            // Pattern: "1. Newport Camel 4 Piece Leather Sectional - $3,999.99"
-            const productMatches = text.match(/\d+\.\s+([^-]+)\s*-\s*\$([0-9,.]+)/g);
+            // SIMPLE: Extract products from numbered list
+            // "1. Newport Camel 4 Piece Leather Sectional - $3,999.99"
+            const lines = text.split('\n');
             
-            if (productMatches) {
-                productMatches.forEach(match => {
-                    const parts = match.match(/\d+\.\s+([^-]+)\s*-\s*\$([0-9,.]+)/);
-                    if (parts) {
-                        const name = parts[1].trim();
-                        const price = parts[2];
-                        
-                        products.push({
-                            name: name,
-                            sku: `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                            price: parseFloat(price.replace(',', '')),
-                            status: 2, // In stock
-                            media_gallery_entries: [],
-                            custom_attributes: [
-                                { attribute_code: 'brand', value: 'Woodstock Furniture' }
-                            ]
-                        });
-                    }
-                });
-            }
+            lines.forEach(line => {
+                // Look for numbered items with prices
+                const match = line.match(/^\s*\d+\.\s*(.+?)\s*-\s*\$([0-9,]+\.?\d*)/);
+                if (match) {
+                    const name = match[1].trim();
+                    const price = match[2].replace(',', '');
+                    
+                    products.push({
+                        name: name,
+                        sku: name.replace(/\s+/g, '-').toUpperCase(),
+                        price: parseFloat(price),
+                        status: 2,
+                        media_gallery_entries: [],
+                        custom_attributes: [
+                            { attribute_code: 'brand', value: 'Woodstock Furniture' }
+                        ]
+                    });
+                }
+            });
             
             // Also check for CAROUSEL_DATA format
             const carouselDataMatch = text.match(/\*\*CAROUSEL_DATA:\*\*\s*(\{.*\})/);
