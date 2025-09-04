@@ -40,20 +40,14 @@ class WoodstockMagentoCarousel {
                     <span>${title} (${products.length} items)</span>
                 </div>
                 <div class="carousel-container">
-                    <div class="carousel-controls">
-                        <button class="carousel-btn prev-btn" onclick="woodstockCarousel.navigate('${carouselId}', 'prev')">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <button class="carousel-btn next-btn" onclick="woodstockCarousel.navigate('${carouselId}', 'next')">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
+                    <div class="swiffy-slider slider-nav-round slider-nav-dark" id="${carouselId}">
+                        <ul class="slider-container">
+                            ${products.map(product => `<li>${this.createProductCard(product)}</li>`).join('')}
+                        </ul>
+                        <button type="button" class="slider-nav" onclick="woodstockCarousel.navigate('${carouselId}', 'prev')"></button>
+                        <button type="button" class="slider-nav slider-nav-next" onclick="woodstockCarousel.navigate('${carouselId}', 'next')"></button>
+                        <div class="slider-indicators"></div>
                     </div>
-                    <div class="product-carousel-wrapper" id="${carouselId}">
-                        <div class="product-carousel-track">
-                            ${productsHtml}
-                        </div>
-                    </div>
-                    <div class="carousel-dots" id="${carouselId}-dots"></div>
                 </div>
             </div>
         `;
@@ -107,93 +101,56 @@ class WoodstockMagentoCarousel {
     }
 
     /**
-     * Initialize carousel with Tiny Slider (responsive, touch-friendly)
+     * Initialize carousel with Swiffy Slider (BETTER, FASTER, MORE RELIABLE!)
      */
     initializeCarousel(carouselId) {
-        // Load Tiny Slider if not already loaded
-        if (typeof tns === 'undefined') {
-            this.loadTinySlider(() => {
-                this.setupCarousel(carouselId);
+        // Load Swiffy Slider if not already loaded
+        if (typeof window.swiffyslider === 'undefined') {
+            this.loadSwiffySlider(() => {
+                this.setupSwiffyCarousel(carouselId);
             });
         } else {
-            this.setupCarousel(carouselId);
+            this.setupSwiffyCarousel(carouselId);
         }
     }
 
     /**
-     * Setup carousel with responsive configuration
+     * Setup Swiffy Slider (much more reliable than Tiny Slider)
      */
-    setupCarousel(carouselId) {
-        const container = document.querySelector(`#${carouselId} .product-carousel-track`);
-        if (!container) {
-            console.error('❌ Carousel container not found:', carouselId);
+    setupSwiffyCarousel(carouselId) {
+        const sliderElement = document.getElementById(carouselId);
+        if (!sliderElement) {
+            console.error('❌ Swiffy Slider element not found:', carouselId);
             return;
         }
 
-        console.log('🎨 Setting up carousel:', carouselId);
+        console.log('🎨 Setting up Swiffy Slider:', carouselId);
 
-        const slider = tns({
-            container: container,
-            items: 1,
-            slideBy: 1, // Slide one item at a time
-            mouseDrag: true,
-            touch: true,
-            swipeAngle: 15,
-            controls: false, // We have custom controls
-            nav: true,
-            navContainer: `#${carouselId}-dots`,
-            responsive: {
-                480: {
-                    items: 2,
-                    gutter: 10,
-                    edgePadding: 20
-                },
-                768: {
-                    items: 3,
-                    gutter: 15,
-                    edgePadding: 30
-                },
-                1024: {
-                    items: 4,
-                    gutter: 20,
-                    edgePadding: 40
-                }
-            },
-            autoplay: false,
-            speed: 300,
-            autoHeight: false,
-            loop: false,
-            rewind: true,
-            preventScrollOnTouch: 'auto',
-            // Enable wheel/trackpad scrolling
-            mouseDrag: true,
-            preventActionWhenRunning: false
-        });
-
-        // Store slider instance for navigation
-        this.sliders = this.sliders || {};
-        this.sliders[carouselId] = slider;
-        
-        console.log('✅ Carousel initialized:', carouselId);
+        try {
+            // Initialize this specific slider
+            window.swiffyslider.initSlider(sliderElement);
+            console.log('✅ Swiffy Slider initialized:', carouselId);
+        } catch (error) {
+            console.error('❌ Swiffy Slider setup error:', error);
+        }
     }
 
     /**
-     * Navigate carousel programmatically
+     * Navigate Swiffy Slider programmatically
      */
     navigate(carouselId, direction) {
-        const slider = this.sliders && this.sliders[carouselId];
-        if (!slider) {
-            console.error('❌ Slider not found for navigation:', carouselId);
+        const sliderElement = document.getElementById(carouselId);
+        if (!sliderElement) {
+            console.error('❌ Slider element not found for navigation:', carouselId);
             return;
         }
 
-        console.log('🎯 Navigating carousel:', carouselId, direction);
+        console.log('🎯 Navigating Swiffy Slider:', carouselId, direction);
         
         try {
-            if (direction === 'next') {
-                slider.goTo('next');
-            } else if (direction === 'prev') {
-                slider.goTo('prev');
+            if (window.swiffyslider) {
+                const next = direction === 'next';
+                window.swiffyslider.slide(sliderElement, next);
             }
         } catch (error) {
             console.error('❌ Navigation error:', error);
@@ -254,25 +211,29 @@ class WoodstockMagentoCarousel {
     }
 
     /**
-     * Load Tiny Slider library dynamically
+     * Load Swiffy Slider library dynamically (MUCH BETTER than Tiny Slider!)
      */
-    loadTinySlider(callback) {
+    loadSwiffySlider(callback) {
         // Load CSS
-        if (!document.querySelector('link[href*="tiny-slider"]')) {
+        if (!document.querySelector('link[href*="swiffy-slider"]')) {
             const css = document.createElement('link');
             css.rel = 'stylesheet';
-            css.href = 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/tiny-slider.css';
+            css.href = 'https://cdn.jsdelivr.net/npm/swiffy-slider@1.6.0/dist/css/swiffy-slider.min.css';
             document.head.appendChild(css);
         }
 
         // Load JS
-        if (!document.querySelector('script[src*="tiny-slider"]')) {
+        if (!document.querySelector('script[src*="swiffy-slider"]')) {
             const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/tiny-slider/2.9.4/min/tiny-slider.js';
-            script.onload = callback;
+            script.src = 'https://cdn.jsdelivr.net/npm/swiffy-slider@1.6.0/dist/js/swiffy-slider.min.js';
+            script.setAttribute('defer', '');
+            script.onload = () => {
+                console.log('✅ Swiffy Slider loaded');
+                if (callback) callback();
+            };
             document.head.appendChild(script);
         } else {
-            callback();
+            if (callback) callback();
         }
     }
 
