@@ -1365,15 +1365,53 @@ async def search_magento_products(ctx: RunContext, query: str, page_size: int = 
             # Extract image from existing product data
             image_url = 'https://via.placeholder.com/400x300/002147/FFFFFF?text=Woodstock+Furniture'
             
-            # Try to get image from media_gallery_entries (WORKING PATTERN!)
+            # Try to get image from media_gallery_entries (robust URL normalization)
             if product.get('media_gallery_entries'):
                 media_entries = product['media_gallery_entries']
                 if len(media_entries) > 0 and media_entries[0].get('file'):
-                    # Convert /pub/media/catalog/product to /media/catalog/product
-                    file_path = media_entries[0]['file']
-                    if file_path.startswith('/pub/media/catalog/product'):
-                        file_path = file_path.replace('/pub/media/catalog/product', '/media/catalog/product')
-                    image_url = f"https://www.woodstockoutlet.com{file_path}"
+                    raw_path = str(media_entries[0]['file']).strip()
+                    if raw_path:
+                        if raw_path.startswith('http'):
+                            # Normalize host and protocol
+                            image_url = (
+                                raw_path
+                                .replace('http://', 'https://')
+                                .replace('woodstockoutlet.com', 'www.woodstockoutlet.com')
+                            )
+                        else:
+                            path = raw_path
+                            if path.startswith('/pub/media/catalog/product'):
+                                path = path.replace('/pub/media/catalog/product', '/media/catalog/product')
+                            elif not path.startswith('/media/catalog/product'):
+                                # Ensure leading slash and prepend correct base
+                                if not path.startswith('/'):
+                                    path = '/' + path
+                                path = '/media/catalog/product' + path
+                            image_url = f"https://www.woodstockoutlet.com{path}"
+
+            # Fallback: look into custom_attributes for image/small_image/thumbnail
+            if image_url.startswith('https://via.placeholder.com'):
+                for attr in product.get('custom_attributes', []):
+                    if attr.get('attribute_code') in ('image', 'small_image', 'thumbnail'):
+                        raw_path = str(attr.get('value', '')).strip()
+                        if not raw_path:
+                            continue
+                        if raw_path.startswith('http'):
+                            image_url = (
+                                raw_path
+                                .replace('http://', 'https://')
+                                .replace('woodstockoutlet.com', 'www.woodstockoutlet.com')
+                            )
+                        else:
+                            path = raw_path
+                            if path.startswith('/pub/media/catalog/product'):
+                                path = path.replace('/pub/media/catalog/product', '/media/catalog/product')
+                            elif not path.startswith('/media/catalog/product'):
+                                if not path.startswith('/'):
+                                    path = '/' + path
+                                path = '/media/catalog/product' + path
+                            image_url = f"https://www.woodstockoutlet.com{path}"
+                        break
             
             formatted_products.append({
                 'name': product.get('name', 'Product'),
