@@ -33,11 +33,6 @@ class WoodstockMagentoCarousel {
         const carouselId = `carousel-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
         const productsHtml = products.map(product => this.createProductCard(product)).join('');
 
-        // Auto-initialize carousel after render
-        setTimeout(() => {
-            this.initializeCarousel(carouselId);
-        }, 100);
-
         return `
             <div class="function-result product-carousel">
                 <div class="card-header">
@@ -130,60 +125,56 @@ class WoodstockMagentoCarousel {
      */
     setupCarousel(carouselId) {
         const container = document.querySelector(`#${carouselId} .product-carousel-track`);
-        if (!container) return;
+        if (!container) {
+            console.error('❌ Carousel container not found:', carouselId);
+            return;
+        }
+
+        console.log('🎨 Setting up carousel:', carouselId);
 
         const slider = tns({
             container: container,
             items: 1,
-            slideBy: 'page',
+            slideBy: 1, // Slide one item at a time
             mouseDrag: true,
             touch: true,
+            swipeAngle: 15,
             controls: false, // We have custom controls
             nav: true,
             navContainer: `#${carouselId}-dots`,
-            // FIXED: Enable wheel/trackpad scrolling
-            swipeAngle: 15,
-            preventActionWhenRunning: false,
-            preventScrollOnTouch: 'auto',
-            nested: false,
-            freezable: true,
             responsive: {
                 480: {
                     items: 2,
                     gutter: 10,
-                    slideBy: 1
+                    edgePadding: 20
                 },
                 768: {
                     items: 3,
                     gutter: 15,
-                    slideBy: 1
+                    edgePadding: 30
                 },
                 1024: {
                     items: 4,
                     gutter: 20,
-                    slideBy: 1
+                    edgePadding: 40
                 }
             },
             autoplay: false,
             speed: 300,
             autoHeight: false,
             loop: false,
-            rewind: true
+            rewind: true,
+            preventScrollOnTouch: 'auto',
+            // Enable wheel/trackpad scrolling
+            mouseDrag: true,
+            preventActionWhenRunning: false
         });
-
-        // ADD WHEEL/TRACKPAD SUPPORT
-        container.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            if (e.deltaX > 0 || e.deltaY > 0) {
-                slider.goTo('next');
-            } else {
-                slider.goTo('prev');
-            }
-        }, { passive: false });
 
         // Store slider instance for navigation
         this.sliders = this.sliders || {};
         this.sliders[carouselId] = slider;
+        
+        console.log('✅ Carousel initialized:', carouselId);
     }
 
     /**
@@ -191,12 +182,21 @@ class WoodstockMagentoCarousel {
      */
     navigate(carouselId, direction) {
         const slider = this.sliders && this.sliders[carouselId];
-        if (!slider) return;
+        if (!slider) {
+            console.error('❌ Slider not found for navigation:', carouselId);
+            return;
+        }
 
-        if (direction === 'next') {
-            slider.goTo('next');
-        } else if (direction === 'prev') {
-            slider.goTo('prev');
+        console.log('🎯 Navigating carousel:', carouselId, direction);
+        
+        try {
+            if (direction === 'next') {
+                slider.goTo('next');
+            } else if (direction === 'prev') {
+                slider.goTo('prev');
+            }
+        } catch (error) {
+            console.error('❌ Navigation error:', error);
         }
     }
 
@@ -219,7 +219,7 @@ class WoodstockMagentoCarousel {
             }
         }
 
-        // Fallback to Woodstock branded placeholder
+        // Fallback to Woodstock branded placeholder (HTTPS)
         return 'https://via.placeholder.com/300x200/002147/FFFFFF?text=Woodstock+Furniture';
     }
 

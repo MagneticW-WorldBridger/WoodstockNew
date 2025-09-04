@@ -368,15 +368,9 @@ class WoodstockChat {
     async sendToAI(message) {
         console.log('🤖 Sending to AI backend...');
         
-        // Use non-streaming for product searches for instant results
-        const isProductSearch = message.toLowerCase().includes('sectional') || 
-                               message.toLowerCase().includes('recliner') || 
-                               message.toLowerCase().includes('products') ||
-                               message.toLowerCase().includes('recommendations');
-
         const requestBody = {
             messages: this.messageHistory.slice(-10), // Send last 10 messages for context
-            stream: !isProductSearch, // No streaming for product searches
+            stream: true,
             session_id: this.sessionId,
             user_identifier: this.userIdentifier,
             user_type: this.isAdminMode ? 'admin' : 'customer',
@@ -387,7 +381,7 @@ class WoodstockChat {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': isProductSearch ? 'application/json' : 'text/event-stream'
+                'Accept': 'text/event-stream'
             },
             body: JSON.stringify(requestBody)
         });
@@ -396,24 +390,8 @@ class WoodstockChat {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        if (isProductSearch) {
-            console.log('🛒 Instant product response...');
-            this.hideTypingIndicator();
-            
-            const data = await response.json();
-            const content = data.choices?.[0]?.message?.content;
-            
-            if (content) {
-                console.log('🎨 Rendering product components instantly');
-                const messageDiv = this.addMessage('', 'assistant');
-                const contentDiv = messageDiv.querySelector('.message-content');
-                this.detectAndRenderComponents(content, contentDiv);
-                this.messageHistory.push({ role: 'assistant', content: content });
-            }
-        } else {
-            console.log('📡 Streaming response...');
-            await this.handleStreamingResponse(response);
-        }
+        console.log('📡 Streaming response...');
+        await this.handleStreamingResponse(response);
     }
 
     async handleStreamingResponse(response) {
@@ -587,9 +565,40 @@ class WoodstockChat {
                 // Extract structured data from response
                 const componentData = this.extractDataFromResponse(fullResponse, detectedFunction);
                 
-                // Render component
-                const componentHTML = window.woodstockComponents.renderFunctionResult(detectedFunction, componentData);
-                contentDiv.innerHTML = componentHTML;
+                // INSTANT RENDERING: Show loading first, then component
+                if (detectedFunction.includes('product') || detectedFunction.includes('magento')) {
+                    contentDiv.innerHTML = `
+                        <div class="function-result loading-carousel">
+                            <div class="card-header">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span>Loading Products...</span>
+                            </div>
+                            <div style="padding: 2rem; text-align: center;">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--woodstock-red);"></i>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Render component after brief delay for smooth UX
+                    setTimeout(() => {
+                        const componentHTML = window.woodstockComponents.renderFunctionResult(detectedFunction, componentData);
+                        contentDiv.innerHTML = componentHTML;
+                        
+                        // Initialize carousel after rendering
+                        if (window.woodstockCarousel) {
+                            setTimeout(() => {
+                                const carouselId = contentDiv.querySelector('[id^="carousel-"]')?.id;
+                                if (carouselId) {
+                                    window.woodstockCarousel.initializeCarousel(carouselId);
+                                }
+                            }, 100);
+                        }
+                    }, 200);
+                } else {
+                    // Regular component rendering for non-product functions
+                    const componentHTML = window.woodstockComponents.renderFunctionResult(detectedFunction, componentData);
+                    contentDiv.innerHTML = componentHTML;
+                }
                 
                 return; // Exit early, component rendered
             } catch (error) {

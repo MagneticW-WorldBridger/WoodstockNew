@@ -50,12 +50,6 @@ app.add_middleware(
 # --- MCP Integration via Supergateway ---
 # Connect to local supergateway instead of Pipedream directly
 mcp_calendar_url = os.getenv("MCP_CALENDAR_LOCAL_URL", "http://localhost:3333")
-
-# Disable MCP on Railway to prevent TaskGroup errors
-RAILWAY_ENVIRONMENT = os.getenv("RAILWAY_ENVIRONMENT") == "production"
-if RAILWAY_ENVIRONMENT:
-    MCP_AVAILABLE = False
-    print("🚨 MCP disabled on Railway to prevent TaskGroup errors")
 print(f"🔌 MCP Calendar URL configured: {mcp_calendar_url}")
 # --- End MCP Integration ---
 
@@ -907,27 +901,14 @@ async def get_product_recommendations(ctx: RunContext, identifier: str, type: st
         recommendations.append("🎯 PERSONALIZED PRODUCT RECOMMENDATIONS:")
         
         # Generate recommendations based on patterns
+        # Use Magento search for real product recommendations
         if "Sectional" in patterns_result:
-            recommendations.append("\n🛋️ Based on your Sectional purchase:")
-            recommendations.append("   • Matching Ottoman/Console pieces")
-            recommendations.append("   • Premium Sectional accessories")
-            recommendations.append("   • Coordinating accent chairs")
-        
-        if "Recliner" in patterns_result:
-            recommendations.append("\n🪑 Based on your Recliner preference:")
-            recommendations.append("   • Additional reclining chairs")
-            recommendations.append("   • Recliner accessories")
-            recommendations.append("   • Power upgrade options")
-        
-        if "High-value" in patterns_result:
-            recommendations.append("\n💎 Premium Recommendations:")
-            recommendations.append("   • Extended warranty options")
-            recommendations.append("   • White-glove delivery service")
-            recommendations.append("   • Interior design consultation")
-        
-        recommendations.append(f"\n💡 Contact our sales team for personalized pricing!")
-        
-        return "\n".join(recommendations)
+            return await search_magento_products(ctx, "sectional", 8)
+        elif "Recliner" in patterns_result:
+            return await search_magento_products(ctx, "recliner", 8)
+        else:
+            # Default to sectionals (most popular)
+            return await search_magento_products(ctx, "sectional", 8)
         
     except Exception as error:
         print(f"❌ Error in getProductRecommendations: {error}")
@@ -1309,6 +1290,115 @@ async def show_directions(ctx: RunContext, store_name: str) -> str:
 
 print(f"✅ Agent initialized with 14 LOFT functions (4 API + 8 database/analytics/proactive + 2 support) + MCP Calendar tools")
 
+# =====================================================
+# MAGENTO INTEGRATION (From original system)
+# =====================================================
+
+async def get_magento_token(force_refresh=False):
+    """Get Magento admin token with auto-refresh"""
+    try:
+        # Use credentials from environment or fallback
+        username = os.getenv('MAGENTO_USERNAME', 'jlasse@aiprlassist.com')
+        password = os.getenv('MAGENTO_PASSWORD', 'bV38.O@3&/a{')
+        
+        response = await httpx.AsyncClient().post(
+            'https://woodstockoutlet.com/rest/all/V1/integration/admin/token',
+            headers={'Content-Type': 'application/json'},
+            json={'username': username, 'password': password},
+            timeout=10.0
+        )
+        
+        if response.status_code != 200:
+            raise Exception(f"Magento auth failed: {response.status_code}")
+        
+        token = response.json().replace('"', '')
+        print(f"🔑 Magento token obtained: {token[:20]}...")
+        return token
+        
+    except Exception as e:
+        print(f"❌ Magento token error: {e}")
+        return None
+
+@agent.tool
+async def search_magento_products(ctx: RunContext, query: str, page_size: int = 12) -> str:
+    """Search Magento products for recommendations and display as carousel"""
+    try:
+        print(f"🔧 Searching Magento products: {query}")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access product catalog at this time"
+        
+        # Build Magento search query
+        search_params = {
+            'searchCriteria[pageSize]': str(page_size),
+            'searchCriteria[currentPage]': '1',
+            'searchCriteria[filterGroups][0][filters][0][field]': 'name',
+            'searchCriteria[filterGroups][0][filters][0][value]': f'%{query}%',
+            'searchCriteria[filterGroups][0][filters][0][conditionType]': 'like',
+            'searchCriteria[filterGroups][1][filters][0][field]': 'status',
+            'searchCriteria[filterGroups][1][filters][0][value]': '2',  # Enabled products
+            'searchCriteria[filterGroups][1][filters][0][conditionType]': 'eq'
+        }
+        
+        url = 'https://woodstockoutlet.com/rest/V1/products?' + '&'.join([f'{k}={v}' for k, v in search_params.items()])
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=15.0
+            )
+        
+        if response.status_code != 200:
+            return f"❌ Product search failed: {response.status_code}"
+        
+        data = response.json()
+        products = data.get('items', [])
+        
+        if not products:
+            return f"No {query} products found in our catalog"
+        
+        # Format for frontend carousel
+        formatted_products = []
+        for product in products[:page_size]:
+            formatted_products.append({
+                'name': product.get('name', 'Product'),
+                'sku': product.get('sku', 'N/A'),
+                'price': product.get('price', 0),
+                'status': product.get('status', 1),
+                'media_gallery_entries': product.get('media_gallery_entries', []),
+                'custom_attributes': product.get('custom_attributes', [])
+            })
+        
+        print(f"✅ Found {len(formatted_products)} {query} products")
+        
+        # Return INSTANT carousel data (no streaming delay)
+        return f"""🛒 Found {len(formatted_products)} {query} products for you!
+
+{chr(10).join([f"{i+1}. {p['name']} - ${p['price']}" for i, p in enumerate(formatted_products)])}
+
+**CAROUSEL_DATA:** {json.dumps({'products': formatted_products})}"""
+        
+    except Exception as error:
+        print(f"❌ Error in search_magento_products: {error}")
+        return f"❌ Error searching products: {str(error)}"
+
+@agent.tool
+async def show_sectional_products(ctx: RunContext) -> str:
+    """Show available sectional products with carousel"""
+    return await search_magento_products(ctx, "sectional", 12)
+
+@agent.tool
+async def show_recliner_products(ctx: RunContext) -> str:
+    """Show available recliner products with carousel"""
+    return await search_magento_products(ctx, "recliner", 12)
+
+@agent.tool
+async def show_dining_products(ctx: RunContext) -> str:
+    """Show available dining room products with carousel"""
+    return await search_magento_products(ctx, "dining", 12)
+
 # Startup and shutdown events
 async def startup_event():
     """Initialize services on startup"""
@@ -1456,7 +1546,15 @@ async def chat_completions(request: ChatRequest):
         else:
             user_identifier = extract_user_identifier(user_message)
         
+        # Check for admin mode
+        is_admin_mode = False
+        if hasattr(request, 'admin_mode'):
+            is_admin_mode = request.admin_mode
+        elif hasattr(request, 'user_type'):
+            is_admin_mode = request.user_type == 'admin'
+        
         print(f"👤 User identifier: {user_identifier}")
+        print(f"🔧 Admin mode: {is_admin_mode}")
         
         # SMART SESSION MANAGEMENT - cuando usar memoria vs nueva sesión
         use_memory = should_use_memory(user_message, user_identifier)
@@ -1489,15 +1587,28 @@ async def chat_completions(request: ChatRequest):
         
         print(f"📚 Using {len(message_history)} historical messages")
         
+        # Modify user message with admin mode context if needed
+        final_user_message = user_message
+        if is_admin_mode:
+            final_user_message = f"""[ADMIN MODE] {user_message}
+
+Admin Context: You have full access to all 12 LOFT functions and can look up any customer data. Use technical language and provide comprehensive responses."""
+        else:
+            final_user_message = f"""[CUSTOMER MODE] {user_message}
+
+Customer Context: Provide friendly, helpful responses focused on customer self-service. Only access customer's own data when appropriate."""
+        
         if request.stream:
             print("🤖 Running streaming response with memory...")
             async def generate_stream():
                 try:
-                    async with agent.run_stream(user_message, message_history=message_history) as result:
+                    async with agent.run_stream(final_user_message, message_history=message_history) as result:
                         # Save user message to EXISTING table
                         await memory.save_user_message(conversation_id, user_message)
                         
                         full_response = ""
+                        function_calls_made = []
+                        
                         async for message in result.stream_text(delta=True):
                             full_response += message
                             chunk = {
@@ -1505,6 +1616,25 @@ async def chat_completions(request: ChatRequest):
                                 "model": "loft-chat"
                             }
                             yield f"data: {json.dumps(chunk)}\n\n"
+                        
+                        # Check if any functions were called during this response
+                        if hasattr(result, 'all_messages'):
+                            for msg in result.all_messages():
+                                if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                                    for tool_call in msg.tool_calls:
+                                        if hasattr(tool_call, 'function'):
+                                            function_calls_made.append({
+                                                'function_name': tool_call.function.name,
+                                                'arguments': tool_call.function.arguments
+                                            })
+                        
+                        # Send function metadata if functions were called
+                        if function_calls_made:
+                            function_metadata = {
+                                "choices": [{"delta": {"function_calls": function_calls_made}}],
+                                "model": "loft-chat"
+                            }
+                            yield f"data: {json.dumps(function_metadata)}\n\n"
                         
                         # Save assistant response to EXISTING table
                         await memory.save_assistant_message(conversation_id, full_response)
@@ -1523,7 +1653,7 @@ async def chat_completions(request: ChatRequest):
         
         else:
             print("🤖 Running non-streaming response with memory...")
-            result = await agent.run(user_message, message_history=message_history)
+            result = await agent.run(final_user_message, message_history=message_history)
             
             # Save user message to EXISTING table
             await memory.save_user_message(conversation_id, user_message)
