@@ -17,9 +17,7 @@ import httpx
 # Import MCP optionally to prevent Railway crashes
 try:
     from pydantic_ai.mcp import MCPServerSSE
-    # TEMPORARILY DISABLE MCP TO FIX TASKGROUP ERROR
-    MCP_AVAILABLE = False  # Will re-enable after carousel is working
-    print("⚠️ MCP temporarily disabled to fix TaskGroup error - carousel priority")
+    MCP_AVAILABLE = True
 except Exception as _e:
     MCPServerSSE = None
     MCP_AVAILABLE = False
@@ -59,13 +57,10 @@ print(f"🔌 MCP Calendar URL configured: {mcp_calendar_url}")
 calendar_server = None
 if MCP_AVAILABLE and MCPServerSSE is not None:
     try:
-        # Use async context manager to prevent TaskGroup issues
         calendar_server = MCPServerSSE(url=mcp_calendar_url)
         print(f"🔌 MCP Calendar server initialized for agent toolset")
     except Exception as e:
         print(f"⚠️ MCP Calendar server failed to initialize: {e}")
-        calendar_server = None
-        MCP_AVAILABLE = False
 else:
     print("ℹ️ Skipping MCP Calendar (module not installed/compatible)")
 
