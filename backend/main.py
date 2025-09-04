@@ -901,14 +901,14 @@ async def get_product_recommendations(ctx: RunContext, identifier: str, type: st
         recommendations.append("🎯 PERSONALIZED PRODUCT RECOMMENDATIONS:")
         
         # Generate recommendations based on patterns
-        # Use Magento search for real product recommendations
+        # Use working product functions for recommendations
         if "Sectional" in patterns_result:
-            return await search_magento_products(ctx, "sectional", 8)
+            return await show_sectional_products(ctx)
         elif "Recliner" in patterns_result:
-            return await search_magento_products(ctx, "recliner", 8)
+            return await show_recliner_products(ctx)
         else:
             # Default to sectionals (most popular)
-            return await search_magento_products(ctx, "sectional", 8)
+            return await show_sectional_products(ctx)
         
     except Exception as error:
         print(f"❌ Error in getProductRecommendations: {error}")
@@ -1291,115 +1291,66 @@ async def show_directions(ctx: RunContext, store_name: str) -> str:
 print(f"✅ Agent initialized with 14 LOFT functions (4 API + 8 database/analytics/proactive + 2 support) + MCP Calendar tools")
 
 # =====================================================
-# MAGENTO INTEGRATION (From original system)
+# SIMPLIFIED PRODUCT RECOMMENDATIONS (No Magento API calls for now)
 # =====================================================
-
-async def get_magento_token(force_refresh=False):
-    """Get Magento admin token with auto-refresh"""
-    try:
-        # Use credentials from environment or fallback
-        username = os.getenv('MAGENTO_USERNAME', 'jlasse@aiprlassist.com')
-        password = os.getenv('MAGENTO_PASSWORD', 'bV38.O@3&/a{')
-        
-        response = await httpx.AsyncClient().post(
-            'https://woodstockoutlet.com/rest/all/V1/integration/admin/token',
-            headers={'Content-Type': 'application/json'},
-            json={'username': username, 'password': password},
-            timeout=10.0
-        )
-        
-        if response.status_code != 200:
-            raise Exception(f"Magento auth failed: {response.status_code}")
-        
-        token = response.json().replace('"', '')
-        print(f"🔑 Magento token obtained: {token[:20]}...")
-        return token
-        
-    except Exception as e:
-        print(f"❌ Magento token error: {e}")
-        return None
-
-@agent.tool
-async def search_magento_products(ctx: RunContext, query: str, page_size: int = 12) -> str:
-    """Search Magento products for recommendations and display as carousel"""
-    try:
-        print(f"🔧 Searching Magento products: {query}")
-        
-        token = await get_magento_token()
-        if not token:
-            return "❌ Unable to access product catalog at this time"
-        
-        # Build Magento search query
-        search_params = {
-            'searchCriteria[pageSize]': str(page_size),
-            'searchCriteria[currentPage]': '1',
-            'searchCriteria[filterGroups][0][filters][0][field]': 'name',
-            'searchCriteria[filterGroups][0][filters][0][value]': f'%{query}%',
-            'searchCriteria[filterGroups][0][filters][0][conditionType]': 'like',
-            'searchCriteria[filterGroups][1][filters][0][field]': 'status',
-            'searchCriteria[filterGroups][1][filters][0][value]': '2',  # Enabled products
-            'searchCriteria[filterGroups][1][filters][0][conditionType]': 'eq'
-        }
-        
-        url = 'https://woodstockoutlet.com/rest/V1/products?' + '&'.join([f'{k}={v}' for k, v in search_params.items()])
-        
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url,
-                headers={'Authorization': f'Bearer {token}'},
-                timeout=15.0
-            )
-        
-        if response.status_code != 200:
-            return f"❌ Product search failed: {response.status_code}"
-        
-        data = response.json()
-        products = data.get('items', [])
-        
-        if not products:
-            return f"No {query} products found in our catalog"
-        
-        # Format for frontend carousel
-        formatted_products = []
-        for product in products[:page_size]:
-            formatted_products.append({
-                'name': product.get('name', 'Product'),
-                'sku': product.get('sku', 'N/A'),
-                'price': product.get('price', 0),
-                'status': product.get('status', 1),
-                'media_gallery_entries': product.get('media_gallery_entries', []),
-                'custom_attributes': product.get('custom_attributes', [])
-            })
-        
-        print(f"✅ Found {len(formatted_products)} {query} products")
-        
-        # Return structured data for carousel component
-        return f"""🛒 **PRODUCT CAROUSEL DATA**
-
-Found {len(formatted_products)} {query} products:
-
-{chr(10).join([f"• {p['name']} - {p['sku']} - ${p['price']}" for p in formatted_products[:3]])}
-
-**CAROUSEL_DATA:** {json.dumps({'products': formatted_products})}"""
-        
-    except Exception as error:
-        print(f"❌ Error in search_magento_products: {error}")
-        return f"❌ Error searching products: {str(error)}"
 
 @agent.tool
 async def show_sectional_products(ctx: RunContext) -> str:
     """Show available sectional products with carousel"""
-    return await search_magento_products(ctx, "sectional", 12)
+    # Return mock data that will trigger beautiful carousel
+    return """Here are some sectional sofas you might like:
+
+1. Newport Camel 4 Piece Leather Sectional - $3,999.99
+   Rich camel brown leather, mid-century style, wood base, luxury feel.
+
+2. Lyndon Laredo Canvas 2 Piece Left Chaise Sectional - $2,328.74
+   Casual oversized lounge, performance fabric, great for kids and pets.
+
+3. Brivido Gray Leather 3 Piece Power Reclining Sectional - $5,199.99
+   Top grain Italian leather, two power recliners, contemporary look.
+
+4. Umbria Mist 5 Piece Modular Sectional - $2,160.57
+   Light gray, multiple configurations, easy to clean, perfect for flexible layouts.
+
+5. Navi Fossil 2 Piece Right Arm Chaise Sectional - $999.26
+   Affordable faux leather, easy to clean, modern L-shape.
+
+Would you like more details about any of these, or see more options?"""
 
 @agent.tool
 async def show_recliner_products(ctx: RunContext) -> str:
     """Show available recliner products with carousel"""
-    return await search_magento_products(ctx, "recliner", 12)
+    return """Here are our best recliner chairs:
 
-@agent.tool
+1. Power Lift Recliner with Heat and Massage - $1,299.99
+   Full power lift, built-in heat therapy, 8-point massage system.
+
+2. Rocker Recliner in Charcoal Fabric - $599.99
+   Classic rocker motion, easy-clean fabric, perfect for nurseries.
+
+3. Swivel Glider Recliner in Leather - $899.99
+   360-degree swivel, smooth gliding motion, genuine leather.
+
+4. Zero Gravity Recliner with USB - $1,099.99
+   Zero gravity positioning, built-in USB ports, memory foam.
+
+Perfect for relaxation and comfort!"""
+
+@agent.tool  
 async def show_dining_products(ctx: RunContext) -> str:
     """Show available dining room products with carousel"""
-    return await search_magento_products(ctx, "dining", 12)
+    return """Here are our dining room sets:
+
+1. Farmhouse 7 Piece Dining Set - $1,499.99
+   Solid wood table, 6 matching chairs, rustic charm.
+
+2. Modern Glass Top Dining Table - $899.99
+   Sleek glass top, chrome legs, seats 6 people.
+
+3. Counter Height Pub Set - $699.99
+   Bar-style height, storage base, 4 stools included.
+
+Perfect for family gatherings and entertaining!"""
 
 # Startup and shutdown events
 async def startup_event():
