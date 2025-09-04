@@ -443,15 +443,22 @@ Beautiful, rich UI components for function results
     --slider-nav-color-hover: var(--woodstock-red);
 }
 
-/* Swiffy Slider Responsive Configuration - PROPER DESKTOP DISPLAY */
+/* Swiffy Slider Responsive Configuration - PROPER SPACING */
 .product-carousel .slider-item-show4 .slider-container > * {
-    flex: 0 0 25%;
-    max-width: 25%;
+    flex: 0 0 calc(25% - 1rem);
+    max-width: calc(25% - 1rem);
+    margin: 0 0.5rem;
 }
 
 .product-carousel .slider-item-show2-sm .slider-container > * {
-    flex: 0 0 50%;
-    max-width: 50%;
+    flex: 0 0 calc(50% - 1rem);
+    max-width: calc(50% - 1rem);
+    margin: 0 0.5rem;
+}
+
+.product-carousel .slider-container {
+    padding: 0 0.5rem;
+    gap: 1rem;
 }
 
 /* Responsive Adjustments - Context7 Wisdom */
