@@ -1704,29 +1704,30 @@ Customer Context: Provide friendly, helpful responses focused on customer self-s
             return StreamingResponse(generate_stream(), media_type="text/event-stream")
         
         else:
-            print("🤖 Running non-streaming response with memory...")
-            result = await agent.run(final_user_message, message_history=message_history)
-            
-            # Save user message to EXISTING table
+            print("🤖 Running non-streaming response with memory (via stream aggregator)...")
+            full_response = ""
+            async with agent.run_stream(final_user_message, message_history=message_history) as result:
+                async for chunk in result.stream_text(delta=True):
+                    full_response += chunk
+
+            # Save messages to memory
             await memory.save_user_message(conversation_id, user_message)
-            
-            # Save assistant response to EXISTING table  
-            await memory.save_assistant_message(conversation_id, str(result.output))
-            
+            await memory.save_assistant_message(conversation_id, full_response)
+
             response = ChatResponse(
                 choices=[{
                     "index": 0,
                     "message": {
                         "role": "assistant",
-                        "content": str(result.output) if result is not None else ""
+                        "content": full_response
                     },
                     "finish_reason": "stop"
                 }],
                 model="loft-chat",
                 usage={
                     "prompt_tokens": len(user_message.split()),
-                    "completion_tokens": len(str(result.output).split()) if result.output else 0,
-                    "total_tokens": len(user_message.split()) + (len(str(result.output).split()) if result.output else 0)
+                    "completion_tokens": len(full_response.split()),
+                    "total_tokens": len(user_message.split()) + len(full_response.split())
                 }
             )
             return response
