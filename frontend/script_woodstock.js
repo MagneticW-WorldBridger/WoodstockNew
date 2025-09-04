@@ -468,11 +468,11 @@ class WoodstockChat {
                 func: 'getDetailsByOrder', 
                 trigger: /(?:Order.*(?:Number|ID):\s*[A-Z0-9]+|Total:\s*\$[\d,]+\.?\d*|Delivery.*Date)/i 
             },
-            // Order history patterns
+            // Order history patterns - match actual bullet format
             { 
-                pattern: /(?:order.*history|orders.*found|you have.*order)/i, 
+                pattern: /(?:purchase.*history|you have.*order|order.*on file|latest.*order)/i, 
                 func: 'getOrdersByCustomer', 
-                trigger: /(?:Order.*(?:Number|ID):\s*[A-Z0-9]+|Status:\s*[A-Za-z]+|Order.*Date)/i 
+                trigger: /(?:Order.*ID\s*[A-Z0-9]+|Total:\s*\$[0-9,.]+|Status:\s*[A-Za-z]+)/i 
             },
             // Analytics patterns - based on your screenshots
             { 
@@ -533,35 +533,30 @@ class WoodstockChat {
         const data = { data: { entry: [] } };
 
         if (functionName === 'getCustomerByPhone' || functionName === 'getCustomerByEmail') {
-            // Extract customer data - handle various formats
+            // Extract customer data - handle actual response format
             const nameMatch = text.match(/Name:\s*([^\n]+)/i);
             const phoneMatch = text.match(/Phone:\s*([^\n]+)/i);
             const emailMatch = text.match(/Email:\s*([^\n]+)/i);
             const addressMatch = text.match(/Address:\s*([^\n]+)/i);
             const customerIdMatch = text.match(/Customer ID:\s*([^\n]+)/i);
 
-            // Also try to extract from "You have one order" format
-            const orderIdMatch = text.match(/Order.*(?:Number|ID):\s*([A-Z0-9]+)/i);
-            const orderDateMatch = text.match(/Order Date:\s*([^\n]+)/i);
-            const statusMatch = text.match(/Status:\s*([^\n]+)/i);
-            const totalMatch = text.match(/Total:\s*\$([0-9,.]+)/i);
+            // Handle "You have X order(s)" format - this triggers getOrdersByCustomer component
+            const orderCountMatch = text.match(/You have (\d+) order/i);
+            if (orderCountMatch) {
+                // This should trigger order list component instead
+                return this.extractDataFromResponse(text, 'getOrdersByCustomer');
+            }
 
-            if (nameMatch || phoneMatch || emailMatch || orderIdMatch) {
-                const nameParts = nameMatch ? nameMatch[1].split(' ') : ['', ''];
+            // Extract direct customer info
+            if (nameMatch || phoneMatch || emailMatch) {
+                const nameParts = nameMatch ? nameMatch[1].split(' ') : ['Customer', 'Unknown'];
                 data.data.entry = [{
-                    firstname: nameParts[0] || '',
-                    lastname: nameParts.slice(1).join(' ') || '',
+                    firstname: nameParts[0] || 'Customer',
+                    lastname: nameParts.slice(1).join(' ') || 'Unknown',
                     phonenumber: phoneMatch ? phoneMatch[1].trim() : '',
                     email: emailMatch ? emailMatch[1].trim() : '',
                     address: addressMatch ? addressMatch[1].trim() : '',
-                    customerid: customerIdMatch ? customerIdMatch[1].trim() : '',
-                    // Include order info if present
-                    recent_order: orderIdMatch ? {
-                        orderid: orderIdMatch[1],
-                        orderdate: orderDateMatch ? orderDateMatch[1] : '',
-                        status: statusMatch ? statusMatch[1] : '',
-                        total: totalMatch ? totalMatch[1] : ''
-                    } : null
+                    customerid: customerIdMatch ? customerIdMatch[1].trim() : ''
                 }];
             }
         }
@@ -591,12 +586,30 @@ class WoodstockChat {
         }
 
         else if (functionName === 'getOrdersByCustomer') {
-            // Extract orders list
-            const orderMatches = text.match(/Order.*#?\s*([A-Z0-9]+)[^\n]*\$([0-9,.]+)/gi);
+            // Extract orders list - handle actual format
             const orders = [];
-
-            if (orderMatches) {
-                orderMatches.forEach(match => {
+            
+            // Pattern 1: "Order ID 0710544II27" or "Latest order: Order ID 0710544II27"
+            const orderNumberMatch = text.match(/(?:Order.*ID|Latest.*order.*Order.*ID)\s*:?\s*([A-Z0-9]+)/i);
+            const orderTotalMatch = text.match(/Total:\s*\$([0-9,.]+)/i);
+            const statusMatch = text.match(/Status:\s*([^\n]+)/i);
+            const orderDateMatch = text.match(/(?:Order.*date|date):\s*([^\n]+)/i);
+            const deliveryDateMatch = text.match(/Delivery.*date:\s*([^\n]+)/i);
+            
+            if (orderNumberMatch) {
+                orders.push({
+                    orderid: orderNumberMatch[1],
+                    ordertotal: orderTotalMatch ? orderTotalMatch[1] : '0.00',
+                    status: statusMatch ? (statusMatch[1].toLowerCase().includes('complete') ? 'F' : 'P') : 'F',
+                    orderdate: orderDateMatch ? orderDateMatch[1] : new Date().toISOString(),
+                    deliverydate: deliveryDateMatch ? deliveryDateMatch[1] : ''
+                });
+            }
+            
+            // Pattern 2: Multiple orders format (fallback)
+            const multiOrderMatches = text.match(/Order.*#?\s*([A-Z0-9]+)[^\n]*\$([0-9,.]+)/gi);
+            if (multiOrderMatches && orders.length === 0) {
+                multiOrderMatches.forEach(match => {
                     const idMatch = match.match(/([A-Z0-9]+)/);
                     const priceMatch = match.match(/\$([0-9,.]+)/);
                     
@@ -604,7 +617,7 @@ class WoodstockChat {
                         orders.push({
                             orderid: idMatch[1],
                             ordertotal: priceMatch[1],
-                            status: 'F', // Assume finalized
+                            status: 'F',
                             orderdate: new Date().toISOString()
                         });
                     }
@@ -630,6 +643,7 @@ class WoodstockChat {
         }
 
         console.log('🔍 Extracted data for', functionName, ':', data);
+        console.log('📝 Original text:', text.substring(0, 200) + '...');
         return data;
     }
 
