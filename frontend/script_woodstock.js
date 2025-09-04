@@ -368,9 +368,15 @@ class WoodstockChat {
     async sendToAI(message) {
         console.log('🤖 Sending to AI backend...');
         
+        // Use non-streaming for product searches for instant results
+        const isProductSearch = message.toLowerCase().includes('sectional') || 
+                               message.toLowerCase().includes('recliner') || 
+                               message.toLowerCase().includes('products') ||
+                               message.toLowerCase().includes('recommendations');
+
         const requestBody = {
             messages: this.messageHistory.slice(-10), // Send last 10 messages for context
-            stream: true,
+            stream: !isProductSearch, // No streaming for product searches
             session_id: this.sessionId,
             user_identifier: this.userIdentifier,
             user_type: this.isAdminMode ? 'admin' : 'customer',
@@ -381,7 +387,7 @@ class WoodstockChat {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'text/event-stream'
+                'Accept': isProductSearch ? 'application/json' : 'text/event-stream'
             },
             body: JSON.stringify(requestBody)
         });
@@ -390,8 +396,24 @@ class WoodstockChat {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        console.log('📡 Streaming response...');
-        await this.handleStreamingResponse(response);
+        if (isProductSearch) {
+            console.log('🛒 Instant product response...');
+            this.hideTypingIndicator();
+            
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content;
+            
+            if (content) {
+                console.log('🎨 Rendering product components instantly');
+                const messageDiv = this.addMessage('', 'assistant');
+                const contentDiv = messageDiv.querySelector('.message-content');
+                this.detectAndRenderComponents(content, contentDiv);
+                this.messageHistory.push({ role: 'assistant', content: content });
+            }
+        } else {
+            console.log('📡 Streaming response...');
+            await this.handleStreamingResponse(response);
+        }
     }
 
     async handleStreamingResponse(response) {

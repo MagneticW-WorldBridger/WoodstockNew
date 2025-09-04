@@ -33,6 +33,11 @@ class WoodstockMagentoCarousel {
         const carouselId = `carousel-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
         const productsHtml = products.map(product => this.createProductCard(product)).join('');
 
+        // Auto-initialize carousel after render
+        setTimeout(() => {
+            this.initializeCarousel(carouselId);
+        }, 100);
+
         return `
             <div class="function-result product-carousel">
                 <div class="card-header">
@@ -136,26 +141,45 @@ class WoodstockMagentoCarousel {
             controls: false, // We have custom controls
             nav: true,
             navContainer: `#${carouselId}-dots`,
+            // FIXED: Enable wheel/trackpad scrolling
+            swipeAngle: 15,
+            preventActionWhenRunning: false,
+            preventScrollOnTouch: 'auto',
+            nested: false,
+            freezable: true,
             responsive: {
                 480: {
                     items: 2,
-                    gutter: 10
+                    gutter: 10,
+                    slideBy: 1
                 },
                 768: {
                     items: 3,
-                    gutter: 15
+                    gutter: 15,
+                    slideBy: 1
                 },
                 1024: {
                     items: 4,
-                    gutter: 20
+                    gutter: 20,
+                    slideBy: 1
                 }
             },
             autoplay: false,
-            speed: 400,
+            speed: 300,
             autoHeight: false,
             loop: false,
             rewind: true
         });
+
+        // ADD WHEEL/TRACKPAD SUPPORT
+        container.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaX > 0 || e.deltaY > 0) {
+                slider.goTo('next');
+            } else {
+                slider.goTo('prev');
+            }
+        }, { passive: false });
 
         // Store slider instance for navigation
         this.sliders = this.sliders || {};
