@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Test - Woodstock</title>
+    <link rel="stylesheet" href="style_woodstock.css">
+    <link rel="stylesheet" href="components.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="woodstock-app">
+        <header class="woodstock-header">
+            <h1>🎨 Component Test - Amazing Components</h1>
+        </header>
+        
+        <main style="padding: 2rem;">
+            <div id="test-results"></div>
+            
+            <button onclick="testCustomerComponent()" style="margin: 1rem; padding: 1rem 2rem; background: var(--woodstock-red); color: white; border: none; border-radius: 8px;">
+                Test Customer Component
+            </button>
+            
+            <button onclick="testOrderDetailsComponent()" style="margin: 1rem; padding: 1rem 2rem; background: var(--woodstock-navy); color: white; border: none; border-radius: 8px;">
+                Test Order Details Component
+            </button>
+            
+            <button onclick="testAnalyticsComponent()" style="margin: 1rem; padding: 1rem 2rem; background: var(--woodstock-red); color: white; border: none; border-radius: 8px;">
+                Test Analytics Component
+            </button>
+        </main>
+    </div>
+
+    <script src="html-components.js"></script>
+    <script>
+        function testCustomerComponent() {
+            const testData = {
+                data: {
+                    entry: [{
+                        firstname: 'Janice',
+                        lastname: 'Daniels', 
+                        phonenumber: '407-288-6040',
+                        email: 'jdan4sure@yahoo.com',
+                        address: '2010 Moonlight Path, Covington, GA 30016',
+                        customerid: '9318667506'
+                    }]
+                }
+            };
+            
+            const html = window.woodstockComponents.renderFunctionResult('getCustomerByPhone', testData);
+            document.getElementById('test-results').innerHTML = html;
+        }
+        
+        function testOrderDetailsComponent() {
+            const testData = {
+                data: {
+                    entry: [
+                        {
+                            description: 'Repose Avenue RAF Dual Power Recliner - Defender Sand',
+                            itemprice: '460.14',
+                            qtyordered: '1',
+                            productid: 'RA-RAF-DPR-DS'
+                        },
+                        {
+                            description: 'Repose Avenue LAF Dual Power Recliner - Defender Sand',
+                            itemprice: '460.14', 
+                            qtyordered: '1',
+                            productid: 'RA-LAF-DPR-DS'
+                        },
+                        {
+                            description: 'Repose Avenue Console - Defender Sand',
+                            itemprice: '112.96',
+                            qtyordered: '1', 
+                            productid: 'RA-CON-DS'
+                        }
+                    ]
+                }
+            };
+            
+            const html = window.woodstockComponents.renderFunctionResult('getDetailsByOrder', testData);
+            document.getElementById('test-results').innerHTML = html;
+        }
+        
+        function testAnalyticsComponent() {
+            const testData = {
+                data: {
+                    totalSpent: '3995.00',
+                    orderCount: 2,
+                    favoriteCategories: [
+                        { category: 'Sectionals', count: 3 },
+                        { category: 'Recliners', count: 2 },
+                        { category: 'Dining Sets', count: 1 }
+                    ]
+                }
+            };
+            
+            const html = window.woodstockComponents.renderFunctionResult('analyzeCustomerPatterns', testData);
+            document.getElementById('test-results').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

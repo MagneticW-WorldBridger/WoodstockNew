@@ -1511,6 +1511,8 @@ Customer Context: Provide friendly, helpful responses focused on customer self-s
                         await memory.save_user_message(conversation_id, user_message)
                         
                         full_response = ""
+                        function_calls_made = []
+                        
                         async for message in result.stream_text(delta=True):
                             full_response += message
                             chunk = {
@@ -1518,6 +1520,25 @@ Customer Context: Provide friendly, helpful responses focused on customer self-s
                                 "model": "loft-chat"
                             }
                             yield f"data: {json.dumps(chunk)}\n\n"
+                        
+                        # Check if any functions were called during this response
+                        if hasattr(result, 'all_messages'):
+                            for msg in result.all_messages():
+                                if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                                    for tool_call in msg.tool_calls:
+                                        if hasattr(tool_call, 'function'):
+                                            function_calls_made.append({
+                                                'function_name': tool_call.function.name,
+                                                'arguments': tool_call.function.arguments
+                                            })
+                        
+                        # Send function metadata if functions were called
+                        if function_calls_made:
+                            function_metadata = {
+                                "choices": [{"delta": {"function_calls": function_calls_made}}],
+                                "model": "loft-chat"
+                            }
+                            yield f"data: {json.dumps(function_metadata)}\n\n"
                         
                         # Save assistant response to EXISTING table
                         await memory.save_assistant_message(conversation_id, full_response)

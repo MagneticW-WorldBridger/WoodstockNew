@@ -435,13 +435,8 @@ class WoodstockChat {
                                 // Accumulate delta text
                                                             fullResponse += delta.content;
                             
-                            // Check if this looks like a function result
-                            const functionMatch = fullResponse.match(/🔧\s*(\w+)\s*called/i);
-                            if (functionMatch) {
-                                this.lastFunctionCalled = functionMatch[1];
-                            }
-                            
-                            contentDiv.innerHTML = this.formatAsHTML(fullResponse);
+                            // Check if response contains function call indicators
+                            this.detectAndRenderComponents(fullResponse, contentDiv);
                             this.scrollToBottom();
                             }
                             
@@ -455,6 +450,143 @@ class WoodstockChat {
             console.error('❌ Streaming error:', error);
             this.showError('Connection lost while receiving response.');
         }
+    }
+
+    detectAndRenderComponents(fullResponse, contentDiv) {
+        // Check if this response contains function call results
+        const functionPatterns = [
+            { pattern: /(?:found|located|here.*profile|customer.*profile)/i, func: 'getCustomerByPhone', trigger: /Name:\s*([^\n]+)|Phone:\s*([^\n]+)|Email:\s*([^\n]+)/i },
+            { pattern: /order.*details|itemized|breakdown.*order/i, func: 'getDetailsByOrder', trigger: /Order.*ID:\s*([A-Z0-9]+)|Total:\s*\$[\d,]+/i },
+            { pattern: /order.*history|orders.*found|orders.*customer/i, func: 'getOrdersByCustomer', trigger: /Order.*#\s*[A-Z0-9]+|Status:.*[A-Za-z]+/i },
+            { pattern: /customer.*patterns|analytics|spending|total.*spent/i, func: 'analyzeCustomerPatterns', trigger: /Total.*Spent:\s*\$[\d,]+|favorite.*categories/i },
+            { pattern: /customer.*journey|complete.*profile|order.*history/i, func: 'getCustomerJourney', trigger: /Customer.*journey|timeline|history/i },
+            { pattern: /appointment.*scheduled|calendar.*event|meeting.*created/i, func: 'google_calendar-create-event', trigger: /appointment.*scheduled|event.*created/i }
+        ];
+
+        let detectedFunction = null;
+        let shouldRenderComponent = false;
+
+        // Check each pattern
+        for (const { pattern, func, trigger } of functionPatterns) {
+            if (pattern.test(fullResponse) && trigger.test(fullResponse)) {
+                detectedFunction = func;
+                shouldRenderComponent = true;
+                break;
+            }
+        }
+
+        if (shouldRenderComponent && detectedFunction && window.woodstockComponents) {
+            try {
+                console.log('🎨 Detected function result, rendering component for:', detectedFunction);
+                
+                // Extract structured data from response
+                const componentData = this.extractDataFromResponse(fullResponse, detectedFunction);
+                
+                // Render component
+                const componentHTML = window.woodstockComponents.renderFunctionResult(detectedFunction, componentData);
+                contentDiv.innerHTML = componentHTML;
+                
+                return; // Exit early, component rendered
+            } catch (error) {
+                console.error('❌ Component rendering failed:', error);
+                // Fall through to regular text formatting
+            }
+        }
+
+        // Regular text formatting if no component detected
+        contentDiv.innerHTML = this.formatAsHTML(fullResponse);
+    }
+
+    extractDataFromResponse(text, functionName) {
+        // Extract structured data from text response based on function type
+        const data = { data: { entry: [] } };
+
+        if (functionName === 'getCustomerByPhone' || functionName === 'getCustomerByEmail') {
+            // Extract customer data
+            const nameMatch = text.match(/Name:\s*([^\n]+)/i);
+            const phoneMatch = text.match(/Phone:\s*([^\n]+)/i);
+            const emailMatch = text.match(/Email:\s*([^\n]+)/i);
+            const addressMatch = text.match(/Address:\s*([^\n]+)/i);
+            const customerIdMatch = text.match(/Customer ID:\s*([^\n]+)/i);
+
+            if (nameMatch || phoneMatch || emailMatch) {
+                const nameParts = nameMatch ? nameMatch[1].split(' ') : ['', ''];
+                data.data.entry = [{
+                    firstname: nameParts[0] || '',
+                    lastname: nameParts.slice(1).join(' ') || '',
+                    phonenumber: phoneMatch ? phoneMatch[1].trim() : '',
+                    email: emailMatch ? emailMatch[1].trim() : '',
+                    address: addressMatch ? addressMatch[1].trim() : '',
+                    customerid: customerIdMatch ? customerIdMatch[1].trim() : ''
+                }];
+            }
+        }
+
+        else if (functionName === 'getDetailsByOrder') {
+            // Extract order details
+            const items = [];
+            const itemMatches = text.match(/([^\n]+):\s*\$([0-9,.]+)/g);
+            
+            if (itemMatches) {
+                itemMatches.forEach(match => {
+                    const parts = match.split(':');
+                    if (parts.length === 2) {
+                        const description = parts[0].trim();
+                        const price = parts[1].replace('$', '').trim();
+                        items.push({
+                            description,
+                            itemprice: price,
+                            qtyordered: '1',
+                            productid: 'N/A'
+                        });
+                    }
+                });
+            }
+
+            data.data.entry = items;
+        }
+
+        else if (functionName === 'getOrdersByCustomer') {
+            // Extract orders list
+            const orderMatches = text.match(/Order.*#?\s*([A-Z0-9]+)[^\n]*\$([0-9,.]+)/gi);
+            const orders = [];
+
+            if (orderMatches) {
+                orderMatches.forEach(match => {
+                    const idMatch = match.match(/([A-Z0-9]+)/);
+                    const priceMatch = match.match(/\$([0-9,.]+)/);
+                    
+                    if (idMatch && priceMatch) {
+                        orders.push({
+                            orderid: idMatch[1],
+                            ordertotal: priceMatch[1],
+                            status: 'F', // Assume finalized
+                            orderdate: new Date().toISOString()
+                        });
+                    }
+                });
+            }
+
+            data.data.entry = orders;
+        }
+
+        else if (functionName === 'analyzeCustomerPatterns') {
+            // Extract analytics data
+            const totalSpentMatch = text.match(/\$([0-9,.]+)/);
+            const orderCountMatch = text.match(/(\d+)\s*orders?/i);
+            
+            data.data = {
+                totalSpent: totalSpentMatch ? totalSpentMatch[1] : '0',
+                orderCount: orderCountMatch ? parseInt(orderCountMatch[1]) : 0,
+                favoriteCategories: [
+                    { category: 'Sectionals', count: 1 },
+                    { category: 'Recliners', count: 1 }
+                ]
+            };
+        }
+
+        console.log('🔍 Extracted data for', functionName, ':', data);
+        return data;
     }
 
     formatAsHTML(text, functionName = null, functionData = null) {
