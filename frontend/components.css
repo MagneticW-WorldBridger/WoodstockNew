@@ -443,44 +443,30 @@ Beautiful, rich UI components for function results
     --slider-nav-color-hover: var(--woodstock-red);
 }
 
-/* Show multiple cards per view */
-.product-carousel .slider-item-show2-sm li {
-    width: calc(100% / 2);
+/* Swiffy Slider Responsive Configuration - PROPER DESKTOP DISPLAY */
+.product-carousel .slider-item-show4 .slider-container > * {
+    flex: 0 0 25%;
+    max-width: 25%;
 }
 
-.product-carousel .slider-item-show3-md li {
-    width: calc(100% / 3);
+.product-carousel .slider-item-show2-sm .slider-container > * {
+    flex: 0 0 50%;
+    max-width: 50%;
 }
 
-.product-carousel .slider-item-show4-lg li {
-    width: calc(100% / 4);
-}
-
-/* Mobile: 1 card */
-@media (max-width: 479px) {
-    .product-carousel .swiffy-slider li {
-        width: 100%;
+/* Responsive Adjustments - Context7 Wisdom */
+@media (max-width: 991.98px) {
+    .product-carousel .slider-item-show4 .slider-container > * {
+        flex: 0 0 50%; /* 2 cards on tablets */
+        max-width: 50%;
     }
 }
 
-/* Small: 2 cards */
-@media (min-width: 480px) and (max-width: 767px) {
-    .product-carousel .swiffy-slider li {
-        width: calc(100% / 2);
-    }
-}
-
-/* Medium: 3 cards */
-@media (min-width: 768px) and (max-width: 1023px) {
-    .product-carousel .swiffy-slider li {
-        width: calc(100% / 3);
-    }
-}
-
-/* Large: 4 cards */
-@media (min-width: 1024px) {
-    .product-carousel .swiffy-slider li {
-        width: calc(100% / 4);
+@media (max-width: 767.98px) {
+    .product-carousel .slider-item-show4 .slider-container > *,
+    .product-carousel .slider-item-show2-sm .slider-container > * {
+        flex: 0 0 100%; /* 1 card on mobile */
+        max-width: 100%;
     }
 }
 

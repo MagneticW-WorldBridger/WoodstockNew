@@ -40,7 +40,7 @@ class WoodstockMagentoCarousel {
                     <span>${title} (${products.length} items)</span>
                 </div>
                 <div class="carousel-container">
-                    <div class="swiffy-slider slider-nav-round slider-nav-dark slider-item-show2-sm slider-item-show3-md slider-item-show4-lg" id="${carouselId}">
+                    <div class="swiffy-slider slider-nav-round slider-nav-dark slider-item-show4 slider-item-show2-sm" id="${carouselId}">
                         <ul class="slider-container">
                             ${products.map(product => `<li>${this.createProductCard(product)}</li>`).join('')}
                         </ul>
@@ -166,13 +166,13 @@ class WoodstockMagentoCarousel {
             return product.image_url;
         }
         
-        // PRIORITY 2: Try media gallery entries (FIXED: Correct URL pattern from original)
+        // PRIORITY 2: Try media gallery entries (ORIGINAL WORKING PATTERN!)
         if (product.media_gallery_entries && product.media_gallery_entries.length > 0) {
             const mediaBase = 'https://www.woodstockoutlet.com/media/catalog/product';
             return mediaBase + product.media_gallery_entries[0].file;
         }
         
-        // PRIORITY 3: Try custom attributes (FIXED: Correct URL pattern)
+        // PRIORITY 3: Try custom attributes (ORIGINAL WORKING PATTERN!)
         if (product.custom_attributes) {
             const imageAttr = product.custom_attributes.find(attr => 
                 attr.attribute_code === 'image' || attr.attribute_code === 'small_image'
