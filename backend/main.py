@@ -1608,6 +1608,39 @@ async def chat_completions(request: ChatRequest):
         print(f"👤 User identifier: {user_identifier}")
         print(f"🔧 Admin mode: {is_admin_mode}")
         
+        # FAST-PATH: product browsing intents → call Magento directly for instant carousel
+        msg_lower = user_message.lower()
+        fastpath_query = None
+        if any(k in msg_lower for k in ["sectional", "sectionals"]):
+            fastpath_query = "sectional"
+        elif "recliner" in msg_lower or "recliners" in msg_lower:
+            fastpath_query = "recliner"
+        elif "dining" in msg_lower:
+            fastpath_query = "dining"
+
+        if fastpath_query:
+            try:
+                print(f"⚡ Fast-path Magento search for: {fastpath_query}")
+                # Call tool directly to guarantee CAROUSEL_DATA in response
+                result_text = await search_magento_products(None, fastpath_query, 12)
+                await memory.save_user_message(conversation_id := await memory.get_or_create_conversation(user_identifier), user_message)
+                await memory.save_assistant_message(conversation_id, result_text)
+                return ChatResponse(
+                    choices=[{
+                        "index": 0,
+                        "message": {"role": "assistant", "content": result_text},
+                        "finish_reason": "stop"
+                    }],
+                    model="loft-chat",
+                    usage={
+                        "prompt_tokens": len(user_message.split()),
+                        "completion_tokens": len(result_text.split()),
+                        "total_tokens": len(user_message.split()) + len(result_text.split())
+                    }
+                )
+            except Exception as e:
+                print(f"❌ Fast-path error: {e}")
+
         # SMART SESSION MANAGEMENT - cuando usar memoria vs nueva sesión
         use_memory = should_use_memory(user_message, user_identifier)
         print(f"🧠 Memory decision: {'USE MEMORY' if use_memory else 'NEW SESSION'}")
