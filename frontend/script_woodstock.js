@@ -492,16 +492,21 @@ class WoodstockChat {
                 trigger: /(?:journey|timeline|history)/i 
             },
             
-            // Product Recommendation Functions (2)
+            // Product Recommendation Functions (2) + Magento Search
             { 
-                pattern: /(?:product.*recommendations|recommendations|suggest.*products)/i, 
+                pattern: /(?:product.*recommendations|recommendations|suggest.*products|PRODUCT.*CAROUSEL.*DATA)/i, 
                 func: 'get_product_recommendations', 
-                trigger: /(?:recommend|suggest|might.*like|based.*on)/i 
+                trigger: /(?:recommend|suggest|might.*like|based.*on|CAROUSEL_DATA)/i 
             },
             { 
-                pattern: /(?:personalized.*recommendations|handle.*recommendations)/i, 
+                pattern: /(?:personalized.*recommendations|handle.*recommendations|CAROUSEL_DATA)/i, 
                 func: 'handle_product_recommendations', 
-                trigger: /(?:personalized|custom|tailored)/i 
+                trigger: /(?:personalized|custom|tailored|CAROUSEL_DATA)/i 
+            },
+            { 
+                pattern: /(?:search.*products|product.*search|Found.*products|CAROUSEL_DATA)/i, 
+                func: 'search_magento_products', 
+                trigger: /(?:Found.*products|CAROUSEL_DATA)/i 
             },
             
             // Proactive Functions (3)
@@ -695,6 +700,27 @@ class WoodstockChat {
                     { category: 'Recliners', count: 1 }
                 ]
             };
+        }
+
+        else if (functionName === 'search_magento_products' || 
+                 functionName === 'get_product_recommendations' || 
+                 functionName === 'handle_product_recommendations') {
+            // Extract Magento product carousel data
+            const carouselDataMatch = text.match(/\*\*CAROUSEL_DATA:\*\*\s*(\{.*\})/);
+            
+            if (carouselDataMatch) {
+                try {
+                    const carouselData = JSON.parse(carouselDataMatch[1]);
+                    console.log('🎨 Extracted carousel data:', carouselData);
+                    data.data = carouselData;
+                } catch (parseError) {
+                    console.error('❌ Failed to parse carousel data:', parseError);
+                    data.data = { products: [] };
+                }
+            } else {
+                // Fallback - no products found
+                data.data = { products: [] };
+            }
         }
 
         console.log('🔍 Extracted data for', functionName, ':', data);
