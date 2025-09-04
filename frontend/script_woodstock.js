@@ -494,19 +494,19 @@ class WoodstockChat {
             
             // Product Recommendation Functions (2) + Magento Search
             { 
-                pattern: /(?:product.*recommendations|recommendations|suggest.*products|PRODUCT.*CAROUSEL.*DATA)/i, 
-                func: 'get_product_recommendations', 
-                trigger: /(?:recommend|suggest|might.*like|based.*on|CAROUSEL_DATA)/i 
-            },
-            { 
-                pattern: /(?:personalized.*recommendations|handle.*recommendations|CAROUSEL_DATA)/i, 
-                func: 'handle_product_recommendations', 
-                trigger: /(?:personalized|custom|tailored|CAROUSEL_DATA)/i 
-            },
-            { 
-                pattern: /(?:search.*products|product.*search|Found.*products|CAROUSEL_DATA)/i, 
+                pattern: /(?:sectional.*sofas|here are some.*sectional|sectional.*you might like)/i, 
                 func: 'search_magento_products', 
-                trigger: /(?:Found.*products|CAROUSEL_DATA)/i 
+                trigger: /(?:\$[0-9,.]+|Sectional.*-.*\$|Piece.*Sectional)/i 
+            },
+            { 
+                pattern: /(?:product.*recommendations|recommendations|suggest.*products)/i, 
+                func: 'get_product_recommendations', 
+                trigger: /(?:recommend|suggest|might.*like|based.*on)/i 
+            },
+            { 
+                pattern: /(?:personalized.*recommendations|handle.*recommendations)/i, 
+                func: 'handle_product_recommendations', 
+                trigger: /(?:personalized|custom|tailored)/i 
             },
             
             // Proactive Functions (3)
@@ -705,22 +705,49 @@ class WoodstockChat {
         else if (functionName === 'search_magento_products' || 
                  functionName === 'get_product_recommendations' || 
                  functionName === 'handle_product_recommendations') {
-            // Extract Magento product carousel data
-            const carouselDataMatch = text.match(/\*\*CAROUSEL_DATA:\*\*\s*(\{.*\})/);
+            // Extract Magento product data from numbered list format
+            const products = [];
             
+            // Pattern: "1. Newport Camel 4 Piece Leather Sectional - $3,999.99"
+            const productMatches = text.match(/\d+\.\s+([^-]+)\s*-\s*\$([0-9,.]+)/g);
+            
+            if (productMatches) {
+                productMatches.forEach(match => {
+                    const parts = match.match(/\d+\.\s+([^-]+)\s*-\s*\$([0-9,.]+)/);
+                    if (parts) {
+                        const name = parts[1].trim();
+                        const price = parts[2];
+                        
+                        products.push({
+                            name: name,
+                            sku: `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                            price: parseFloat(price.replace(',', '')),
+                            status: 2, // In stock
+                            media_gallery_entries: [],
+                            custom_attributes: [
+                                { attribute_code: 'brand', value: 'Woodstock Furniture' }
+                            ]
+                        });
+                    }
+                });
+            }
+            
+            // Also check for CAROUSEL_DATA format
+            const carouselDataMatch = text.match(/\*\*CAROUSEL_DATA:\*\*\s*(\{.*\})/);
             if (carouselDataMatch) {
                 try {
                     const carouselData = JSON.parse(carouselDataMatch[1]);
-                    console.log('🎨 Extracted carousel data:', carouselData);
+                    console.log('🎨 Extracted carousel JSON data:', carouselData);
                     data.data = carouselData;
                 } catch (parseError) {
                     console.error('❌ Failed to parse carousel data:', parseError);
-                    data.data = { products: [] };
+                    data.data = { products: products };
                 }
             } else {
-                // Fallback - no products found
-                data.data = { products: [] };
+                data.data = { products: products };
             }
+            
+            console.log('🛒 Extracted products:', products.length);
         }
 
         console.log('🔍 Extracted data for', functionName, ':', data);
