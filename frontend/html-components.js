@@ -16,33 +16,63 @@ class WoodstockComponents {
 
         try {
             switch (functionName) {
+                // Core API Functions (4)
+                case 'get_customer_by_phone':
                 case 'getCustomerByPhone':
+                case 'get_customer_by_email':
                 case 'getCustomerByEmail':
                     return this.createCustomerCard(data);
                 
+                case 'get_orders_by_customer':
                 case 'getOrdersByCustomer':
                     return this.createOrdersList(data);
                 
+                case 'get_order_details':
                 case 'getDetailsByOrder':
                     return this.createOrderDetailsCard(data);
                 
+                // Analytics Functions (2)
+                case 'analyze_customer_patterns':
                 case 'analyzeCustomerPatterns':
                     return this.createCustomerPatternsCard(data);
                 
-                case 'getProductRecommendations':
-                    return this.createRecommendationsCard(data);
-                
-                case 'getCustomerJourney':
-                    return this.createCustomerJourneyCard(data);
-                
+                case 'get_customer_analytics':
                 case 'getCustomerAnalytics':
                     return this.createCustomerAnalyticsCard(data);
                 
+                // Journey Function (1)
+                case 'get_customer_journey':
+                case 'getCustomerJourney':
+                    return this.createCustomerJourneyCard(data);
+                
+                // Product Recommendation Functions (2)
+                case 'get_product_recommendations':
+                case 'getProductRecommendations':
+                case 'handle_product_recommendations':
+                case 'handleProductRecommendations':
+                    return this.createRecommendationsCard(data);
+                
+                // Proactive Functions (3)
+                case 'handle_support_escalation':
                 case 'handleSupportEscalation':
                     return this.createSupportTicketCard(data);
                 
+                case 'handle_loyalty_upgrade':
                 case 'handleLoyaltyUpgrade':
                     return this.createLoyaltyUpgradeCard(data);
+                
+                case 'handle_order_confirmation_cross_sell':
+                case 'handleOrderConfirmationCrossSell':
+                    return this.createCrossSellCard(data);
+                
+                // Support Functions (2)
+                case 'connect_to_support':
+                case 'connectToSupport':
+                    return this.createSupportConnectionCard(data);
+                
+                case 'show_directions':
+                case 'showDirections':
+                    return this.createDirectionsCard(data);
 
                 // Google Calendar MCP functions
                 case 'google_calendar-create-event':
@@ -295,6 +325,247 @@ class WoodstockComponents {
                     <div class="ticket-id">Ticket #${ticketId}</div>
                     <div class="ticket-priority priority-${priority.toLowerCase()}">${priority} Priority</div>
                     <div class="ticket-message">${message}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Customer Analytics Card Component
+     */
+    createCustomerAnalyticsCard(data) {
+        const analytics = data.data || {};
+        const totalSpent = parseFloat(analytics.totalSpent || 0).toFixed(2);
+        const orderCount = analytics.orderCount || 0;
+        const avgOrder = orderCount > 0 ? (parseFloat(analytics.totalSpent || 0) / orderCount).toFixed(2) : '0.00';
+
+        return `
+            <div class="function-result customer-analytics">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Customer Analytics</span>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">$${totalSpent}</span>
+                            <span class="stat-label">Lifetime Value</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">${orderCount}</span>
+                            <span class="stat-label">Total Orders</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">$${avgOrder}</span>
+                            <span class="stat-label">Average Order</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Cross-Sell Card Component
+     */
+    createCrossSellCard(data) {
+        const crossSell = data.data || {};
+        const recommendations = crossSell.recommendations || [];
+
+        const recsHtml = recommendations.slice(0, 3).map(rec => `
+            <div class="cross-sell-item">
+                <div class="rec-name">${rec.name || 'Product'}</div>
+                <div class="rec-price">$${rec.price || '0.00'}</div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="function-result cross-sell">
+                <div class="card-header">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Recommended for You</span>
+                </div>
+                <div class="cross-sell-content">
+                    <div class="cross-sell-message">${crossSell.message || 'Based on your purchase, you might like:'}</div>
+                    <div class="recommendations-list">
+                        ${recsHtml || '<div class="no-data">No recommendations available</div>'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Support Connection Card Component
+     */
+    createSupportConnectionCard(data) {
+        const support = data.data || {};
+        const ticketId = support.ticketId || 'SUPPORT-' + Date.now();
+
+        return `
+            <div class="function-result support-connection">
+                <div class="card-header">
+                    <i class="fas fa-phone"></i>
+                    <span>Human Support Connected</span>
+                </div>
+                <div class="support-content">
+                    <div class="connection-info">
+                        <div class="support-id">Reference: ${ticketId}</div>
+                        <div class="support-message">A support specialist will contact you shortly.</div>
+                    </div>
+                    <div class="contact-options">
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span>1-800-WOODSTOCK</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>support@woodstockoutlet.com</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Directions Card Component
+     */
+    createDirectionsCard(data) {
+        const directions = data.data || {};
+        const storeName = directions.storeName || 'Woodstock Furniture Store';
+        const address = directions.address || 'Store location';
+
+        return `
+            <div class="function-result directions">
+                <div class="card-header">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Directions</span>
+                </div>
+                <div class="directions-content">
+                    <div class="store-info">
+                        <div class="store-name">${storeName}</div>
+                        <div class="store-address">${address}</div>
+                    </div>
+                    <div class="directions-actions">
+                        <a href="#" class="directions-btn" onclick="window.open('https://maps.google.com/maps?q=${encodeURIComponent(address)}', '_blank')">
+                            <i class="fas fa-external-link-alt"></i>
+                            Open in Google Maps
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Recommendations Card Component
+     */
+    createRecommendationsCard(data) {
+        const recommendations = data.data || {};
+        const products = recommendations.products || [];
+
+        const productsHtml = products.slice(0, 4).map(product => `
+            <div class="recommendation-item">
+                <div class="product-name">${product.name || 'Product'}</div>
+                <div class="product-price">$${product.price || '0.00'}</div>
+                <div class="product-reason">${product.reason || 'Recommended for you'}</div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="function-result recommendations">
+                <div class="card-header">
+                    <i class="fas fa-star"></i>
+                    <span>Product Recommendations</span>
+                </div>
+                <div class="recommendations-content">
+                    <div class="recommendations-grid">
+                        ${productsHtml || '<div class="no-data">No recommendations available at this time</div>'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Customer Journey Card Component  
+     */
+    createCustomerJourneyCard(data) {
+        const journey = data.data || {};
+        const customer = journey.customer || {};
+        const orders = journey.orders || [];
+
+        const ordersHtml = orders.map(order => `
+            <div class="journey-order">
+                <div class="journey-order-header">
+                    <span class="journey-order-id">#${order.orderid}</span>
+                    <span class="journey-order-date">${this.formatDate(order.orderdate)}</span>
+                </div>
+                <div class="journey-order-total">$${parseFloat(order.ordertotal || 0).toFixed(2)}</div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="function-result customer-journey">
+                <div class="card-header">
+                    <i class="fas fa-route"></i>
+                    <span>Customer Journey</span>
+                </div>
+                <div class="journey-content">
+                    <div class="journey-summary">
+                        <div class="customer-name">${customer.firstname || ''} ${customer.lastname || ''}</div>
+                        <div class="journey-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">${orders.length}</span>
+                                <span class="stat-label">Orders</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">$${journey.totalSpent || '0.00'}</span>
+                                <span class="stat-label">Total Spent</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="journey-orders">
+                        <h4>Order Timeline</h4>
+                        <div class="journey-orders-list">
+                            ${ordersHtml || '<div class="no-data">No order history available</div>'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Loyalty Upgrade Card Component
+     */
+    createLoyaltyUpgradeCard(data) {
+        const loyalty = data.data || {};
+        const status = loyalty.status || 'Bronze';
+        const message = loyalty.message || 'Loyalty program information';
+
+        return `
+            <div class="function-result loyalty-upgrade">
+                <div class="card-header">
+                    <i class="fas fa-crown"></i>
+                    <span>Loyalty Program</span>
+                </div>
+                <div class="loyalty-content">
+                    <div class="loyalty-status">
+                        <div class="status-badge status-${status.toLowerCase()}">${status} Member</div>
+                        <div class="loyalty-message">${message}</div>
+                    </div>
+                    <div class="loyalty-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-gift"></i>
+                            <span>Exclusive member discounts</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-shipping-fast"></i>
+                            <span>Free shipping on orders over $500</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;

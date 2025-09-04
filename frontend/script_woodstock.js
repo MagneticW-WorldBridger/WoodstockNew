@@ -454,39 +454,86 @@ class WoodstockChat {
     }
 
     detectAndRenderComponents(fullResponse, contentDiv) {
-        // Check if this response contains function call results
+        // Check if this response contains function call results - ALL 14 FUNCTIONS
         const functionPatterns = [
-            // Customer lookup patterns
+            // Core API Functions (4)
             { 
-                pattern: /(?:customer|profile|found|located)/i, 
-                func: 'getCustomerByPhone', 
+                pattern: /(?:customer|profile|found|located|account.*information)/i, 
+                func: 'get_customer_by_phone', 
                 trigger: /(?:Name:\s*[^\n]+|Phone:\s*[^\n]+|Email:\s*[^\n]+|Address:\s*[^\n]+)/i 
             },
-            // Order details patterns - based on your screenshots
-            { 
-                pattern: /(?:order.*details|itemized|breakdown|here are the details)/i, 
-                func: 'getDetailsByOrder', 
-                trigger: /(?:Order.*(?:Number|ID):\s*[A-Z0-9]+|Total:\s*\$[\d,]+\.?\d*|Delivery.*Date)/i 
-            },
-            // Order history patterns - match actual bullet format
             { 
                 pattern: /(?:purchase.*history|you have.*order|order.*on file|latest.*order)/i, 
-                func: 'getOrdersByCustomer', 
+                func: 'get_orders_by_customer', 
                 trigger: /(?:Order.*ID\s*[A-Z0-9]+|Total:\s*\$[0-9,.]+|Status:\s*[A-Za-z]+)/i 
             },
-            // Analytics patterns - based on your screenshots
+            { 
+                pattern: /(?:order.*details|itemized|breakdown|here are the details)/i, 
+                func: 'get_order_details', 
+                trigger: /(?:Order.*(?:Number|ID):\s*[A-Z0-9]+|Total:\s*\$[\d,]+\.?\d*|Delivery.*Date)/i 
+            },
+            
+            // Analytics Functions (2)
             { 
                 pattern: /(?:patterns|analytics|spending|overview.*shopping|placed.*order)/i, 
-                func: 'analyzeCustomerPatterns', 
+                func: 'analyze_customer_patterns', 
                 trigger: /(?:\$[\d,]+\.?\d*|favorite.*(?:items|categories)|high-value.*customer)/i 
             },
-            // Customer journey
+            { 
+                pattern: /(?:customer.*analytics|comprehensive.*analytics|insights)/i, 
+                func: 'get_customer_analytics', 
+                trigger: /(?:analytics|insights|lifetime.*value)/i 
+            },
+            
+            // Journey Function (1)
             { 
                 pattern: /(?:customer.*journey|complete.*profile|timeline)/i, 
-                func: 'getCustomerJourney', 
+                func: 'get_customer_journey', 
                 trigger: /(?:journey|timeline|history)/i 
             },
-            // Calendar events
+            
+            // Product Recommendation Functions (2)
+            { 
+                pattern: /(?:product.*recommendations|recommendations|suggest.*products)/i, 
+                func: 'get_product_recommendations', 
+                trigger: /(?:recommend|suggest|might.*like|based.*on)/i 
+            },
+            { 
+                pattern: /(?:personalized.*recommendations|handle.*recommendations)/i, 
+                func: 'handle_product_recommendations', 
+                trigger: /(?:personalized|custom|tailored)/i 
+            },
+            
+            // Proactive Functions (3)
+            { 
+                pattern: /(?:order.*confirmation|cross.*sell|confirmation.*cross)/i, 
+                func: 'handle_order_confirmation_cross_sell', 
+                trigger: /(?:confirmation|cross.*sell|additional.*items)/i 
+            },
+            { 
+                pattern: /(?:support.*escalation|ticket.*created|escalate.*support)/i, 
+                func: 'handle_support_escalation', 
+                trigger: /(?:ticket|escalation|support.*team|priority)/i 
+            },
+            { 
+                pattern: /(?:loyalty.*upgrade|loyalty.*program|tier.*upgrade)/i, 
+                func: 'handle_loyalty_upgrade', 
+                trigger: /(?:loyalty|tier|upgrade|member)/i 
+            },
+            
+            // Support Functions (2)
+            { 
+                pattern: /(?:connect.*support|human.*support|specialist.*contact)/i, 
+                func: 'connect_to_support', 
+                trigger: /(?:support.*specialist|human.*agent|contact.*shortly)/i 
+            },
+            { 
+                pattern: /(?:directions|maps|store.*location|how.*to.*get)/i, 
+                func: 'show_directions', 
+                trigger: /(?:directions|maps|address|location)/i 
+            },
+            
+            // Calendar MCP Functions
             { 
                 pattern: /(?:appointment.*scheduled|calendar.*event|meeting.*created)/i, 
                 func: 'google_calendar-create-event', 
