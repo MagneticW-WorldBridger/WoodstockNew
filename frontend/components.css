@@ -431,6 +431,248 @@ Beautiful, rich UI components for function results
     }
 }
 
+/* Product Carousel Styles */
+.product-carousel .carousel-container {
+    position: relative;
+    padding: 1rem;
+}
+
+.product-carousel .carousel-controls {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.product-carousel .carousel-btn {
+    background: var(--woodstock-navy);
+    color: var(--woodstock-white);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 33, 71, 0.3);
+}
+
+.product-carousel .carousel-btn:hover {
+    background: var(--woodstock-red);
+    transform: scale(1.1);
+}
+
+.product-carousel .product-carousel-wrapper {
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.product-carousel .product-carousel-track {
+    display: flex;
+    gap: 1rem;
+}
+
+.product-carousel .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* Product Card Styles */
+.product-card {
+    background: rgba(var(--glass-tint), 0.2);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+    min-width: 280px;
+    max-width: 320px;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 33, 71, 0.15);
+}
+
+.product-card .product-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.product-card .product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.05);
+}
+
+.product-card .product-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 33, 71, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.product-card:hover .product-overlay {
+    opacity: 1;
+}
+
+.product-card .quick-view-btn {
+    background: var(--woodstock-red);
+    color: var(--woodstock-white);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.product-card .quick-view-btn:hover {
+    background: #d32535;
+    transform: scale(1.05);
+}
+
+.product-card .product-info {
+    padding: 1.5rem;
+}
+
+.product-card .product-brand {
+    font-size: 0.8rem;
+    color: var(--woodstock-red);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.product-card .product-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--woodstock-navy);
+    margin-bottom: 0.75rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.product-card .product-price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--woodstock-red);
+    margin-bottom: 1rem;
+    font-family: var(--font-serif);
+}
+
+.product-card .product-availability {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.product-card .product-availability.in-stock {
+    color: #059669;
+}
+
+.product-card .product-availability.out-of-stock {
+    color: #dc2626;
+}
+
+.product-card .product-availability i {
+    font-size: 0.6rem;
+}
+
+.product-card .product-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.product-card .product-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.product-card .product-btn.primary {
+    background: var(--woodstock-red);
+    color: var(--woodstock-white);
+}
+
+.product-card .product-btn.primary:hover {
+    background: #d32535;
+}
+
+.product-card .product-btn.secondary {
+    background: rgba(0, 33, 71, 0.1);
+    color: var(--woodstock-navy);
+    border: 1px solid var(--woodstock-navy);
+}
+
+.product-card .product-btn.secondary:hover {
+    background: var(--woodstock-navy);
+    color: var(--woodstock-white);
+}
+
+/* Carousel Responsive */
+@media (max-width: 768px) {
+    .product-card {
+        min-width: 240px;
+        max-width: 280px;
+    }
+    
+    .product-card .product-info {
+        padding: 1rem;
+    }
+    
+    .product-carousel .carousel-btn {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .product-card .product-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
 /* Animations */
 .function-result {
     animation: slideInUp 0.3s ease-out;
@@ -450,7 +692,8 @@ Beautiful, rich UI components for function results
 .order-item:hover,
 .order-line-item:hover,
 .stat-item:hover,
-.category-item:hover {
+.category-item:hover,
+.product-card:hover {
     transform: translateY(-2px);
     transition: transform 0.2s ease;
 }

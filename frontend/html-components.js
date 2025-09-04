@@ -143,17 +143,34 @@ class WoodstockComponents {
         const orders = data.data.entry;
         const ordersHtml = orders.map(order => {
             const statusClass = this.getOrderStatusClass(order.status);
+            const statusText = order.status_text || this.getOrderStatusText(order.status);
             const total = parseFloat(order.ordertotal || 0).toFixed(2);
+            const orderDate = order.formatted_date || this.formatDate(order.orderdate);
+            const deliveryDate = order.formatted_delivery || this.formatDate(order.deliverydate);
             
             return `
                 <div class="order-item">
                     <div class="order-header">
                         <span class="order-id">#${order.orderid}</span>
-                        <span class="order-status ${statusClass}">${this.getOrderStatusText(order.status)}</span>
+                        <span class="order-status ${statusClass}">${statusText}</span>
                     </div>
                     <div class="order-details">
-                        <div class="order-date">${this.formatDate(order.orderdate)}</div>
-                        <div class="order-total">$${total}</div>
+                        <div class="order-info">
+                            <div class="order-date">
+                                <i class="fas fa-calendar"></i>
+                                <span>Ordered: ${orderDate}</span>
+                            </div>
+                            ${order.deliverydate && order.deliverydate !== 'N/A' ? `
+                            <div class="delivery-date">
+                                <i class="fas fa-truck"></i>
+                                <span>Delivered: ${deliveryDate}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="order-total">
+                            <span class="total-label">Total:</span>
+                            <span class="total-amount">$${total}</span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -163,7 +180,7 @@ class WoodstockComponents {
             <div class="function-result orders-list">
                 <div class="card-header">
                     <i class="fas fa-shopping-bag"></i>
-                    <span>Order History (${orders.length} orders)</span>
+                    <span>Order History (${orders.length} order${orders.length > 1 ? 's' : ''})</span>
                 </div>
                 <div class="orders-container">
                     ${ordersHtml}
@@ -465,6 +482,12 @@ class WoodstockComponents {
         const recommendations = data.data || {};
         const products = recommendations.products || [];
 
+        // If we have Magento product data, use the carousel
+        if (products.length > 0 && window.woodstockCarousel) {
+            return window.woodstockCarousel.createProductCarousel(products, 'Recommended Products');
+        }
+
+        // Fallback to simple grid
         const productsHtml = products.slice(0, 4).map(product => `
             <div class="recommendation-item">
                 <div class="product-name">${product.name || 'Product'}</div>

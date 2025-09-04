@@ -636,20 +636,28 @@ class WoodstockChat {
             // Extract orders list - handle actual format
             const orders = [];
             
-            // Pattern 1: "Order ID 0710544II27" or "Latest order: Order ID 0710544II27"
-            const orderNumberMatch = text.match(/(?:Order.*ID|Latest.*order.*Order.*ID)\s*:?\s*([A-Z0-9]+)/i);
-            const orderTotalMatch = text.match(/Total:\s*\$([0-9,.]+)/i);
+            // Extract ALL order information from bullet points
+            const orderIdMatch = text.match(/Order ID:\s*([A-Z0-9]+)/i);
+            const orderDateMatch = text.match(/Order Date:\s*([^\n]+)/i);
+            const orderTotalMatch = text.match(/Order Total:\s*\$([0-9,.]+)/i);
             const statusMatch = text.match(/Status:\s*([^\n]+)/i);
-            const orderDateMatch = text.match(/(?:Order.*date|date):\s*([^\n]+)/i);
-            const deliveryDateMatch = text.match(/Delivery.*date:\s*([^\n]+)/i);
+            const deliveryDateMatch = text.match(/Delivery Date:\s*([^\n]+)/i);
             
-            if (orderNumberMatch) {
+            if (orderIdMatch || orderTotalMatch) {
+                const statusText = statusMatch ? statusMatch[1].trim() : 'Unknown';
+                const statusCode = statusText.toLowerCase().includes('fulfilled') || statusText.toLowerCase().includes('complete') ? 'F' : 
+                                 statusText.toLowerCase().includes('pending') ? 'P' : 
+                                 statusText.toLowerCase().includes('shipped') ? 'S' : 'P';
+                
                 orders.push({
-                    orderid: orderNumberMatch[1],
+                    orderid: orderIdMatch ? orderIdMatch[1] : 'N/A',
                     ordertotal: orderTotalMatch ? orderTotalMatch[1] : '0.00',
-                    status: statusMatch ? (statusMatch[1].toLowerCase().includes('complete') ? 'F' : 'P') : 'F',
+                    status: statusCode,
+                    status_text: statusText,
                     orderdate: orderDateMatch ? orderDateMatch[1] : new Date().toISOString(),
-                    deliverydate: deliveryDateMatch ? deliveryDateMatch[1] : ''
+                    deliverydate: deliveryDateMatch ? deliveryDateMatch[1] : 'N/A',
+                    formatted_date: orderDateMatch ? this.formatDate(orderDateMatch[1]) : 'N/A',
+                    formatted_delivery: deliveryDateMatch ? this.formatDate(deliveryDateMatch[1]) : 'N/A'
                 });
             }
             
@@ -692,6 +700,21 @@ class WoodstockChat {
         console.log('🔍 Extracted data for', functionName, ':', data);
         console.log('📝 Original text:', text.substring(0, 200) + '...');
         return data;
+    }
+
+    formatDate(dateString) {
+        if (!dateString || dateString === 'N/A') return 'N/A';
+        try {
+            // Handle various date formats
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch {
+            return dateString;
+        }
     }
 
     formatAsHTML(text, functionName = null, functionData = null) {
