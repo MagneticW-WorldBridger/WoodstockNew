@@ -1386,6 +1386,21 @@ Found {len(formatted_products)} {query} products:
         print(f"❌ Error in search_magento_products: {error}")
         return f"❌ Error searching products: {str(error)}"
 
+@agent.tool
+async def show_sectional_products(ctx: RunContext) -> str:
+    """Show available sectional products with carousel"""
+    return await search_magento_products(ctx, "sectional", 12)
+
+@agent.tool
+async def show_recliner_products(ctx: RunContext) -> str:
+    """Show available recliner products with carousel"""
+    return await search_magento_products(ctx, "recliner", 12)
+
+@agent.tool
+async def show_dining_products(ctx: RunContext) -> str:
+    """Show available dining room products with carousel"""
+    return await search_magento_products(ctx, "dining", 12)
+
 # Startup and shutdown events
 async def startup_event():
     """Initialize services on startup"""
