@@ -418,9 +418,10 @@ class WoodstockChat {
                         
                         if (data === '[DONE]') {
                             console.log('✅ Streaming completed');
-                            // Format final response as HTML
+                            // NOW render components with complete response
                             if (fullResponse.trim()) {
-                                contentDiv.innerHTML = this.formatAsHTML(fullResponse);
+                                console.log('🎨 Rendering final components for complete response');
+                                this.detectAndRenderComponents(fullResponse, contentDiv);
                                 this.messageHistory.push({ role: 'assistant', content: fullResponse });
                                 console.log('💾 Added assistant response to history');
                             }
@@ -433,11 +434,11 @@ class WoodstockChat {
                             
                             if (delta?.content) {
                                 // Accumulate delta text
-                                                            fullResponse += delta.content;
+                                fullResponse += delta.content;
                             
-                            // Check if response contains function call indicators
-                            this.detectAndRenderComponents(fullResponse, contentDiv);
-                            this.scrollToBottom();
+                                // Only show text during streaming (components will render at the end)
+                                contentDiv.innerHTML = this.formatAsHTML(fullResponse);
+                                this.scrollToBottom();
                             }
                             
                         } catch (parseError) {
@@ -455,12 +456,42 @@ class WoodstockChat {
     detectAndRenderComponents(fullResponse, contentDiv) {
         // Check if this response contains function call results
         const functionPatterns = [
-            { pattern: /(?:found|located|here.*profile|customer.*profile)/i, func: 'getCustomerByPhone', trigger: /Name:\s*([^\n]+)|Phone:\s*([^\n]+)|Email:\s*([^\n]+)/i },
-            { pattern: /order.*details|itemized|breakdown.*order/i, func: 'getDetailsByOrder', trigger: /Order.*ID:\s*([A-Z0-9]+)|Total:\s*\$[\d,]+/i },
-            { pattern: /order.*history|orders.*found|orders.*customer/i, func: 'getOrdersByCustomer', trigger: /Order.*#\s*[A-Z0-9]+|Status:.*[A-Za-z]+/i },
-            { pattern: /customer.*patterns|analytics|spending|total.*spent/i, func: 'analyzeCustomerPatterns', trigger: /Total.*Spent:\s*\$[\d,]+|favorite.*categories/i },
-            { pattern: /customer.*journey|complete.*profile|order.*history/i, func: 'getCustomerJourney', trigger: /Customer.*journey|timeline|history/i },
-            { pattern: /appointment.*scheduled|calendar.*event|meeting.*created/i, func: 'google_calendar-create-event', trigger: /appointment.*scheduled|event.*created/i }
+            // Customer lookup patterns
+            { 
+                pattern: /(?:customer|profile|found|located)/i, 
+                func: 'getCustomerByPhone', 
+                trigger: /(?:Name:\s*[^\n]+|Phone:\s*[^\n]+|Email:\s*[^\n]+|Address:\s*[^\n]+)/i 
+            },
+            // Order details patterns - based on your screenshots
+            { 
+                pattern: /(?:order.*details|itemized|breakdown|here are the details)/i, 
+                func: 'getDetailsByOrder', 
+                trigger: /(?:Order.*(?:Number|ID):\s*[A-Z0-9]+|Total:\s*\$[\d,]+\.?\d*|Delivery.*Date)/i 
+            },
+            // Order history patterns
+            { 
+                pattern: /(?:order.*history|orders.*found|you have.*order)/i, 
+                func: 'getOrdersByCustomer', 
+                trigger: /(?:Order.*(?:Number|ID):\s*[A-Z0-9]+|Status:\s*[A-Za-z]+|Order.*Date)/i 
+            },
+            // Analytics patterns - based on your screenshots
+            { 
+                pattern: /(?:patterns|analytics|spending|overview.*shopping|placed.*order)/i, 
+                func: 'analyzeCustomerPatterns', 
+                trigger: /(?:\$[\d,]+\.?\d*|favorite.*(?:items|categories)|high-value.*customer)/i 
+            },
+            // Customer journey
+            { 
+                pattern: /(?:customer.*journey|complete.*profile|timeline)/i, 
+                func: 'getCustomerJourney', 
+                trigger: /(?:journey|timeline|history)/i 
+            },
+            // Calendar events
+            { 
+                pattern: /(?:appointment.*scheduled|calendar.*event|meeting.*created)/i, 
+                func: 'google_calendar-create-event', 
+                trigger: /(?:appointment.*scheduled|event.*created)/i 
+            }
         ];
 
         let detectedFunction = null;
@@ -502,14 +533,20 @@ class WoodstockChat {
         const data = { data: { entry: [] } };
 
         if (functionName === 'getCustomerByPhone' || functionName === 'getCustomerByEmail') {
-            // Extract customer data
+            // Extract customer data - handle various formats
             const nameMatch = text.match(/Name:\s*([^\n]+)/i);
             const phoneMatch = text.match(/Phone:\s*([^\n]+)/i);
             const emailMatch = text.match(/Email:\s*([^\n]+)/i);
             const addressMatch = text.match(/Address:\s*([^\n]+)/i);
             const customerIdMatch = text.match(/Customer ID:\s*([^\n]+)/i);
 
-            if (nameMatch || phoneMatch || emailMatch) {
+            // Also try to extract from "You have one order" format
+            const orderIdMatch = text.match(/Order.*(?:Number|ID):\s*([A-Z0-9]+)/i);
+            const orderDateMatch = text.match(/Order Date:\s*([^\n]+)/i);
+            const statusMatch = text.match(/Status:\s*([^\n]+)/i);
+            const totalMatch = text.match(/Total:\s*\$([0-9,.]+)/i);
+
+            if (nameMatch || phoneMatch || emailMatch || orderIdMatch) {
                 const nameParts = nameMatch ? nameMatch[1].split(' ') : ['', ''];
                 data.data.entry = [{
                     firstname: nameParts[0] || '',
@@ -517,7 +554,14 @@ class WoodstockChat {
                     phonenumber: phoneMatch ? phoneMatch[1].trim() : '',
                     email: emailMatch ? emailMatch[1].trim() : '',
                     address: addressMatch ? addressMatch[1].trim() : '',
-                    customerid: customerIdMatch ? customerIdMatch[1].trim() : ''
+                    customerid: customerIdMatch ? customerIdMatch[1].trim() : '',
+                    // Include order info if present
+                    recent_order: orderIdMatch ? {
+                        orderid: orderIdMatch[1],
+                        orderdate: orderDateMatch ? orderDateMatch[1] : '',
+                        status: statusMatch ? statusMatch[1] : '',
+                        total: totalMatch ? totalMatch[1] : ''
+                    } : null
                 }];
             }
         }
@@ -634,7 +678,10 @@ class WoodstockChat {
         contentDiv.className = 'message-content';
         
         if (role === 'assistant') {
-            contentDiv.innerHTML = content ? this.formatAsHTML(content) : '';
+            if (content) {
+                // Use component detection for assistant messages
+                this.detectAndRenderComponents(content, contentDiv);
+            }
         } else {
             contentDiv.textContent = content;
         }
