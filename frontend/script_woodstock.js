@@ -656,6 +656,9 @@ class WoodstockChat {
     extractDataFromResponse(text, functionName) {
         // Extract structured data from text response based on function type
         const data = { data: { entry: [] } };
+        
+        console.log(`🔍 Extracting data for function: ${functionName}`);
+        console.log(`📝 Text to parse: ${text.substring(0, 200)}...`);
 
         if (functionName === 'getCustomerByPhone' || functionName === 'getCustomerByEmail' || functionName === 'get_customer_by_phone' || functionName === 'get_customer_by_email') {
             // ACTUAL BACKEND RESPONSE: "Janice Daniels has 1 order on record" or "Hello! I see you're looking for information related to your own account with the email jdan4sure@yahoo.com"
@@ -721,9 +724,11 @@ class WoodstockChat {
             
             if (orderNumberMatch || totalAmountMatch) {
                 const statusText = statusMatch ? statusMatch[1].trim() : 'Unknown';
-                const statusCode = statusText.toLowerCase().includes('completed') ? 'F' : 
+                const statusCode = statusText.toLowerCase().includes('completed') || statusText.toLowerCase().includes('fulfilled') ? 'F' : 
                                  statusText.toLowerCase().includes('pending') ? 'P' : 
                                  statusText.toLowerCase().includes('shipped') ? 'S' : 'P';
+                
+                console.log(`✅ Found order: ${orderNumberMatch ? orderNumberMatch[1] : 'N/A'} - $${totalAmountMatch ? totalAmountMatch[1] : '0.00'}`);
                 
                 orders.push({
                     orderid: orderNumberMatch ? orderNumberMatch[1] : 'N/A',
@@ -735,6 +740,9 @@ class WoodstockChat {
                     formatted_date: orderDateMatch ? orderDateMatch[1] : 'N/A',
                     formatted_delivery: deliveryDateMatch ? deliveryDateMatch[1] : 'N/A'
                 });
+            } else {
+                console.log('❌ No order patterns matched!');
+                console.log('🔍 Looking for: Order Number, Total Amount, Status, etc.');
             }
             
             // Pattern 2: Multiple orders format (fallback)
