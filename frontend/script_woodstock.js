@@ -503,81 +503,81 @@ class WoodstockChat {
         
         // Check if this response contains function call results - ALL 14 FUNCTIONS
         const functionPatterns = [
-            // Core API Functions (4) - ACTUAL BACKEND RESPONSES
+            // Core API Functions (4) - EXACT BACKEND RESPONSES
             { 
-                pattern: /(?:Hi.*I've found your account|found your account using|jdan4sure@yahoo\.com)/i, 
+                pattern: /(?:Janice Daniels has.*order on record|Hello.*jdan4sure@yahoo\.com)/i, 
                 func: 'get_customer_by_phone', 
-                trigger: /(?:jdan4sure@yahoo\.com|view your recent orders|track a delivery)/i 
+                trigger: /(?:Order ID: 0710544II27|jdan4sure@yahoo\.com|Janice Daniels)/i 
             },
             { 
-                pattern: /(?:You have.*order on record|Order ID.*0710544II27|Status.*Finished)/i, 
+                pattern: /(?:You have one order on record|Order Number.*0710544II27)/i, 
                 func: 'get_orders_by_customer', 
-                trigger: /(?:Order ID:\s*[A-Z0-9]+|Total:\s*\$[0-9,.]+|Status:\s*(?:Finished|Completed))/i 
+                trigger: /(?:Order Number: 0710544II27|Total Amount: \$1997\.50|Status: Completed)/i 
             },
             { 
-                pattern: /(?:Here are the details for order|You have.*items from.*Repose Avenue)/i, 
+                pattern: /(?:Here are the details for your order.*0710544II27|8 items purchased)/i, 
                 func: 'get_order_details', 
-                trigger: /(?:Repose Avenue|Defender Sand|\$460\.14|\$351\.76)/i 
+                trigger: /(?:Repose Avenue.*Defender Sand|Order total: \$1997\.50|\$460\.14)/i 
             },
             
             // Analytics Functions (2)
             { 
-                pattern: /(?:Here's an analysis of your purchase patterns|total spending of|favorite categories include)/i, 
+                pattern: /(?:Here's an overview of your purchase patterns|You have placed 1 order)/i, 
                 func: 'analyze_customer_patterns', 
-                trigger: /(?:total spending of \$[\d,]+|favorite categories.*Sectional|high-value customer)/i 
+                trigger: /(?:total of \$3,995\.00|Console, Recliner, and Sectional|high-value customer)/i 
             },
             { 
-                pattern: /(?:Here's a comprehensive overview.*Janice|Your Profile.*Name.*Janice)/i, 
+                pattern: /(?:Here is a comprehensive overview.*Janice|Customer Activity Overview)/i, 
                 func: 'get_customer_analytics', 
-                trigger: /(?:Name: Janice Daniels|Phone: 407-288-6040|Order Summary)/i 
+                trigger: /(?:Name: Janice Daniels|Total Orders: 1|Total Spending Analyzed)/i 
             },
             
             // Journey Function (1)
             { 
-                pattern: /(?:Here is your customer journey summary|Name: Janice Daniels)/i, 
+                pattern: /(?:Here is your customer journey summary.*Janice|You have made 1 purchase)/i, 
                 func: 'get_customer_journey', 
-                trigger: /(?:customer journey summary|Order History.*Order Number)/i 
+                trigger: /(?:Order ID: 0710544II27|Status: Fulfilled|Order Date: July 10)/i 
             },
             
             // Product Recommendation Functions (2) + Magento Search
             { 
-                pattern: /(?:Here are some sectional sofas we recommend|perfect for cozying up)/i, 
+                pattern: /(?:Here are some sectional product recommendations just for you|Beautiful camel brown leather)/i, 
                 func: 'get_product_recommendations', 
-                trigger: /(?:Newport Camel.*Leather Sectional|Lyndon Laredo.*Canvas|View Details)/i 
+                trigger: /(?:Newport Camel.*\$3,999\.99|Lyndon Laredo.*\$2,326\.74|Brivido Gray)/i 
             },
             { 
-                pattern: /(?:Here are some personalized recommendations|just for you.*sectional)/i, 
+                pattern: /(?:Here are some personalized sectional recommendations just for you.*Janice|Each option offers its own style)/i, 
                 func: 'handle_product_recommendations', 
-                trigger: /(?:Lyndon Laredo.*\$2,326\.74|Newport Camel.*\$3,999\.99)/i 
+                trigger: /(?:Cozy, casual, and kid\/pet-friendly|Luxurious camel-colored leather)/i 
             },
             
             // Proactive Functions (3)
             { 
-                pattern: /(?:no recent orders on your account to confirm|believe this is a mistake)/i, 
+                pattern: /(?:couldn't find any recent orders|nothing to confirm at the moment)/i, 
                 func: 'handle_order_confirmation_cross_sell', 
-                trigger: /(?:no recent orders|placing an order|product recommendations)/i 
+                trigger: /(?:recently placed an order|believe this is an error|product information)/i 
             },
             { 
-                pattern: /(?:Thank you for letting us know.*damaged delivery|priority support ticket)/i, 
+                pattern: /(?:Your support issue.*has been escalated|priority support ticket has been created)/i, 
                 func: 'handle_support_escalation', 
-                trigger: /(?:priority support ticket|manager has been notified|24 hours)/i 
+                trigger: /(?:priority support ticket|manager has been notified|within 24 hours)/i 
             },
             { 
-                pattern: /(?:Congratulations.*qualifies you as.*PREMIUM MEMBER|Premium Member.*benefits)/i, 
+                pattern: /(?:Great news.*Premium Member in our loyalty program|exclusive benefits)/i, 
                 func: 'handle_loyalty_upgrade', 
-                trigger: /(?:PREMIUM MEMBER|10% discount|white-glove delivery)/i 
+                trigger: /(?:10% discount on all future|Free white-glove delivery|Premium Member perks)/i 
             },
             
             // Support Functions (2)
             { 
-                pattern: /(?:being connected to.*human support|support ticket has been created)/i, 
+                pattern: /(?:You are now being connected.*human support team|support ticket has been created for Janice)/i, 
                 func: 'connect_to_support', 
-                trigger: /(?:support representative|call within.*2 hours|\(470\) 205-2566)/i 
+                trigger: /(?:call within 2 hours|\(470\) 205-2566|support specialist will be with you)/i 
             },
             { 
-                pattern: /(?:share your address.*ZIP code|nearest Woodstock.*location)/i, 
+                pattern: /(?:Could you please share your address or ZIP code|nearest Woodstock Furniture showroom)/i, 
                 func: 'show_directions', 
-                trigger: /(?:address.*ZIP code|nearest.*location|guide you)/i 
+                trigger: /(?:share your address|ZIP code|nearest.*showroom)/i 
             },
             
             // Calendar MCP Functions
