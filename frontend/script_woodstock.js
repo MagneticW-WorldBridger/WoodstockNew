@@ -475,6 +475,32 @@ class WoodstockChat {
     }
 
     detectAndRenderComponents(fullResponse, contentDiv) {
+        // PRIORITY: Check for CAROUSEL_DATA first (Magento products)
+        if (fullResponse.includes('CAROUSEL_DATA:')) {
+            console.log('🛒 PRIORITY: CAROUSEL_DATA detected - rendering product carousel');
+            const carouselMatch = fullResponse.match(/\*\*CAROUSEL_DATA:\*\* (.+)/);
+            if (carouselMatch) {
+                try {
+                    const carouselData = JSON.parse(carouselMatch[1]);
+                    const componentHTML = window.woodstockComponents.renderFunctionResult('search_magento_products', { data: carouselData });
+                    contentDiv.innerHTML = componentHTML;
+                    
+                    // Initialize carousel if needed
+                    if (window.woodstockCarousel) {
+                        setTimeout(() => {
+                            const carouselId = contentDiv.querySelector('[id^="carousel-"]')?.id;
+                            if (carouselId) {
+                                window.woodstockCarousel.initializeCarousel(carouselId);
+                            }
+                        }, 100);
+                    }
+                    return;
+                } catch (error) {
+                    console.error('❌ CAROUSEL_DATA parsing failed:', error);
+                }
+            }
+        }
+        
         // Check if this response contains function call results - ALL 14 FUNCTIONS
         const functionPatterns = [
             // Core API Functions (4)
