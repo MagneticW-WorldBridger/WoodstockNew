@@ -732,9 +732,16 @@ class WoodstockChat {
             // ACTUAL BACKEND FORMAT: "Order Number: 0710544II27" etc.
             const orderNumberMatch = text.match(/(?:Order Number|Order ID):\s*([A-Z0-9]+)/i);
             const orderDateMatch = text.match(/Order Date:\s*([^\n]+)/i);
-            const totalAmountMatch = text.match(/(?:Total Amount|Order Total):\s*\$([0-9,.]+)/i);
+            const totalAmountMatch = text.match(/(?:Total Amount|Order Total|Total):\s*\$([0-9,.]+)/i);
             const statusMatch = text.match(/(?:Status|Order Status):\s*([^\n]+)/i);
             const deliveryDateMatch = text.match(/Delivery Date:\s*([^\n]+)/i);
+            
+            console.log('🔍 Pattern matching results:');
+            console.log('📋 Order Number match:', orderNumberMatch);
+            console.log('💰 Total match:', totalAmountMatch);
+            console.log('📅 Date match:', orderDateMatch);
+            console.log('📋 Status match:', statusMatch);
+            console.log('🚚 Delivery match:', deliveryDateMatch);
             
             if (orderNumberMatch || totalAmountMatch) {
                 const statusText = statusMatch ? statusMatch[1].trim() : 'Unknown';
