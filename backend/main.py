@@ -66,16 +66,9 @@ mcp_calendar_url = os.getenv("MCP_CALENDAR_LOCAL_URL", "http://localhost:3333")
 print(f"🔌 MCP Calendar URL configured: {mcp_calendar_url}")
 # --- End MCP Integration ---
 
-# Initialize MCP Calendar Server for agent toolset - SAFE
+# Initialize MCP Calendar Server for agent toolset - DISABLED TO FIX TASKGROUP ERROR
 calendar_server = None
-if MCP_AVAILABLE and MCPServerSSE is not None:
-    try:
-        calendar_server = MCPServerSSE(url=mcp_calendar_url)
-        print(f"🔌 MCP Calendar server initialized for agent toolset")
-    except Exception as e:
-        print(f"⚠️ MCP Calendar server failed to initialize: {e}")
-else:
-    print("ℹ️ Skipping MCP Calendar (module not installed/compatible)")
+print("ℹ️ MCP Calendar disabled (TaskGroup error fix - no server at localhost:3333)")
 
 # Initialize PydanticAI agent with version-adaptive parameters
 print("🔧 Initializing PydanticAI agent with memory...")
