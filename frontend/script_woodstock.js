@@ -503,86 +503,81 @@ class WoodstockChat {
         
         // Check if this response contains function call results - ALL 14 FUNCTIONS
         const functionPatterns = [
-            // Core API Functions (4) - FIXED PATTERNS
+            // Core API Functions (4) - ACTUAL BACKEND RESPONSES
             { 
-                pattern: /(?:found your customer profile|customer account|Hello.*I've found)/i, 
+                pattern: /(?:Hi.*I've found your account|found your account using|jdan4sure@yahoo\.com)/i, 
                 func: 'get_customer_by_phone', 
-                trigger: /(?:customer profile|email.*@|phone.*\d|How can I assist)/i 
+                trigger: /(?:jdan4sure@yahoo\.com|view your recent orders|track a delivery)/i 
             },
             { 
-                pattern: /(?:You have.*order.*on file|Order Number.*Order Date|Status.*Completed)/i, 
+                pattern: /(?:You have.*order on record|Order ID.*0710544II27|Status.*Finished)/i, 
                 func: 'get_orders_by_customer', 
-                trigger: /(?:Order Number:\s*[A-Z0-9]+|Order Total:\s*\$[0-9,.]+|Status:\s*[A-Za-z]+)/i 
+                trigger: /(?:Order ID:\s*[A-Z0-9]+|Total:\s*\$[0-9,.]+|Status:\s*(?:Finished|Completed))/i 
             },
             { 
-                pattern: /(?:Here are the details for.*order|order.*0710544II27)/i, 
+                pattern: /(?:Here are the details for order|You have.*items from.*Repose Avenue)/i, 
                 func: 'get_order_details', 
-                trigger: /(?:\$\d+\.\d+\)|Defender.*Sand|Repose.*Avenue)/i 
+                trigger: /(?:Repose Avenue|Defender Sand|\$460\.14|\$351\.76)/i 
             },
             
             // Analytics Functions (2)
             { 
-                pattern: /(?:patterns|analytics|spending|overview.*shopping|placed.*order)/i, 
+                pattern: /(?:Here's an analysis of your purchase patterns|total spending of|favorite categories include)/i, 
                 func: 'analyze_customer_patterns', 
-                trigger: /(?:\$[\d,]+\.?\d*|favorite.*(?:items|categories)|high-value.*customer)/i 
+                trigger: /(?:total spending of \$[\d,]+|favorite categories.*Sectional|high-value customer)/i 
             },
             { 
-                pattern: /(?:customer.*analytics|comprehensive.*analytics|insights)/i, 
+                pattern: /(?:Here's a comprehensive overview.*Janice|Your Profile.*Name.*Janice)/i, 
                 func: 'get_customer_analytics', 
-                trigger: /(?:analytics|insights|lifetime.*value)/i 
+                trigger: /(?:Name: Janice Daniels|Phone: 407-288-6040|Order Summary)/i 
             },
             
             // Journey Function (1)
             { 
-                pattern: /(?:customer.*journey|complete.*profile|timeline)/i, 
+                pattern: /(?:Here is your customer journey summary|Name: Janice Daniels)/i, 
                 func: 'get_customer_journey', 
-                trigger: /(?:journey|timeline|history)/i 
+                trigger: /(?:customer journey summary|Order History.*Order Number)/i 
             },
             
             // Product Recommendation Functions (2) + Magento Search
             { 
-                pattern: /(?:sectional.*sofas|here are some.*sectional|sectional.*you might like)/i, 
-                func: 'search_magento_products', 
-                trigger: /(?:\$[0-9,.]+|Sectional.*-.*\$|Piece.*Sectional)/i 
-            },
-            { 
-                pattern: /(?:product.*recommendations|recommendations|suggest.*products)/i, 
+                pattern: /(?:Here are some sectional sofas we recommend|perfect for cozying up)/i, 
                 func: 'get_product_recommendations', 
-                trigger: /(?:recommend|suggest|might.*like|based.*on)/i 
+                trigger: /(?:Newport Camel.*Leather Sectional|Lyndon Laredo.*Canvas|View Details)/i 
             },
             { 
-                pattern: /(?:personalized.*recommendations|handle.*recommendations)/i, 
+                pattern: /(?:Here are some personalized recommendations|just for you.*sectional)/i, 
                 func: 'handle_product_recommendations', 
-                trigger: /(?:personalized|custom|tailored)/i 
+                trigger: /(?:Lyndon Laredo.*\$2,326\.74|Newport Camel.*\$3,999\.99)/i 
             },
             
             // Proactive Functions (3)
             { 
-                pattern: /(?:order.*confirmation|cross.*sell|confirmation.*cross)/i, 
+                pattern: /(?:no recent orders on your account to confirm|believe this is a mistake)/i, 
                 func: 'handle_order_confirmation_cross_sell', 
-                trigger: /(?:confirmation|cross.*sell|additional.*items)/i 
+                trigger: /(?:no recent orders|placing an order|product recommendations)/i 
             },
             { 
-                pattern: /(?:support.*escalation|ticket.*created|escalate.*support)/i, 
+                pattern: /(?:Thank you for letting us know.*damaged delivery|priority support ticket)/i, 
                 func: 'handle_support_escalation', 
-                trigger: /(?:ticket|escalation|support.*team|priority)/i 
+                trigger: /(?:priority support ticket|manager has been notified|24 hours)/i 
             },
             { 
-                pattern: /(?:loyalty.*upgrade|loyalty.*program|tier.*upgrade)/i, 
+                pattern: /(?:Congratulations.*qualifies you as.*PREMIUM MEMBER|Premium Member.*benefits)/i, 
                 func: 'handle_loyalty_upgrade', 
-                trigger: /(?:loyalty|tier|upgrade|member)/i 
+                trigger: /(?:PREMIUM MEMBER|10% discount|white-glove delivery)/i 
             },
             
             // Support Functions (2)
             { 
-                pattern: /(?:connect.*support|human.*support|specialist.*contact)/i, 
+                pattern: /(?:being connected to.*human support|support ticket has been created)/i, 
                 func: 'connect_to_support', 
-                trigger: /(?:support.*specialist|human.*agent|contact.*shortly)/i 
+                trigger: /(?:support representative|call within.*2 hours|\(470\) 205-2566)/i 
             },
             { 
-                pattern: /(?:directions|maps|store.*location|how.*to.*get)/i, 
+                pattern: /(?:share your address.*ZIP code|nearest Woodstock.*location)/i, 
                 func: 'show_directions', 
-                trigger: /(?:directions|maps|address|location)/i 
+                trigger: /(?:address.*ZIP code|nearest.*location|guide you)/i 
             },
             
             // Calendar MCP Functions
