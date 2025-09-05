@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 ALL 14 LOFT COMPONENTS - EXACT UI PREVIEW</title>
+    <link rel="stylesheet" href="frontend/style_woodstock.css">
+    <link rel="stylesheet" href="frontend/components.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+            font-family: 'Inter', sans-serif; 
+            padding: 2rem; 
+        }
+        .component-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            background: rgba(255,255,255,0.8);
+            border-radius: 12px;
+            border-left: 4px solid var(--woodstock-red);
+        }
+        .component-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--woodstock-navy);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .test-data {
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 ALL 14 LOFT COMPONENTS - EXACT UI PREVIEW</h1>
+    <p>These are the <strong>EXACT</strong> components your code renders based on backend responses:</p>
+
+    <!-- 1. CUSTOMER CARD -->
+    <div class="component-section">
+        <div class="component-title">1️⃣ Customer Card (get_customer_by_phone)</div>
+        <div class="test-data">Backend returns: "Janice Daniels has 1 order on record"</div>
+        <div class="function-result customer-card">
+            <div class="card-header">
+                <i class="fas fa-user-circle"></i>
+                <span>Customer Profile</span>
+            </div>
+            <div class="customer-info">
+                <div class="customer-name">Janice Daniels</div>
+                <div class="customer-details">
+                    <div class="detail-item">
+                        <i class="fas fa-phone"></i>
+                        <span>407-288-6040</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-envelope"></i>
+                        <span>jdan4sure@yahoo.com</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>2010 Moonlight Path, Covington, GA 30016</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ORDERS LIST -->
+    <div class="component-section">
+        <div class="component-title">2️⃣ Orders List (get_orders_by_customer)</div>
+        <div class="test-data">Backend returns: "You have one order on record: Order Number: 0710544II27..."</div>
+        <div class="function-result orders-list">
+            <div class="card-header">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Order History (1 order)</span>
+            </div>
+            <div class="orders-container">
+                <div class="order-item">
+                    <div class="order-header">
+                        <span class="order-id">#0710544II27</span>
+                        <span class="order-status status-finalized">Completed</span>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-info">
+                            <div class="order-date">
+                                <i class="fas fa-calendar"></i>
+                                <span>Ordered: July 10, 2025</span>
+                            </div>
+                            <div class="delivery-date">
+                                <i class="fas fa-truck"></i>
+                                <span>Delivered: July 12, 2025</span>
+                            </div>
+                        </div>
+                        <div class="order-total">
+                            <span class="total-label">Total:</span>
+                            <span class="total-amount">$1997.50</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ORDER DETAILS -->
+    <div class="component-section">
+        <div class="component-title">3️⃣ Order Details (get_order_details)</div>
+        <div class="test-data">Backend returns: "Here are the details for your order 0710544II27: 8 items purchased..."</div>
+        <div class="function-result order-details">
+            <div class="card-header">
+                <i class="fas fa-list"></i>
+                <span>Order Details</span>
+            </div>
+            <div class="items-container">
+                <div class="order-line-item">
+                    <div class="item-info">
+                        <div class="item-name">Repose Avenue RAF Dual Power Recliner - Defender Sand</div>
+                        <div class="item-id">Product ID: N/A</div>
+                    </div>
+                    <div class="item-details">
+                        <div class="item-qty">Qty: 1</div>
+                        <div class="item-price">$460.14</div>
+                    </div>
+                </div>
+                <div class="order-line-item">
+                    <div class="item-info">
+                        <div class="item-name">Repose Avenue LAF Dual Power Recliner - Defender Sand</div>
+                        <div class="item-id">Product ID: N/A</div>
+                    </div>
+                    <div class="item-details">
+                        <div class="item-qty">Qty: 1</div>
+                        <div class="item-price">$460.14</div>
+                    </div>
+                </div>
+                <div class="order-total">
+                    <strong>Total: $1997.50</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. CUSTOMER PATTERNS -->
+    <div class="component-section">
+        <div class="component-title">4️⃣ Customer Patterns (analyze_customer_patterns)</div>
+        <div class="test-data">Backend returns: "Here's an overview of your purchase patterns: You have placed 1 order for a total of $3,995.00..."</div>
+        <div class="function-result customer-patterns">
+            <div class="card-header">
+                <i class="fas fa-chart-line"></i>
+                <span>Customer Patterns</span>
+            </div>
+            <div class="patterns-content">
+                <div class="patterns-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">$3,995.00</span>
+                        <span class="stat-label">Total Spent</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Orders</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">$3,995.00</span>
+                        <span class="stat-label">Avg Order</span>
+                    </div>
+                </div>
+                <div class="favorite-categories">
+                    <h4>Favorite Categories</h4>
+                    <div class="categories-list">
+                        <div class="category-item">
+                            <span class="category-name">Console</span>
+                            <span class="category-count">1 orders</span>
+                        </div>
+                        <div class="category-item">
+                            <span class="category-name">Recliner</span>
+                            <span class="category-count">1 orders</span>
+                        </div>
+                        <div class="category-item">
+                            <span class="category-name">Sectional</span>
+                            <span class="category-count">1 orders</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. CUSTOMER ANALYTICS -->
+    <div class="component-section">
+        <div class="component-title">5️⃣ Customer Analytics (get_customer_analytics)</div>
+        <div class="test-data">Backend returns: "Here is a comprehensive overview of your customer profile and analytics, Janice..."</div>
+        <div class="function-result customer-analytics">
+            <div class="card-header">
+                <i class="fas fa-chart-bar"></i>
+                <span>Customer Analytics</span>
+            </div>
+            <div class="analytics-content">
+                <div class="analytics-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">$3,995.00</span>
+                        <span class="stat-label">Lifetime Value</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">Total Orders</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">$3,995.00</span>
+                        <span class="stat-label">Average Order</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. CUSTOMER JOURNEY -->
+    <div class="component-section">
+        <div class="component-title">6️⃣ Customer Journey (get_customer_journey)</div>
+        <div class="test-data">Backend returns: "Here is your customer journey summary, Janice..."</div>
+        <div class="function-result customer-journey">
+            <div class="card-header">
+                <i class="fas fa-route"></i>
+                <span>Customer Journey</span>
+            </div>
+            <div class="journey-content">
+                <div class="journey-summary">
+                    <div class="customer-name">Janice Daniels</div>
+                    <div class="journey-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">1</span>
+                            <span class="stat-label">Orders</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">$1997.50</span>
+                            <span class="stat-label">Total Spent</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="journey-orders">
+                    <h4>Order Timeline</h4>
+                    <div class="journey-orders-list">
+                        <div class="journey-order">
+                            <div class="journey-order-header">
+                                <span class="journey-order-id">#0710544II27</span>
+                                <span class="journey-order-date">July 10, 2025</span>
+                            </div>
+                            <div class="journey-order-total">$1997.50</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. PRODUCT RECOMMENDATIONS -->
+    <div class="component-section">
+        <div class="component-title">7️⃣ Product Recommendations (get_product_recommendations)</div>
+        <div class="test-data">Backend returns: "Here are some sectional product recommendations just for you!"</div>
+        <div class="function-result recommendations">
+            <div class="card-header">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Sectional Products (8 found)</span>
+            </div>
+            <div class="recommendations-content">
+                <div class="products-grid">
+                    <div class="product-card-simple">
+                        <div class="product-name">Newport Camel 4 Piece Leather Sectional</div>
+                        <div class="product-sku">SKU: 444216277</div>
+                        <div class="product-price">$3,999</div>
+                        <div class="product-status">● In Stock</div>
+                    </div>
+                    <div class="product-card-simple">
+                        <div class="product-name">Lyndon Laredo Canvas 2 Piece Left Chaise Sectional</div>
+                        <div class="product-sku">SKU: 694056266</div>
+                        <div class="product-price">$2,326</div>
+                        <div class="product-status">● In Stock</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. PERSONALIZED RECOMMENDATIONS -->
+    <div class="component-section">
+        <div class="component-title">8️⃣ Personalized Recommendations (handle_product_recommendations)</div>
+        <div class="test-data">Backend returns: "Here are some personalized sectional recommendations just for you, Janice!"</div>
+        <div class="function-result recommendations">
+            <div class="card-header">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Personalized Products (8 found)</span>
+            </div>
+            <div class="recommendations-content">
+                <div class="products-grid">
+                    <div class="product-card-simple">
+                        <div class="product-name">Lyndon Laredo Canvas 2 Piece Left Chaise Sectional</div>
+                        <div class="product-sku">SKU: 694056266</div>
+                        <div class="product-price">$2,326</div>
+                        <div class="product-status">● In Stock</div>
+                    </div>
+                    <div class="product-card-simple">
+                        <div class="product-name">Newport Camel 4 Piece Leather Sectional</div>
+                        <div class="product-sku">SKU: 444216277</div>
+                        <div class="product-price">$3,999</div>
+                        <div class="product-status">● In Stock</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. CROSS-SELL CARD -->
+    <div class="component-section">
+        <div class="component-title">9️⃣ Cross-Sell (handle_order_confirmation_cross_sell)</div>
+        <div class="test-data">Backend returns: "Hi! I couldn't find any recent orders..."</div>
+        <div class="function-result cross-sell">
+            <div class="card-header">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Recommended for You</span>
+            </div>
+            <div class="cross-sell-content">
+                <div class="cross-sell-message">No recent orders to confirm, but here are some recommendations:</div>
+                <div class="recommendations-list">
+                    <div class="cross-sell-item">
+                        <div class="rec-name">Navi Fossil 2 Piece Sectional</div>
+                        <div class="rec-price">$999.26</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 10. SUPPORT TICKET -->
+    <div class="component-section">
+        <div class="component-title">🔟 Support Ticket (handle_support_escalation)</div>
+        <div class="test-data">Backend returns: "Your support issue regarding the damaged delivery has been escalated..."</div>
+        <div class="function-result support-ticket">
+            <div class="card-header">
+                <i class="fas fa-headset"></i>
+                <span>Support Ticket Created</span>
+            </div>
+            <div class="ticket-info">
+                <div class="ticket-id">Ticket #PRIORITY-123</div>
+                <div class="ticket-priority priority-high">HIGH Priority</div>
+                <div class="ticket-message">Your support issue regarding the damaged delivery has been escalated. A priority support ticket has been created and a manager has been notified.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 11. LOYALTY UPGRADE -->
+    <div class="component-section">
+        <div class="component-title">1️⃣1️⃣ Loyalty Upgrade (handle_loyalty_upgrade)</div>
+        <div class="test-data">Backend returns: "Great news! You are now a Premium Member in our loyalty program..."</div>
+        <div class="function-result loyalty-upgrade">
+            <div class="card-header">
+                <i class="fas fa-crown"></i>
+                <span>Loyalty Program</span>
+            </div>
+            <div class="loyalty-content">
+                <div class="loyalty-status">
+                    <div class="status-badge status-premium">Premium Member</div>
+                    <div class="loyalty-message">Great news! You are now a Premium Member in our loyalty program.</div>
+                </div>
+                <div class="loyalty-benefits">
+                    <div class="benefit-item">
+                        <i class="fas fa-gift"></i>
+                        <span>10% discount on all future purchases</span>
+                    </div>
+                    <div class="benefit-item">
+                        <i class="fas fa-shipping-fast"></i>
+                        <span>Free white-glove delivery</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 12. SUPPORT CONNECTION -->
+    <div class="component-section">
+        <div class="component-title">1️⃣2️⃣ Support Connection (connect_to_support)</div>
+        <div class="test-data">Backend returns: "You are now being connected to our human support team..."</div>
+        <div class="function-result support-connection">
+            <div class="card-header">
+                <i class="fas fa-phone"></i>
+                <span>Human Support Connected</span>
+            </div>
+            <div class="support-content">
+                <div class="connection-info">
+                    <div class="support-id">Reference: SUPPORT-123</div>
+                    <div class="support-message">A support ticket has been created for Janice Daniels. You'll receive a call within 2 hours.</div>
+                </div>
+                <div class="contact-options">
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <span>(470) 205-2566</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <span>support@woodstockoutlet.com</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 13. DIRECTIONS -->
+    <div class="component-section">
+        <div class="component-title">1️⃣3️⃣ Directions (show_directions)</div>
+        <div class="test-data">Backend returns: "I'd be happy to help! Could you please share your address or ZIP code?"</div>
+        <div class="function-result directions">
+            <div class="card-header">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Directions</span>
+            </div>
+            <div class="directions-content">
+                <div class="store-info">
+                    <div class="store-name">Woodstock Furniture Store</div>
+                    <div class="store-address">Main Branch, Woodstock, GA</div>
+                </div>
+                <div class="directions-actions">
+                    <a href="#" class="directions-btn" onclick="window.open('https://maps.google.com/maps?q=Woodstock+Furniture+Store', '_blank')">
+                        <i class="fas fa-external-link-alt"></i>
+                        Open in Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 14. SECTIONAL PRODUCTS CAROUSEL -->
+    <div class="component-section">
+        <div class="component-title">1️⃣4️⃣ Sectional Products Carousel (search_magento_products)</div>
+        <div class="test-data">Backend returns: "🛒 Found 12 sectional products for you! **CAROUSEL_DATA:** {...}"</div>
+        <div class="function-result product-carousel">
+            <div class="card-header">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Sectional Products (12 items)</span>
+            </div>
+            <div class="carousel-container">
+                <div class="swiffy-slider slider-nav-round slider-nav-dark slider-item-show4 slider-item-show2-sm">
+                    <ul class="slider-container">
+                        <li>
+                            <div class="product-card">
+                                <div class="product-image">
+                                    <img src="https://www.woodstockoutlet.com/media/catalog/product/l/e/leather-italia-newport-camel-sectional-1669-6394-01177137-front2_1.jpg" alt="Newport Camel 4 Piece Leather Sectional" loading="lazy">
+                                    <div class="product-overlay">
+                                        <button class="quick-view-btn">
+                                            <i class="fas fa-eye"></i>
+                                            Quick View
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-brand">LEATHER ITALIA</div>
+                                    <div class="product-name">Newport Camel 4 Piece Leather Sectional</div>
+                                    <div class="product-price">$3,999.99</div>
+                                    <div class="product-availability in-stock">
+                                        <i class="fas fa-circle"></i>
+                                        <span>In Stock</span>
+                                    </div>
+                                    <div class="product-actions">
+                                        <button class="product-btn primary">
+                                            <i class="fas fa-heart"></i>
+                                            Interested
+                                        </button>
+                                        <button class="product-btn secondary">
+                                            <i class="fas fa-info-circle"></i>
+                                            Details
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="product-card">
+                                <div class="product-image">
+                                    <img src="https://www.woodstockoutlet.com/media/catalog/product/e/n/england-lyndon-laredo-canvas-2-pc-sectional-8L00-23-06main-angle.jpg" alt="Lyndon Laredo Canvas 2 Piece Left Chaise Sectional" loading="lazy">
+                                    <div class="product-overlay">
+                                        <button class="quick-view-btn">
+                                            <i class="fas fa-eye"></i>
+                                            Quick View
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-brand">ENGLAND FURNITURE</div>
+                                    <div class="product-name">Lyndon Laredo Canvas 2 Piece Left Chaise Sectional</div>
+                                    <div class="product-price">$2,326.74</div>
+                                    <div class="product-availability in-stock">
+                                        <i class="fas fa-circle"></i>
+                                        <span>In Stock</span>
+                                    </div>
+                                    <div class="product-actions">
+                                        <button class="product-btn primary">
+                                            <i class="fas fa-heart"></i>
+                                            Interested
+                                        </button>
+                                        <button class="product-btn secondary">
+                                            <i class="fas fa-info-circle"></i>
+                                            Details
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="product-card">
+                                <div class="product-image">
+                                    <img src="https://www.woodstockoutlet.com/media/catalog/product/n/a/natuzzi-brivido-gray-leather-3-piece-power-reclining-sectional-b757-img1_1.jpg" alt="Brivido Gray Leather 3 Piece Power Reclining Sectional" loading="lazy">
+                                    <div class="product-overlay">
+                                        <button class="quick-view-btn">
+                                            <i class="fas fa-eye"></i>
+                                            Quick View
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-brand">NATUZZI</div>
+                                    <div class="product-name">Brivido Gray Leather 3 Piece Power Reclining Sectional</div>
+                                    <div class="product-price">$5,199.99</div>
+                                    <div class="product-availability in-stock">
+                                        <i class="fas fa-circle"></i>
+                                        <span>In Stock</span>
+                                    </div>
+                                    <div class="product-actions">
+                                        <button class="product-btn primary">
+                                            <i class="fas fa-heart"></i>
+                                            Interested
+                                        </button>
+                                        <button class="product-btn secondary">
+                                            <i class="fas fa-info-circle"></i>
+                                            Details
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="product-card">
+                                <div class="product-image">
+                                    <img src="https://www.woodstockoutlet.com/media/catalog/product/f/u/fusion-unbria-mist-5-piece-sectional-15_19KP-img1.jpg" alt="Umbria Mist 5 Piece Modular Sectional" loading="lazy">
+                                    <div class="product-overlay">
+                                        <button class="quick-view-btn">
+                                            <i class="fas fa-eye"></i>
+                                            Quick View
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-brand">FUSION FURNITURE</div>
+                                    <div class="product-name">Umbria Mist 5 Piece Modular Sectional</div>
+                                    <div class="product-price">$2,160.57</div>
+                                    <div class="product-availability in-stock">
+                                        <i class="fas fa-circle"></i>
+                                        <span>In Stock</span>
+                                    </div>
+                                    <div class="product-actions">
+                                        <button class="product-btn primary">
+                                            <i class="fas fa-heart"></i>
+                                            Interested
+                                        </button>
+                                        <button class="product-btn secondary">
+                                            <i class="fas fa-info-circle"></i>
+                                            Details
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    <button type="button" class="slider-nav"></button>
+                    <button type="button" class="slider-nav slider-nav-next"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .order-highlight, .total-highlight, .status-highlight, .date-highlight, .delivery-highlight {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 8px;
+            background: rgba(var(--woodstock-navy), 0.1);
+            border-left: 3px solid var(--woodstock-red);
+        }
+        .customer-name, .customer-phone, .customer-email, .customer-address {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 8px;
+            background: rgba(var(--woodstock-red), 0.1);
+        }
+        .money-highlight { color: var(--woodstock-red); font-weight: bold; }
+        .vip-badge { background: gold; color: black; padding: 0.25rem 0.5rem; border-radius: 4px; }
+        .ticket-priority { background: #f8d7da; color: #721c24; padding: 0.5rem; border-radius: 8px; }
+        .phone-link { color: var(--woodstock-red); text-decoration: none; }
+        .premium-badge { background: gold; color: black; padding: 0.25rem 0.5rem; border-radius: 4px; }
+        .discount-badge { background: var(--woodstock-red); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .product-card-simple { 
+            background: rgba(var(--glass-tint), 0.2); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 12px; 
+            padding: 1rem; 
+        }
+        .product-card-simple .product-name { font-weight: bold; color: var(--woodstock-navy); margin-bottom: 0.5rem; }
+        .product-card-simple .product-sku { font-size: 0.8rem; color: #666; }
+        .product-card-simple .product-price { font-size: 1.2rem; color: var(--woodstock-red); font-weight: bold; }
+        .product-card-simple .product-status { color: green; font-size: 0.9rem; }
+        
+        .enhanced-response {
+            background: rgba(var(--glass-tint), 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+    </style>
+
+    <script>
+        console.log('🎨 Component Visual Test loaded - These are the EXACT components your code renders!');
+    </script>
+</body>
+</html>
