@@ -649,8 +649,9 @@ class WoodstockChat {
             }
         }
 
-        // Regular text formatting if no component detected
-        contentDiv.innerHTML = this.formatAsHTML(fullResponse);
+        // FALLBACK: Enhanced HTML templating (Context7 + Brave Search best practice)
+        const enhancedHTML = this.createEnhancedHTML(fullResponse);
+        contentDiv.innerHTML = enhancedHTML;
     }
 
     extractDataFromResponse(text, functionName) {
@@ -718,7 +719,7 @@ class WoodstockChat {
             // ACTUAL BACKEND FORMAT: "Order Number: 0710544II27" etc.
             const orderNumberMatch = text.match(/Order Number:\s*([A-Z0-9]+)/i);
             const orderDateMatch = text.match(/Order Date:\s*([^\n]+)/i);
-            const totalAmountMatch = text.match(/Total Amount:\s*\$([0-9,.]+)/i);
+            const totalAmountMatch = text.match(/(?:Total Amount|Order Total):\s*\$([0-9,.]+)/i);
             const statusMatch = text.match(/Status:\s*([^\n]+)/i);
             const deliveryDateMatch = text.match(/Delivery Date:\s*([^\n]+)/i);
             
