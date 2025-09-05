@@ -712,28 +712,28 @@ class WoodstockChat {
             // Extract orders list - handle actual format
             const orders = [];
             
-            // Extract ALL order information from bullet points
-            const orderIdMatch = text.match(/Order ID:\s*([A-Z0-9]+)/i);
+            // ACTUAL BACKEND FORMAT: "Order Number: 0710544II27" etc.
+            const orderNumberMatch = text.match(/Order Number:\s*([A-Z0-9]+)/i);
             const orderDateMatch = text.match(/Order Date:\s*([^\n]+)/i);
-            const orderTotalMatch = text.match(/Order Total:\s*\$([0-9,.]+)/i);
+            const totalAmountMatch = text.match(/Total Amount:\s*\$([0-9,.]+)/i);
             const statusMatch = text.match(/Status:\s*([^\n]+)/i);
             const deliveryDateMatch = text.match(/Delivery Date:\s*([^\n]+)/i);
             
-            if (orderIdMatch || orderTotalMatch) {
+            if (orderNumberMatch || totalAmountMatch) {
                 const statusText = statusMatch ? statusMatch[1].trim() : 'Unknown';
-                const statusCode = statusText.toLowerCase().includes('fulfilled') || statusText.toLowerCase().includes('complete') ? 'F' : 
+                const statusCode = statusText.toLowerCase().includes('completed') ? 'F' : 
                                  statusText.toLowerCase().includes('pending') ? 'P' : 
                                  statusText.toLowerCase().includes('shipped') ? 'S' : 'P';
                 
                 orders.push({
-                    orderid: orderIdMatch ? orderIdMatch[1] : 'N/A',
-                    ordertotal: orderTotalMatch ? orderTotalMatch[1] : '0.00',
+                    orderid: orderNumberMatch ? orderNumberMatch[1] : 'N/A',
+                    ordertotal: totalAmountMatch ? totalAmountMatch[1] : '0.00',
                     status: statusCode,
                     status_text: statusText,
                     orderdate: orderDateMatch ? orderDateMatch[1] : new Date().toISOString(),
                     deliverydate: deliveryDateMatch ? deliveryDateMatch[1] : 'N/A',
-                    formatted_date: orderDateMatch ? this.formatDate(orderDateMatch[1]) : 'N/A',
-                    formatted_delivery: deliveryDateMatch ? this.formatDate(deliveryDateMatch[1]) : 'N/A'
+                    formatted_date: orderDateMatch ? orderDateMatch[1] : 'N/A',
+                    formatted_delivery: deliveryDateMatch ? deliveryDateMatch[1] : 'N/A'
                 });
             }
             
