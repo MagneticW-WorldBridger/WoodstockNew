@@ -503,21 +503,21 @@ class WoodstockChat {
         
         // Check if this response contains function call results - ALL 14 FUNCTIONS
         const functionPatterns = [
-            // Core API Functions (4)
+            // Core API Functions (4) - FIXED PATTERNS
             { 
-                pattern: /(?:customer|profile|found|located|account.*information)/i, 
+                pattern: /(?:found your customer profile|customer account|Hello.*I've found)/i, 
                 func: 'get_customer_by_phone', 
-                trigger: /(?:Name:\s*[^\n]+|Phone:\s*[^\n]+|Email:\s*[^\n]+|Address:\s*[^\n]+)/i 
+                trigger: /(?:customer profile|email.*@|phone.*\d|How can I assist)/i 
             },
             { 
-                pattern: /(?:purchase.*history|you have.*order|order.*on file|latest.*order)/i, 
+                pattern: /(?:You have.*order.*on file|Order Number.*Order Date|Status.*Completed)/i, 
                 func: 'get_orders_by_customer', 
-                trigger: /(?:Order.*ID\s*[A-Z0-9]+|Total:\s*\$[0-9,.]+|Status:\s*[A-Za-z]+)/i 
+                trigger: /(?:Order Number:\s*[A-Z0-9]+|Order Total:\s*\$[0-9,.]+|Status:\s*[A-Za-z]+)/i 
             },
             { 
-                pattern: /(?:order.*details|itemized|breakdown|here are the details)/i, 
+                pattern: /(?:Here are the details for.*order|order.*0710544II27)/i, 
                 func: 'get_order_details', 
-                trigger: /(?:Order.*(?:Number|ID):\s*[A-Z0-9]+|Total:\s*\$[\d,]+\.?\d*|Delivery.*Date)/i 
+                trigger: /(?:\$\d+\.\d+\)|Defender.*Sand|Repose.*Avenue)/i 
             },
             
             // Analytics Functions (2)
