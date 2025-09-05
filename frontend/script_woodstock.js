@@ -1,7 +1,7 @@
 // Woodstock Outlet Chat - Dual Mode Implementation (Customer + Admin)
 class WoodstockChat {
     constructor() {
-        this.apiBase = (typeof window !== 'undefined' && window.BACKEND_URL) ? window.BACKEND_URL : 'http://localhost:8000';
+        this.apiBase = (typeof window !== 'undefined' && window.BACKEND_URL) ? window.BACKEND_URL : 'http://localhost:8001';
         this.isConnected = false;
         this.isThinking = false;
         
@@ -662,9 +662,8 @@ class WoodstockChat {
             }
         }
 
-        // FALLBACK: Enhanced HTML templating (Context7 + Brave Search best practice)
-        const enhancedHTML = this.createEnhancedHTML(fullResponse);
-        contentDiv.innerHTML = enhancedHTML;
+        // FALLBACK: Regular text formatting
+        contentDiv.innerHTML = this.formatAsHTML(fullResponse);
     }
 
     extractDataFromResponse(text, functionName) {

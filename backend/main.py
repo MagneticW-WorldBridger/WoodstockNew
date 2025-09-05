@@ -17,7 +17,7 @@ import httpx
 # Import MCP optionally to prevent Railway crashes
 try:
     from pydantic_ai.mcp import MCPServerSSE
-    MCP_AVAILABLE = True
+    MCP_AVAILABLE = True  # NEVER DISABLE MCP!
 except Exception as _e:
     MCPServerSSE = None
     MCP_AVAILABLE = False
