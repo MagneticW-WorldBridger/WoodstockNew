@@ -3,6 +3,19 @@
 import json
 import asyncio
 import re
+
+# FIX TASKGROUP ERROR: nest-asyncio for PydanticAI + MCP compatibility (Context7 solution!)
+try:
+    import nest_asyncio
+    nest_asyncio.apply()
+    print("✅ nest-asyncio applied - TaskGroup errors fixed!")
+except ImportError:
+    print("⚠️ nest-asyncio not available - installing...")
+    import subprocess
+    subprocess.check_call(['pip', 'install', 'nest-asyncio'])
+    import nest_asyncio
+    nest_asyncio.apply()
+    print("✅ nest-asyncio installed and applied!")
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
