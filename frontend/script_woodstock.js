@@ -368,15 +368,25 @@ class WoodstockChat {
     async sendToAI(message) {
         console.log('🤖 Sending to AI backend...');
         
-        // Use non-streaming for product searches to get instant components
-        const isProductSearch = message.toLowerCase().includes('sectional') || 
-                               message.toLowerCase().includes('recliner') || 
-                               message.toLowerCase().includes('dining') ||
-                               message.toLowerCase().includes('show me');
+        // NUKE STREAMING: Use non-streaming for ALL function calls to get perfect components
+        const isFunctionCall = message.toLowerCase().includes('find customer') || 
+                              message.toLowerCase().includes('get orders') || 
+                              message.toLowerCase().includes('show details') ||
+                              message.toLowerCase().includes('analyze') ||
+                              message.toLowerCase().includes('give') ||
+                              message.toLowerCase().includes('generate') ||
+                              message.toLowerCase().includes('confirm') ||
+                              message.toLowerCase().includes('escalate') ||
+                              message.toLowerCase().includes('check') ||
+                              message.toLowerCase().includes('connect') ||
+                              message.toLowerCase().includes('show me') ||
+                              message.toLowerCase().includes('sectional') ||
+                              message.toLowerCase().includes('recliner') ||
+                              message.toLowerCase().includes('directions');
 
         const requestBody = {
             messages: this.messageHistory.slice(-10), // Send last 10 messages for context
-            stream: !isProductSearch, // Non-streaming for product searches, streaming for chat
+            stream: !isFunctionCall, // Non-streaming for ALL function calls, streaming only for chat
             session_id: this.sessionId,
             user_identifier: this.userIdentifier,
             user_type: this.isAdminMode ? 'admin' : 'customer',
@@ -404,12 +414,15 @@ class WoodstockChat {
             const data = await response.json();
             const content = data.choices?.[0]?.message?.content || 'No response';
             
+            console.log('📝 NON-STREAMING CONTENT:', content.substring(0, 200) + '...');
+            
             this.hideTypingIndicator();
             const messageDiv = this.addMessage('', 'assistant');
             const contentDiv = messageDiv.querySelector('.message-content');
             
             // For non-streaming, immediately render components
             console.log('🎨 Non-streaming: detecting and rendering components immediately');
+            console.log('🔍 Function call detected:', !requestBody.stream);
             this.detectAndRenderComponents(content, contentDiv);
             this.messageHistory.push({ role: 'assistant', content: content });
         }
