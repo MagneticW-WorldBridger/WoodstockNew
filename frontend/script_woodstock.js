@@ -368,9 +368,15 @@ class WoodstockChat {
     async sendToAI(message) {
         console.log('🤖 Sending to AI backend...');
         
+        // Use non-streaming for product searches to get instant components
+        const isProductSearch = message.toLowerCase().includes('sectional') || 
+                               message.toLowerCase().includes('recliner') || 
+                               message.toLowerCase().includes('dining') ||
+                               message.toLowerCase().includes('show me');
+
         const requestBody = {
             messages: this.messageHistory.slice(-10), // Send last 10 messages for context
-            stream: true,
+            stream: !isProductSearch, // Non-streaming for product searches, streaming for chat
             session_id: this.sessionId,
             user_identifier: this.userIdentifier,
             user_type: this.isAdminMode ? 'admin' : 'customer',
@@ -390,8 +396,23 @@ class WoodstockChat {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        console.log('📡 Streaming response...');
-        await this.handleStreamingResponse(response);
+        if (requestBody.stream) {
+            console.log('📡 Streaming response...');
+            await this.handleStreamingResponse(response);
+        } else {
+            console.log('📄 Non-streaming response for instant components...');
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content || 'No response';
+            
+            this.hideTypingIndicator();
+            const messageDiv = this.addMessage('', 'assistant');
+            const contentDiv = messageDiv.querySelector('.message-content');
+            
+            // For non-streaming, immediately render components
+            console.log('🎨 Non-streaming: detecting and rendering components immediately');
+            this.detectAndRenderComponents(content, contentDiv);
+            this.messageHistory.push({ role: 'assistant', content: content });
+        }
     }
 
     async handleStreamingResponse(response) {
