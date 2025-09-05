@@ -443,34 +443,40 @@ Beautiful, rich UI components for function results
     --slider-nav-color-hover: var(--woodstock-red);
 }
 
-/* Swiffy Slider Responsive Configuration - PROPER SPACING */
+/* Swiffy Slider Responsive Configuration - NO OVERLAP GUARANTEE */
 .product-carousel .slider-item-show4 .slider-container > * {
-    flex: 0 0 calc(25% - 1rem);
-    max-width: calc(25% - 1rem);
-    padding: 0.5rem; /* ensure inner spacing so cards never collide */
+    flex: 0 0 calc(25% - 2rem);
+    max-width: calc(25% - 2rem);
+    margin: 0 1rem;
+    box-sizing: border-box;
 }
 
 .product-carousel .slider-item-show2-sm .slider-container > * {
-    flex: 0 0 calc(50% - 1rem);
-    max-width: calc(50% - 1rem);
-    padding: 0.5rem;
+    flex: 0 0 calc(50% - 2rem);
+    max-width: calc(50% - 2rem);
+    margin: 0 1rem;
+    box-sizing: border-box;
 }
 
 .product-carousel .slider-container {
-    padding: 0 0.5rem;
-    gap: 0; /* swiffy uses flex children; spacing handled by li padding */
-    align-items: stretch; /* make children equal height */
+    padding: 0;
+    gap: 0;
+    align-items: stretch;
+    display: flex !important;
 }
 
-/* Ensure each li holds a full-height card */
+/* Ensure each li holds a full-height card with proper spacing */
 .product-carousel .slider-container > li {
     display: flex;
     align-items: stretch;
+    box-sizing: border-box;
 }
 
 .product-carousel .product-card {
     height: 100%;
     width: 100%;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 /* Responsive Adjustments - Context7 Wisdom */
