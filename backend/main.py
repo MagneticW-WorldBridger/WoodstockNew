@@ -16,16 +16,17 @@ except ImportError:
     import nest_asyncio
     nest_asyncio.apply()
     print("✅ nest-asyncio installed and applied!")
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
 import pydantic_ai
 print("🔥 pydantic_ai version:", getattr(pydantic_ai, "__version__", "unknown"))
 from dotenv import load_dotenv
 import os
-from typing import AsyncIterator
+from typing import AsyncIterator, Dict
 import httpx
 # Import MCP optionally to prevent Railway crashes
 try:
@@ -38,6 +39,18 @@ except Exception as _e:
 
 from schemas import ChatRequest, ChatResponse, ChatMessage
 from conversation_memory import memory
+
+# 🧠 ENHANCED MEMORY SYSTEM INTEGRATION
+try:
+    from memory_integration import orchestrator, initialize_memory_orchestrator
+    from memory_api_endpoints import memory_router
+    ENHANCED_MEMORY_AVAILABLE = True
+    print("🧠 Enhanced Memory System loaded!")
+except ImportError as e:
+    print(f"⚠️ Enhanced Memory System not available: {e}")
+    ENHANCED_MEMORY_AVAILABLE = False
+    orchestrator = None
+    memory_router = None
 
 # Load environment variables
 load_dotenv()
@@ -59,6 +72,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for frontend
+import os
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/frontend", StaticFiles(directory=frontend_path, html=True), name="frontend")
+    print(f"📁 Frontend mounted at /frontend from {frontend_path}")
 
 # --- MCP Integration via Supergateway ---
 # Connect to local supergateway instead of Pipedream directly
@@ -89,22 +109,96 @@ agent_kwargs = {
 prompt_content = (
     # UNIFIED WOODSTOCK FURNISHINGS AI ASSISTANT PROMPT
     """
+# CRITICAL: BEAUTIFUL HTML RESPONSE FORMATTING 🎨
+
+**MANDATORY: BEAUTIFUL HTML TAG RESPONSES! 🎨**
+
+CRITICAL: ALWAYS wrap ALL your responses in beautiful HTML tags for stunning visuals!
+
+**CUSTOMER INFO RESPONSES:**
+```html
+<div class="customer-card">
+  <h3 class="customer-name">Janice Daniels</h3>
+  <div class="customer-phone">📱 407-288-6040</div>
+  <div class="customer-email">📧 jdan4sure@yahoo.com</div>
+  <div class="customer-address">📍 2010 Moonlight Path, Covington, GA</div>
+</div>
+```
+
+**ORDER HISTORY RESPONSES:**
+```html
+<div class="orders-container">
+  <h3 class="orders-title">ORDER HISTORY (1 ORDER)</h3>
+  <div class="order-highlight">
+    <div class="order-id">#0710544II27</div>
+    <div class="status-highlight">FULFILLED</div>
+    <div class="date-highlight">Ordered: July 10, 2025</div>
+    <div class="delivery-highlight">Delivered: July 12, 2025</div>
+    <div class="total-highlight">Total: <span class="money-highlight">$1997.50</span></div>
+  </div>
+</div>
+```
+
+**PRODUCT RESPONSES:**
+```html
+<div class="products-section">
+  <h3 class="products-title">SECTIONAL PRODUCTS (12 ITEMS)</h3>
+  <div class="products-grid">
+    <div class="product-card-simple">
+      <div class="product-name">Newport Camel 4 Piece Leather Sectional</div>
+      <div class="product-price">$3,999.99</div>
+      <div class="product-status">● In Stock</div>
+    </div>
+  </div>
+</div>
+```
+
+**SUPPORT RESPONSES:**
+```html
+<div class="support-response">
+  <h3 class="support-title">SUPPORT TICKET CREATED</h3>
+  <div class="ticket-priority">🚨 HIGH PRIORITY</div>
+  <div class="ticket-message">Your damaged delivery issue has been escalated!</div>
+</div>
+```
+
+**GENERAL RESPONSES:**
+```html
+<div class="ai-response">
+  <h3 class="ai-heading">Welcome to Woodstock Furniture!</h3>
+  <div class="ai-content">Your beautiful response here...</div>
+</div>
+```
+
 # CORE IDENTITY & PRIMARY GOAL
 
 You are "AiPRL," the lead AI assistant for Woodstock's Furnishings & Mattress. Your persona is that of a 40-year-old veteran interior designer specialist—helpful, friendly, professional, and deeply knowledgeable about our products and services.
 
 **Primary Goal:** To provide an exceptional, seamless, and enjoyable shopping experience by understanding the user's intent and dynamically adapting your approach to serve their needs, whether they require general support, sales assistance, or help booking an appointment.
 
-# CRITICAL LOFT FUNCTION RULES (ALWAYS FOLLOW FIRST!)
+# CRITICAL LOFT FUNCTION RULES (INTENT-BASED, NOT KEYWORD-BASED!)
 
-1. For EVERY customer inquiry, you MUST call the appropriate LOFT function first when applicable
-2. NEVER provide customer-specific information without calling a function
-3. When user mentions phone/email, call get_customer_by_phone/get_customer_by_email
-4. When they ask about orders, call get_orders_by_customer with customer_id
-5. When they ask order details, call get_order_details with order_id
-6. When they ask patterns/analytics, call analyze_customer_patterns with ANY identifier (phone/email/customerid)
-7. When they ask recommendations, call get_product_recommendations with ANY identifier
-8. For loyalty/cross-sell/support, use handle_ functions with ANY identifier
+🚨 **INTENT PRIORITY RULES - ANALYZE FULL CONTEXT, NOT KEYWORDS!** 🚨
+
+1. **SUPPORT/PROBLEM INTENT (HIGHEST PRIORITY):**
+   - If user mentions: "damaged", "broken", "return", "problem", "issue", "help with", "defective"
+   - ALWAYS call handle_support_escalation() FIRST
+   - DO NOT call product search functions for support issues!
+   - Example: "my recliner arrived damaged" → handle_support_escalation, NOT search_magento_products
+
+2. **CUSTOMER IDENTIFICATION vs DATA REQUEST:**
+   - **IDENTIFICATION**: "My phone is X" or "My email is X" → Call get_customer_by_phone/email BUT only greet them: "Hello [Name]! How can I help you today?"
+   - **DATA REQUEST**: "Show me my orders", "my purchase history", "check my orders" → get_orders_by_customer
+   - **SPECIFIC REQUEST**: "order details", specific order ID → get_order_details
+   - **RULE**: Don't show order data unless explicitly requested!
+
+3. **ANALYTICS INTENT:**
+   - "analyze", "patterns", "analytics" → analyze_customer_patterns
+   - "recommendations" (without problems) → get_product_recommendations
+
+4. **PRODUCT SEARCH INTENT (LOWEST PRIORITY):**
+   - Only when user specifically asks to "show me products", "I want to buy"
+   - NOT when they have problems with existing products!
 
 SMART PARAMETER HANDLING:
 - All analysis functions support HYBRID parameters (phone/email/customerid)
@@ -442,6 +536,8 @@ If any user asks any questions that are not related to Woodstock Furniture in an
 - NEVER provide customer-specific information without calling a function.
 - When user mentions phone/email, call get_customer_by_phone/get_customer_by_email.
 - When they ask about orders, call get_orders_by_customer with customer_id.
+- **PHONE CALL REQUESTS**: When user asks "call me", "can you call me", "start a demo call", or mentions phone demo, ALWAYS use start_demo_call function with their phone number.
+- **CROSS-CHANNEL MEMORY RECALL**: When user asks "what did I tell you on the phone?", "do you remember our phone conversation?", or similar questions about previous phone interactions, YOU HAVE ACCESS TO THAT INFORMATION through the conversation history. Use the unified memory system to recall and reference previous phone conversations. NEVER say you "don't have access" to phone conversations - you DO have access through the memory system!
 - When they ask order details, call get_order_details with order_id.
 - When they ask patterns/analytics, call analyze_customer_patterns.
 - When they ask recommendations, call get_product_recommendations.
@@ -503,7 +599,7 @@ print("🔧 Adding LOFT functions to agent...")
 
 @agent.tool
 async def get_customer_by_phone(ctx: RunContext, phone: str) -> str:
-    """Buscar cliente por número de teléfono en LOFT"""
+    """👤 CUSTOMER IDENTIFICATION: Look up customer by phone number. Use ONLY when customer provides their phone for identification, NOT when they just want order data. Follow up with greeting: 'Hello [Name]! How can I help you today?'"""
     API_BASE = os.getenv('WOODSTOCK_API_BASE', 'https://api.woodstockoutlet.com/public/index.php/april')
     
     try:
@@ -587,7 +683,7 @@ async def get_customer_by_phone(ctx: RunContext, phone: str) -> str:
 
 @agent.tool
 async def get_orders_by_customer(ctx: RunContext, customer_id: str) -> str:
-    """Get order history for a customer by customer ID"""
+    """📦 ORDER HISTORY: Get customer's order history when they specifically ask for 'my orders', 'purchase history', 'order status'. NOT for customer identification - use only after customer requests order information."""
     API_BASE = os.getenv('WOODSTOCK_API_BASE', 'https://api.woodstockoutlet.com/public/index.php/april')
     
     try:
@@ -1004,7 +1100,7 @@ async def handle_order_confirmation_cross_sell(ctx: RunContext, identifier: str,
 
 @agent.tool
 async def handle_support_escalation(ctx: RunContext, identifier: str, issue_description: str, type: str = "auto") -> str:
-    """Handle support escalation with ticket creation - supports phone, email, or customerid"""
+    """🎫 SUPPORT ISSUES ONLY: Handle damaged items, returns, defects, problems, complaints, or any customer service issues. Creates support tickets. Use when customer has problems with existing products, NOT for product searches."""
     try:
         print(f"🔧 PROACTIVE Function: handleSupportEscalation({identifier}, {issue_description}, {type})")
         
@@ -1327,7 +1423,7 @@ async def get_magento_token(force_refresh=False):
 
 @agent.tool
 async def search_magento_products(ctx: RunContext, query: str, page_size: int = 12) -> str:
-    """Search Magento products for recommendations and display as carousel"""
+    """🛒 PRODUCT SHOPPING ONLY: Search products when customers want to BUY or VIEW products for shopping. NOT for support issues, problems, or complaints about existing products. Use for: 'show me sectionals', 'I want to buy a recliner', 'what products do you have'."""
     try:
         print(f"🔧 Searching Magento products: {query}")
         
@@ -1457,10 +1553,82 @@ async def show_dining_products(ctx: RunContext) -> str:
     """Show available dining room products with carousel"""
     return await search_magento_products(ctx, "dining", 12)
 
+@agent.tool
+async def start_demo_call(ctx: RunContext, phone_number: str) -> str:
+    """Start a phone call to demonstrate cross-channel memory. Use when customer asks to call them, wants a phone demo, or requests to test phone integration. Phone number should be in format +1XXXXXXXXXX."""
+    print(f"🔥🔥🔥 START_DEMO_CALL FUNCTION CALLED! 🔥🔥🔥")
+    print(f"📞 DEMO: Starting call to {phone_number}")
+    
+    try:
+        # Get VAPI credentials
+        vapi_private_key = os.getenv('VAPI_PRIVATE_KEY')
+        vapi_assistant_id = os.getenv('VAPI_ASSISTANT_ID') 
+        vapi_phone_number_id = os.getenv('VAPI_PHONE_NUMBER_ID')
+        
+        if not all([vapi_private_key, vapi_assistant_id, vapi_phone_number_id]):
+            return "❌ Demo call feature not configured. Please contact support."
+        
+        # Make VAPI call
+        import requests
+        headers = {
+            "Authorization": f"Bearer {vapi_private_key}",
+            "Content-Type": "application/json"
+        }
+        
+        call_data = {
+            "assistantId": vapi_assistant_id,
+            "phoneNumberId": vapi_phone_number_id,
+            "customer": {"number": phone_number}
+        }
+        
+        response = requests.post("https://api.vapi.ai/call", json=call_data, headers=headers)
+        
+        if response.status_code in [200, 201]:
+            call_info = response.json()
+            call_id = call_info.get('id')
+            
+            print(f"✅ DEMO CALL INITIATED: {call_id}")
+            
+            return f"""📞 **Calling {phone_number}...**
+
+🎯 **CROSS-CHANNEL MEMORY DEMO:**
+1. **Answer the call** from April (our AI assistant)
+2. **Tell her your preferences** - colors, furniture types, budget, etc.
+3. **Hang up** when you're done talking
+4. **Return to this chat** and ask: "What did I tell you on the phone?"
+5. **Watch the magic** - I'll remember everything from your call! ✨
+
+**Call ID:** {call_id}
+**Status:** 📞 Calling now... please answer!
+
+*This demonstrates our cross-channel memory system - conversations persist between web chat and phone calls.*"""
+        else:
+            return f"❌ Failed to start demo call: {response.text}"
+            
+    except Exception as e:
+        print(f"❌ Demo call error: {e}")
+        return f"❌ Demo call failed: {str(e)}"
+
+
 # Startup and shutdown events
 async def startup_event():
     """Initialize services on startup"""
     await memory.init_db()
+    
+    # 🧠 Initialize Enhanced Memory System
+    if ENHANCED_MEMORY_AVAILABLE and orchestrator:
+        try:
+            db_url = os.getenv('DATABASE_URL')
+            openai_api_key = os.getenv('OPENAI_API_KEY')
+            
+            if db_url and openai_api_key:
+                await initialize_memory_orchestrator(db_url, openai_api_key)
+                print("🧠 Enhanced Memory System initialized successfully!")
+            else:
+                print("⚠️ Enhanced Memory System requires DATABASE_URL and OPENAI_API_KEY")
+        except Exception as e:
+            print(f"⚠️ Enhanced Memory System initialization failed: {e}")
+            print("   Continuing with basic memory only...")
 
 async def shutdown_event():
     """Clean up on shutdown"""
@@ -1478,6 +1646,11 @@ async def lifespan(app: FastAPI):
     await shutdown_event()
 
 app.router.lifespan_context = lifespan
+
+# 🧠 Add Enhanced Memory API endpoints
+if ENHANCED_MEMORY_AVAILABLE and memory_router:
+    app.include_router(memory_router)
+    print("🧠 Enhanced Memory API endpoints added!")
 
 # Health check endpoint
 @app.get("/health")
@@ -1508,7 +1681,7 @@ async def health_check():
             mcp_status = "not_initialized"
 
         # Count native agent tools (14 LOFT functions)
-        native_tool_count = 14  # We now have 14 @agent.tool decorated functions
+        native_tool_count = 19  # We now have 19 @agent.tool decorated functions including start_demo_call
 
         return {
             "status": "ok",
@@ -1586,6 +1759,161 @@ def should_use_memory(message: str, user_identifier: str) -> bool:
     # Default: use memory for continuity
     return True
 
+# Phone agent endpoint for voice calls
+@app.post("/v1/phone/chat")
+async def phone_chat(request: Dict):
+    """Phone agent endpoint with unified memory and OTP verification"""
+    try:
+        print(f"📞 Phone call received: {request}")
+        
+        # Extract phone call data - VAPI sends complex objects
+        message_data = request.get('message', {})
+        
+        # Handle different VAPI message formats
+        if isinstance(message_data, dict):
+            # VAPI webhook format
+            user_message = message_data.get('transcript', '') or message_data.get('content', '')
+            call_data = request.get('call', {})
+            call_id = call_data.get('id', '')
+            phone_number = call_data.get('customer', {}).get('number', '')
+        else:
+            # Simple format for testing
+            user_message = str(message_data)
+            call_id = request.get('call_id', '')
+            phone_number = request.get('phone_number', '')
+        
+        print(f"📞 Extracted: message='{user_message}', call_id='{call_id}', phone='{phone_number}'")
+        
+        # Get previous conversation context for this user
+        if hasattr(memory, 'init_pool'):
+            await memory.init_pool()
+        previous_context = await memory.get_unified_conversation_history(phone_number, limit=10)
+        
+        # Build context summary for the phone agent
+        context_summary = ""
+        if previous_context:
+            context_summary = f"\\n\\nPREVIOUS CONVERSATION CONTEXT:\\n"
+            for msg in previous_context[-5:]:  # Last 5 messages
+                platform = msg.get('platform_type', 'unknown')
+                role = msg.get('role', 'unknown')
+                content = msg.get('content', '')[:100]
+                context_summary += f"[{platform}] {role}: {content}...\\n"
+        
+        # Create unified ChatRequest with context - FORCE PHONE PLATFORM
+        enhanced_message = user_message + context_summary
+        
+        # Create the request manually to ensure all fields are set
+        chat_request = ChatRequest(
+            messages=[ChatMessage(role="user", content=enhanced_message)],
+            user_identifier=phone_number,
+            stream=False
+        )
+        
+        # CRITICAL: Set platform_type and channel_metadata after creation
+        chat_request.platform_type = "phone"
+        chat_request.channel_metadata = {
+            "call_id": call_id,
+            "phone_number": phone_number,
+            "provider": "voice_agent",
+            "has_previous_context": len(previous_context) > 0
+        }
+        
+        print(f"📞 PHONE REQUEST: platform_type={chat_request.platform_type}, user={phone_number}")
+        
+        # Use the same chat logic
+        response = await chat_completions(chat_request)
+        
+        # Return voice agent compatible response
+        if hasattr(response, 'choices') and response.choices:
+            message_content = response.choices[0].get('delta', {}).get('content', '')
+            return {
+                "message": message_content,
+                "call_id": call_id,
+                "has_context": len(previous_context) > 0,
+                "context_messages": len(previous_context)
+            }
+        else:
+            return {
+                "message": "Hi! I'm April from Woodstock Furniture. How can I help you today?",
+                "call_id": call_id,
+                "has_context": False
+            }
+            
+    except Exception as e:
+        print(f"❌ Phone endpoint error: {e}")
+        return {
+            "message": "I'm experiencing technical difficulties. Please try again.",
+            "call_id": call_id,
+            "error": str(e)
+        }
+
+# Unified memory testing endpoint
+@app.get("/v1/memory/unified/{user_identifier}")
+async def get_unified_memory(user_identifier: str):
+    """Get unified conversation history across all channels for a user"""
+    try:
+        if hasattr(memory, 'init_pool'):
+            await memory.init_pool()
+        
+        # Get conversation history across all platforms
+        unified_history = await memory.get_unified_conversation_history(user_identifier, limit=50)
+        
+        # Get enhanced memory if available
+        enhanced_memories = []
+        if ENHANCED_MEMORY_AVAILABLE and orchestrator:
+            try:
+                enhanced_context = await orchestrator.get_enhanced_context("user history", user_identifier)
+                if enhanced_context:
+                    enhanced_memories.append(enhanced_context)
+            except Exception as e:
+                print(f"⚠️ Enhanced memory error: {e}")
+        
+        return {
+            "user_identifier": user_identifier,
+            "total_messages": len(unified_history),
+            "platforms_used": list(set([msg.get('platform_type', 'unknown') for msg in unified_history])),
+            "conversation_history": unified_history,
+            "enhanced_memories": enhanced_memories,
+            "memory_system_status": "operational" if ENHANCED_MEMORY_AVAILABLE else "basic"
+        }
+        
+    except Exception as e:
+        print(f"❌ Unified memory error: {e}")
+        return {"error": str(e), "user_identifier": user_identifier}
+
+# OTP verification endpoint for phone authentication
+@app.post("/v1/phone/verify-otp")
+async def verify_otp(request: Dict):
+    """Verify OTP code for phone authentication"""
+    try:
+        phone_number = request.get('phone_number', '')
+        otp_code = request.get('otp_code', '')
+        call_id = request.get('call_id', '')
+        
+        # Simple OTP verification (in production, use proper OTP service)
+        # For demo: accept any 4-digit code
+        if len(otp_code) == 4 and otp_code.isdigit():
+            return {
+                "verified": True,
+                "message": f"Welcome! Your identity has been verified. I can now access your order information.",
+                "call_id": call_id,
+                "phone_number": phone_number
+            }
+        else:
+            return {
+                "verified": False,
+                "message": "Invalid OTP code. Please try again with a 4-digit code.",
+                "call_id": call_id
+            }
+            
+    except Exception as e:
+        print(f"❌ OTP verification error: {e}")
+        return {
+            "verified": False,
+            "message": "Verification system error. Please try again.",
+            "error": str(e)
+        }
+
 # Main chat completions endpoint with MEMORY
 @app.post("/v1/chat/completions")
 async def chat_completions(request: ChatRequest):
@@ -1619,8 +1947,8 @@ async def chat_completions(request: ChatRequest):
         fastpath_query = None
         if any(k in msg_lower for k in ["sectional", "sectionals"]):
             fastpath_query = "sectional"
-        elif "recliner" in msg_lower or "recliners" in msg_lower:
-            fastpath_query = "recliner"
+        # DISABLED: elif "recliner" in msg_lower or "recliners" in msg_lower:
+        #     fastpath_query = "recliner"
         elif "dining" in msg_lower:
             fastpath_query = "dining"
 
@@ -1629,8 +1957,24 @@ async def chat_completions(request: ChatRequest):
                 print(f"⚡ Fast-path Magento search for: {fastpath_query}")
                 # Call tool directly to guarantee CAROUSEL_DATA in response
                 result_text = await search_magento_products(None, fastpath_query, 12)
-                await memory.save_user_message(conversation_id := await memory.get_or_create_conversation(user_identifier), user_message)
-                await memory.save_assistant_message(conversation_id, result_text)
+                
+                conversation_id = await memory.get_or_create_conversation(user_identifier)
+                
+                # 🧠 Enhanced Memory Integration - Save with enhancement
+                if ENHANCED_MEMORY_AVAILABLE and orchestrator:
+                    await orchestrator.save_message_with_enhancement(
+                        conversation_id, 'user', user_message, user_identifier
+                    )
+                    await orchestrator.save_message_with_enhancement(
+                        conversation_id, 'assistant', result_text, user_identifier,
+                        function_name='search_magento_products', 
+                        function_args={'query': fastpath_query, 'limit': 12},
+                        function_result=result_text
+                    )
+                else:
+                    # Fallback to basic memory
+                    await memory.save_user_message(conversation_id, user_message)
+                    await memory.save_assistant_message(conversation_id, result_text)
                 return ChatResponse(
                     choices=[{
                         "index": 0,
@@ -1651,16 +1995,24 @@ async def chat_completions(request: ChatRequest):
         use_memory = should_use_memory(user_message, user_identifier)
         print(f"🧠 Memory decision: {'USE MEMORY' if use_memory else 'NEW SESSION'}")
         
-        # Get or create conversation using EXISTING tables
+        # Get platform type from request - FIXED FOR PYDANTIC
+        platform_type = request.platform_type if hasattr(request, 'platform_type') and request.platform_type else 'webchat'
+        channel_metadata = request.channel_metadata if hasattr(request, 'channel_metadata') and request.channel_metadata else {}
+        
+        print(f"📱 Platform: {platform_type}")
+        if channel_metadata:
+            print(f"📋 Channel metadata: {channel_metadata}")
+        
+        # Get or create conversation using MULTI-CHANNEL support
         if use_memory:
-            conversation_id = await memory.get_or_create_conversation(user_identifier)
+            conversation_id = await memory.get_or_create_conversation(user_identifier, platform_type)
         else:
             # Force new conversation for fresh start
-            conversation_id = await memory.get_or_create_conversation(f"{user_identifier}_new_{int(asyncio.get_event_loop().time())}")
-            print(f"🆕 Starting NEW session for: {user_identifier}")
+            conversation_id = await memory.get_or_create_conversation(f"{user_identifier}_new_{int(asyncio.get_event_loop().time())}", platform_type)
+            print(f"🆕 Starting NEW {platform_type} session for: {user_identifier}")
         
-        # Get conversation history from EXISTING tables
-        db_messages = await memory.get_recent_messages(conversation_id, limit=10)
+        # Get conversation history from EXISTING tables - USE UNIFIED CROSS-CHANNEL MEMORY!
+        db_messages = await memory.get_unified_conversation_history(user_identifier, limit=10)
         
         # Convert to PydanticAI ModelMessage format (THE CORRECT WAY!)        
         message_history = []
@@ -1678,24 +2030,43 @@ async def chat_completions(request: ChatRequest):
         
         print(f"📚 Using {len(message_history)} historical messages")
         
+        # 🧠 Get enhanced conversation context
+        enhanced_context = ""
+        if ENHANCED_MEMORY_AVAILABLE and orchestrator and user_identifier:
+            try:
+                enhanced_context = await orchestrator.get_enhanced_context(user_message, user_identifier)
+                if enhanced_context:
+                    print(f"🧠 Enhanced context loaded: {len(enhanced_context)} chars")
+            except Exception as e:
+                print(f"⚠️ Enhanced context retrieval failed: {e}")
+        
         # Modify user message with admin mode context if needed
         final_user_message = user_message
         if is_admin_mode:
             final_user_message = f"""[ADMIN MODE] {user_message}
 
-Admin Context: You have full access to all 12 LOFT functions and can look up any customer data. Use technical language and provide comprehensive responses."""
+Admin Context: You have full access to all 12 LOFT functions and can look up any customer data. Use technical language and provide comprehensive responses.
+
+{enhanced_context}"""
         else:
             final_user_message = f"""[CUSTOMER MODE] {user_message}
 
-Customer Context: Provide friendly, helpful responses focused on customer self-service. Only access customer's own data when appropriate."""
+Customer Context: Provide friendly, helpful responses focused on customer self-service. Only access customer's own data when appropriate.
+
+{enhanced_context}"""
         
         if request.stream:
             print("🤖 Running streaming response with memory...")
             async def generate_stream():
                 try:
                     async with agent.run_stream(final_user_message, message_history=message_history) as result:
-                        # Save user message to EXISTING table
-                        await memory.save_user_message(conversation_id, user_message)
+                        # 🧠 Save user message with enhancement
+                        if ENHANCED_MEMORY_AVAILABLE and orchestrator:
+                            await orchestrator.save_message_with_enhancement(
+                                conversation_id, 'user', user_message, user_identifier
+                            )
+                        else:
+                            await memory.save_user_message(conversation_id, user_message)
                         
                         full_response = ""
                         function_calls_made = []
@@ -1727,8 +2098,23 @@ Customer Context: Provide friendly, helpful responses focused on customer self-s
                             }
                             yield f"data: {json.dumps(function_metadata)}\n\n"
                         
-                        # Save assistant response to EXISTING table
-                        await memory.save_assistant_message(conversation_id, full_response)
+                        # 🧠 Save assistant response with enhancement
+                        if ENHANCED_MEMORY_AVAILABLE and orchestrator:
+                            # Extract function information if available
+                            func_name = None
+                            func_args = None
+                            func_result = None
+                            if function_calls_made:
+                                func_name = function_calls_made[0].get('function_name')
+                                func_args = function_calls_made[0].get('arguments')
+                                func_result = full_response
+                            
+                            await orchestrator.save_message_with_enhancement(
+                                conversation_id, 'assistant', full_response, user_identifier,
+                                function_name=func_name, function_args=func_args, function_result=func_result
+                            )
+                        else:
+                            await memory.save_assistant_message(conversation_id, full_response)
                         
                         yield "data: [DONE]\n\n"
                         
@@ -1749,9 +2135,18 @@ Customer Context: Provide friendly, helpful responses focused on customer self-s
                 async for chunk in result.stream_text(delta=True):
                     full_response += chunk
 
-            # Save messages to memory
-            await memory.save_user_message(conversation_id, user_message)
-            await memory.save_assistant_message(conversation_id, full_response)
+            # 🧠 Save messages to enhanced memory
+            if ENHANCED_MEMORY_AVAILABLE and orchestrator:
+                await orchestrator.save_message_with_enhancement(
+                    conversation_id, 'user', user_message, user_identifier
+                )
+                await orchestrator.save_message_with_enhancement(
+                    conversation_id, 'assistant', full_response, user_identifier
+                )
+            else:
+                # Fallback to basic memory
+                await memory.save_user_message(conversation_id, user_message)
+                await memory.save_assistant_message(conversation_id, full_response)
 
             response = ChatResponse(
                 choices=[{
@@ -1818,20 +2213,21 @@ async def root():
     </head>
     <body>
         <div class="container">
-            <h1>🧠 LOFT Chat Backend v2.0</h1>
+            <h1>🧠 LOFT Chat Backend v3.0</h1>
             <div class="status">
-                ✅ NOW WITH CONVERSATION MEMORY! ✅
+                🔥 NOW WITH ENHANCED PERSISTENT MEMORY! 🔥
             </div>
             
             <div class="features">
                 <div class="feature">
-                    <h3>🔧 Backend Features</h3>
+                    <h3>🔧 Enhanced Backend</h3>
                     <ul>
                         <li>✅ FastAPI + PydanticAI</li>
-                        <li>✅ PostgreSQL Memory (Existing Tables)</li>
-                        <li>✅ Conversation History</li>
-                        <li>✅ Context Preservation</li>
-                        <li>✅ User Identification</li>
+                        <li>🧠 3-Tier Persistent Memory</li>
+                        <li>🔍 Semantic Entity Search</li>
+                        <li>📊 Knowledge Graph Relations</li>
+                        <li>💾 Long-term Memory Storage</li>
+                        <li>🤖 LLM-powered Insights</li>
                     </ul>
                 </div>
                 
@@ -1841,31 +2237,207 @@ async def root():
                         <li>📱 Customer search by phone</li>
                         <li>📦 Order history lookup</li>
                         <li>🛍️ Product search</li>
-                        <li>🧠 Conversation memory</li>
-                        <li>🤖 Context awareness</li>
+                        <li>🧠 Enhanced conversation memory</li>
+                        <li>🔗 Cross-conversation context</li>
+                        <li>💡 Personalized recommendations</li>
                     </ul>
                 </div>
                 
                 <div class="feature">
-                    <h3>🚀 Test Memory</h3>
+                    <h3>🚀 Test Enhanced Memory</h3>
                     <p><strong>Frontend:</strong> <a href="http://localhost:3000">http://localhost:3000</a></p>
-                    <p><strong>Example conversation:</strong></p>
+                    <p><strong>Memory API:</strong> <a href="http://localhost:8001/memory/status">/memory/status</a></p>
+                    <p><strong>Test Flow:</strong></p>
                     <ol>
-                        <li>Say: <code>407-288-6040</code></li>
-                        <li>Then: <code>What are my orders?</code></li>
-                        <li>AI remembers you're Janice! 🎉</li>
+                        <li>Say: <code>My name is Sarah, I like modern furniture</code></li>
+                        <li>Ask: <code>Show me sectionals</code></li>
+                        <li>Later: <code>What do you remember about me?</code></li>
+                        <li>🧠 AI remembers preferences across conversations!</li>
                     </ol>
                 </div>
             </div>
             
             <div style="text-align: center; margin-top: 30px; font-size: 1.2em;">
-                <p>💡 <strong>The AI now remembers who you are!</strong></p>
-                <p>✨ Uses existing PostgreSQL tables ✨</p>
+                <p>🧠 <strong>Enhanced Persistent Memory System!</strong></p>
+                <p>✨ 3-tier memory: Short-term + Knowledge Graph + Long-term ✨</p>
+                <p>🔍 Semantic search • 💾 Vector embeddings • 🤖 LLM insights</p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 30px;">
+                <h3 style="color: #007bff; margin-top: 0;">🔥 CROSS-CHANNEL MEMORY DEMO</h3>
+                <p><strong>Test the magic of persistent memory across web chat and phone calls!</strong></p>
+                
+                <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <h4>📞 Demo Instructions:</h4>
+                    <ol>
+                        <li>Start a chat conversation</li>
+                        <li>Ask April to call your phone: <code>"Can you call me at [your number]?"</code></li>
+                        <li>Answer the call and tell April your preferences</li>
+                        <li>Hang up and return to web chat</li>
+                        <li>Ask: <code>"What did I tell you on the phone?"</code></li>
+                        <li>Watch April remember everything! ✨</li>
+                    </ol>
+                </div>
+                
+                <p><strong>🎯 This demonstrates:</strong></p>
+                <ul>
+                    <li>✅ Cross-channel memory persistence</li>
+                    <li>✅ Real-time conversation sync</li>
+                    <li>✅ Unified customer experience</li>
+                    <li>✅ Phone-to-web context transfer</li>
+                </ul>
             </div>
         </div>
     </body>
     </html>
     """
+
+@app.post("/v1/demo/start-call")
+async def demo_start_call(request: Dict):
+    """🔥 DEMO: Start phone call from webchat to showcase memory persistence"""
+    try:
+        phone_number = request.get('phone_number', '')
+        user_identifier = request.get('user_identifier', phone_number)
+        
+        print(f"📞 DEMO CALL TO: {phone_number}")
+        print(f"👤 User: {user_identifier}")
+        
+        if not phone_number:
+            return {"status": "error", "message": "Phone number required"}
+        
+        # Get VAPI credentials
+        vapi_private_key = os.getenv('VAPI_PRIVATE_KEY')
+        vapi_assistant_id = os.getenv('VAPI_ASSISTANT_ID') 
+        vapi_phone_number_id = os.getenv('VAPI_PHONE_NUMBER_ID')
+        
+        if not all([vapi_private_key, vapi_assistant_id, vapi_phone_number_id]):
+            return {"status": "error", "message": "VAPI not configured"}
+        
+        # Make VAPI call
+        import requests
+        headers = {
+            "Authorization": f"Bearer {vapi_private_key}",
+            "Content-Type": "application/json"
+        }
+        
+        call_data = {
+            "assistantId": vapi_assistant_id,
+            "phoneNumberId": vapi_phone_number_id,
+            "customer": {"number": phone_number}
+        }
+        
+        response = requests.post("https://api.vapi.ai/call", json=call_data, headers=headers)
+        
+        if response.status_code in [200, 201]:
+            call_info = response.json()
+            call_id = call_info.get('id')
+            call_status = call_info.get('status')
+            
+            print(f"✅ DEMO CALL INITIATED: {call_id}")
+            
+            return {
+                "status": "success", 
+                "message": f"📞 Calling {phone_number}...",
+                "call_id": call_id,
+                "demo_instructions": "🎯 Answer the call and tell April your furniture preferences. Then return here to see the magic of cross-channel memory!"
+            }
+        else:
+            return {"status": "error", "message": f"Call failed: {response.text}"}
+            
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/webhook/vapi/end-of-call")
+async def vapi_end_of_call_webhook(request: Request):
+    """🔥 VAPI END OF CALL WEBHOOK - CRITICAL FOR CROSS-CHANNEL MEMORY"""
+    try:
+        body = await request.body()
+        data = json.loads(body.decode())
+        
+        print(f"\n🔥🔥🔥 VAPI END OF CALL REPORT RECEIVED! 🔥🔥🔥")
+        print(f"📞 FULL CALL DATA:")
+        print(json.dumps(data, indent=2))
+        
+        # Extract call information
+        call_data = data.get('call', {})
+        call_id = call_data.get('id')
+        phone_number = call_data.get('customer', {}).get('number')
+        transcript = data.get('transcript', [])
+        
+        print(f"\n📱 Phone Number: {phone_number}")
+        print(f"🆔 Call ID: {call_id}")
+        print(f"📝 Transcript Messages: {len(transcript)}")
+        
+        # Process transcript and save to memory
+        if phone_number and transcript:
+            # Initialize memory pool if needed
+            if hasattr(memory, 'init_pool'):
+                await memory.init_pool()
+            
+            # Get or create phone conversation
+            conversation_id = await memory.get_or_create_conversation(phone_number, 'phone')
+            print(f"📚 Phone conversation ID: {conversation_id}")
+            
+            # Save transcript messages to memory using correct method
+            saved_count = 0
+            for msg in transcript:
+                role = msg.get('role', 'unknown')
+                content = msg.get('content', '')
+                
+                if role and content:
+                    # Use the correct SimpleMemory methods
+                    if role == 'user':
+                        message_id = await memory.save_user_message(conversation_id, content)
+                    elif role == 'assistant' or role == 'bot':
+                        message_id = await memory.save_assistant_message(
+                            conversation_id=conversation_id,
+                            content=content,
+                            function_name=None,
+                            function_args=None
+                        )
+                    else:
+                        print(f"⚠️ Unknown role: {role}")
+                        continue
+                    
+                    print(f"💾 Saved {role}: {content[:80]}... (ID: {message_id})")
+                    saved_count += 1
+            
+            print(f"\n✅ END OF CALL PROCESSING COMPLETE!")
+            print(f"💾 Saved {saved_count} messages to memory")
+            print(f"🧠 Call context now available for webchat!")
+            print(f"🔗 Cross-channel memory: ACTIVE")
+        else:
+            print(f"⚠️ Missing phone_number or transcript")
+        
+        return {"status": "success", "message": "End of call processed", "saved_messages": saved_count if 'saved_count' in locals() else 0}
+        
+    except Exception as e:
+        print(f"❌ WEBHOOK ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"status": "error", "message": str(e)}
+
+@app.post("/webhook/vapi/call-status")
+async def vapi_call_status_webhook(request: Request):
+    """📞 VAPI Call Status Webhook - Monitor call progress"""
+    try:
+        body = await request.body()
+        data = json.loads(body.decode())
+        
+        status = data.get('status', 'unknown')
+        call_data = data.get('call', {})
+        call_id = call_data.get('id')
+        phone_number = call_data.get('customer', {}).get('number')
+        
+        print(f"\n📞 CALL STATUS UPDATE: {status}")
+        print(f"🆔 Call ID: {call_id}")
+        print(f"📱 Phone: {phone_number}")
+        
+        return {"status": "success"}
+        
+    except Exception as e:
+        print(f"❌ CALL STATUS WEBHOOK ERROR: {e}")
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

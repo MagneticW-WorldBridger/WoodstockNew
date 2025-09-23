@@ -13,10 +13,20 @@
         <!-- Header -->
         <header class="woodstock-header">
             <div class="woodstock-logo">
-                <div>
-                    <div class="woodstock-logo-text">WOODSTOCK FURNITURE</div>
-                    <div class="woodstock-subtitle">AI Customer Support</div>
+                <img src="http://woodstockfurniture.net/skin/frontend/default/exp/images/logo.png" 
+                     alt="Woodstock Furniture" 
+                     class="woodstock-logo-img"
+                     style="background: transparent !important; background-color: transparent !important;"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-fallback" style="display: none;">
+                    WOODSTOCK FURNITURE
                 </div>
+            </div>
+            
+            <div class="demo-button-container">
+                <button id="demoButton" class="demo-button" onclick="showDemoInstructions()">
+                    🔥 DEMO CROSS-CHANNEL MEMORY
+                </button>
             </div>
             
             <div class="connection-status">
@@ -62,6 +72,13 @@
                             spellcheck="true"></textarea>
                         <div class="char-counter" id="charCount">0/1000</div>
                     </div>
+                    <button 
+                        type="button" 
+                        id="clearCacheBtn" 
+                        class="woodstock-clear-button"
+                        title="Clear conversation cache">
+                        🗑️ Clear
+                    </button>
                     <button 
                         type="submit" 
                         id="sendButton" 

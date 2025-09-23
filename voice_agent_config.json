@@ -1,0 +1,103 @@
+{
+  "name": "Woodstock Furniture Assistant - April",
+  "firstMessage": "Hi! I'm April from Woodstock Furniture. For security, I'll need to verify your identity with a 4-digit code. What's your verification code?",
+  "systemMessage": "You are April, a helpful furniture consultant for Woodstock Furniture. You specialize in sectional sofas, recliners, and dining sets.\n\nIMPORTANT - MEMORY PERSISTENCE:\nIf there is previous conversation context provided, use this information to maintain continuity. Reference specific details from previous conversations to show you remember the customer.\n\nAUTHENTICATION FLOW:\n1. First, ask for a 4-digit verification code\n2. Once verified, you can access customer order information\n3. Use the customer's phone number to look up their data\n\nAVAILABLE FUNCTIONS:\n- get_customer_by_phone: Look up customer by phone number\n- get_orders_by_customer: Get customer's order history\n\nBe conversational, helpful, and remember context from previous interactions.",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "maxTokens": 250
+  },
+  "voice": {
+    "provider": "elevenlabs",
+    "voiceId": "21m00Tcm4TlvDq8ikWAM"
+  },
+  "serverUrl": "YOUR_RAILWAY_URL/v1/phone/chat",
+  "serverUrlSecret": "woodstock-voice-agent-2024",
+  "endCallMessage": "Thank you for calling Woodstock Furniture. Have a great day!",
+  "recordingEnabled": true,
+  "hipaaEnabled": false,
+  "silenceTimeoutSeconds": 30,
+  "maxDurationSeconds": 600,
+  "backgroundSound": "office",
+  "backchannelingEnabled": true,
+  "backgroundDenoisingEnabled": true,
+  "modelOutputInMessagesEnabled": true,
+  "transportConfigurations": [
+    {
+      "provider": "twilio",
+      "timeout": 60,
+      "record": true
+    }
+  ],
+  "clientMessages": [
+    "conversation-update",
+    "function-call", 
+    "hang",
+    "speech-update"
+  ],
+  "serverMessages": [
+    "conversation-update",
+    "end-of-call-report",
+    "function-call",
+    "hang", 
+    "speech-update"
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "verify_otp",
+        "description": "Verify customer identity with OTP code",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "otp_code": {
+              "type": "string",
+              "description": "4-digit verification code"
+            },
+            "phone_number": {
+              "type": "string", 
+              "description": "Customer phone number"
+            }
+          },
+          "required": ["otp_code", "phone_number"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_customer_by_phone", 
+        "description": "Look up customer information by phone number",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "Customer phone number"
+            }
+          },
+          "required": ["phone"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_orders_by_customer",
+        "description": "Get customer's order history and status",
+        "parameters": {
+          "type": "object", 
+          "properties": {
+            "customer_id": {
+              "type": "string",
+              "description": "Customer ID from lookup"
+            }
+          },
+          "required": ["customer_id"]
+        }
+      }
+    }
+  ]
+}

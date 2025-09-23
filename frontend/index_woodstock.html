@@ -12,11 +12,15 @@
         <!-- Header -->
         <header class="woodstock-header">
             <div class="woodstock-logo">
-                <img src="http://woodstockfurniture.net/skin/frontend/default/exp/images/logo.png" 
-                     alt="Woodstock Outlet" 
-                     onerror="this.style.display='none'">
+                <div class="logo-container">
+                    <img src="http://woodstockfurniture.net/skin/frontend/default/exp/images/logo.png" 
+                         alt="Woodstock Furniture" 
+                         class="woodstock-logo-img"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div class="logo-fallback" style="display: none; width: 40px; height: 40px; background: var(--woodstock-navy); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">WF</div>
+                </div>
                 <div>
-                    <div class="woodstock-logo-text">WOODSTOCK OUTLET</div>
+                    <div class="woodstock-logo-text">WOODSTOCK FURNITURE</div>
                     <div class="woodstock-subtitle">AI Customer Support</div>
                 </div>
             </div>

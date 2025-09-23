@@ -17,43 +17,74 @@ class SimpleMemory:
         self.pool = None
         print("🔧 SimpleMemory initialized")
     
+    async def init_pool(self):
+        """Initialize database connection pool"""
+        if not self.pool:
+            self.pool = await asyncpg.create_pool(self.db_url, min_size=1, max_size=3)
+            print("✅ PostgreSQL pool initialized")
+    
     async def init_db(self):
         """Initialize database connection pool"""
         if not self.pool:
             self.pool = await asyncpg.create_pool(self.db_url, min_size=1, max_size=3)
             print("✅ PostgreSQL pool initialized")
     
-    async def get_or_create_conversation(self, user_identifier: str) -> str:
-        """Get existing conversation or create new one"""
+    async def get_or_create_conversation(self, user_identifier: str, platform_type: str = 'webchat') -> str:
+        """Get existing conversation or create new one - MULTI-CHANNEL SUPPORT"""
         try:
             async with self.pool.acquire() as conn:
-                # Get existing active conversation
+                # Get existing active conversation for this platform
                 conversation = await conn.fetchrow("""
                     SELECT conversation_id FROM chatbot_conversations 
-                    WHERE user_identifier = $1 AND platform_type = 'webchat' AND is_active = true
+                    WHERE user_identifier = $1 AND platform_type = $2 AND is_active = true
                     ORDER BY last_message_at DESC
                     LIMIT 1
-                """, user_identifier)
+                """, user_identifier, platform_type)
                 
                 if conversation:
                     conv_id = str(conversation['conversation_id'])
-                    print(f"📚 Found existing conversation: {conv_id}")
+                    print(f"📚 Found existing {platform_type} conversation: {conv_id}")
                     return conv_id
                 
                 # Create new conversation
                 conversation_id = await conn.fetchval("""
                     INSERT INTO chatbot_conversations (user_identifier, platform_type)
-                    VALUES ($1, 'webchat')
+                    VALUES ($1, $2)
                     RETURNING conversation_id
-                """, user_identifier)
+                """, user_identifier, platform_type)
                 
                 conv_id = str(conversation_id)
-                print(f"✅ New conversation created: {conv_id}")
+                print(f"✅ New {platform_type} conversation created: {conv_id}")
                 return conv_id
                 
         except Exception as e:
             print(f"❌ Error managing conversation: {e}")
             return str(uuid.uuid4())
+    
+    async def get_unified_conversation_history(self, user_identifier: str, limit: int = 20) -> List[Dict]:
+        """Get conversation history across ALL channels for a user"""
+        try:
+            async with self.pool.acquire() as conn:
+                messages = await conn.fetch("""
+                    SELECT 
+                        cm.message_role as role,
+                        cm.message_content as content,
+                        cm.message_created_at as created_at,
+                        cc.platform_type,
+                        cm.executed_function_name,
+                        cm.function_input_parameters,
+                        cm.function_output_result
+                    FROM chatbot_messages cm
+                    JOIN chatbot_conversations cc ON cm.conversation_id = cc.conversation_id
+                    WHERE cc.user_identifier = $1
+                    ORDER BY cm.message_created_at DESC
+                    LIMIT $2
+                """, user_identifier, limit)
+                
+                return [dict(msg) for msg in reversed(messages)]
+        except Exception as e:
+            print(f"❌ Error getting unified history: {e}")
+            return []
     
     async def save_user_message(self, conversation_id: str, content: str):
         """Save user message"""

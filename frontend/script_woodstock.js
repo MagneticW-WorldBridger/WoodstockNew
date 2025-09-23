@@ -124,6 +124,12 @@ class WoodstockChat {
         this.messageInput.addEventListener('input', () => this.handleInputChange());
         this.messageInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
         
+        // Cache clear button
+        const clearCacheBtn = document.getElementById('clearCacheBtn');
+        if (clearCacheBtn) {
+            clearCacheBtn.addEventListener('click', () => this.clearCache());
+        }
+        
         // Auto-resize textarea
         this.messageInput.addEventListener('input', () => this.autoResize());
         
@@ -528,9 +534,9 @@ class WoodstockChat {
                 trigger: /(?:Order Number: 0710544II27|Total Amount: \$1997\.50|Status: Completed)/i 
             },
             { 
-                pattern: /(?:Here are the details for your order.*0710544II27|8 items purchased)/i, 
+                pattern: /(?:Here are the details for your order|Items Included:|Repose Avenue.*Sectional)/i, 
                 func: 'get_order_details', 
-                trigger: /(?:Repose Avenue.*Defender Sand|Order total: \$1997\.50|\$460\.14)/i 
+                trigger: /(?:Items Included:|Repose Avenue.*Defender Sand|Order total: \$1997\.50|\$460\.14)/i 
             },
             
             // Analytics Functions (2)
@@ -700,26 +706,45 @@ class WoodstockChat {
             }
         }
 
-        else if (functionName === 'getDetailsByOrder') {
-            // Extract order details
+        else if (functionName === 'getDetailsByOrder' || functionName === 'get_order_details') {
+            // Extract order details from backend response
+            console.log('🔍 EXTRACTING ORDER DETAILS from:', text);
             const items = [];
-            const itemMatches = text.match(/([^\n]+):\s*\$([0-9,.]+)/g);
             
-            if (itemMatches) {
-                itemMatches.forEach(match => {
-                    const parts = match.split(':');
-                    if (parts.length === 2) {
-                        const description = parts[0].trim();
-                        const price = parts[1].replace('$', '').trim();
-                        items.push({
-                            description,
-                            itemprice: price,
-                            qtyordered: '1',
-                            productid: 'N/A'
-                        });
-                    }
-                });
+            // Look for "Items Included:" or "Items Ordered:" section
+            const itemsSection = text.match(/Items (?:Included|Ordered):\s*([\s\S]*?)(?:\n\n|$)/i);
+            if (itemsSection) {
+                const itemsText = itemsSection[1];
+                console.log('🛒 Items section found:', itemsText);
+                
+                // Extract each item line (starts with -)
+                const itemLines = itemsText.match(/- ([^\n\r]+)/g);
+                if (itemLines) {
+                    itemLines.forEach(line => {
+                        const cleanLine = line.replace(/^- /, '').trim();
+                        
+                        // Try to extract price from line
+                        const priceMatch = cleanLine.match(/\$([0-9,]+\.?[0-9]*)/);
+                        const price = priceMatch ? priceMatch[1].replace(',', '') : '0.00';
+                        
+                        // Get description (everything before price or full line)
+                        const description = priceMatch ? 
+                            cleanLine.substring(0, cleanLine.indexOf('$')).trim() : 
+                            cleanLine;
+                        
+                        if (description) {
+                            items.push({
+                                description: description,
+                                productid: 'N/A',
+                                qtyordered: '1',
+                                itemprice: price
+                            });
+                        }
+                    });
+                }
             }
+            
+            console.log('🔍 EXTRACTED ITEMS:', items);
 
             data.data.entry = items;
         }
@@ -915,6 +940,26 @@ class WoodstockChat {
             return dateString;
         }
     }
+    
+    // Clear conversation cache
+    clearCache() {
+        console.log('🗑️ Clearing conversation cache...');
+        
+        // Clear conversation history
+        this.conversationHistory = [];
+        
+        // Clear messages container
+        this.messagesContainer.innerHTML = '';
+        
+        // Generate new session ID
+        this.sessionId = `woodstock_${Math.random().toString(36).substring(2)}`;
+        console.log('🆔 New Session ID:', this.sessionId);
+        
+        // Show success message
+        this.addMessage('system', '🗑️ Conversation cache cleared! You can now test as a new customer.');
+        
+        console.log('✅ Cache cleared successfully');
+    }
 
     formatAsHTML(text, functionName = null, functionData = null) {
         // Check if this is a function result that should use amazing components
@@ -1075,3 +1120,31 @@ woodstockChat.messageInput.value = "Give comprehensive analytics for 407-288-604
 `);
 
 console.log('📁 Woodstock Chat script loaded successfully!');
+
+// Demo functionality
+function showDemoInstructions() {
+    const demoMessage = `🔥 **CROSS-CHANNEL MEMORY DEMO**
+
+Ready to see the magic? Here's how to test our cross-channel memory system:
+
+1. **Ask me to call you**: Type something like "Can you call me at [your phone number]?"
+2. **Answer the call** from April (our AI assistant)  
+3. **Tell her your preferences** - colors, furniture types, budget, etc.
+4. **Hang up** when you're done
+5. **Return here and ask**: "What did I tell you on the phone?"
+6. **Watch the magic** - I'll remember everything! ✨
+
+This demonstrates how conversations persist between web chat and phone calls. Try it now!`;
+
+    // Add the demo message to the chat
+    if (window.woodstockChat && window.woodstockChat.addMessage) {
+        window.woodstockChat.addMessage(demoMessage, 'assistant');
+    }
+    
+    // Auto-focus the input
+    const input = document.getElementById('messageInput');
+    if (input) {
+        input.focus();
+        input.placeholder = 'Try: "Can you call me at 555-123-4567?"';
+    }
+}

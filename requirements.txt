@@ -19,6 +19,18 @@ sqlite-utils==3.38
 # Database (PostgreSQL)
 asyncpg==0.29.0
 
+# 🧠 Enhanced Memory System Dependencies
+sentence-transformers==3.3.1
+numpy>=1.24.0
+pgvector==0.3.7  # PostgreSQL vector extension
+
+# Machine Learning and embeddings
+torch>=2.0.0
+transformers>=4.36.0
+
+# Task handling for nest-asyncio fix
+nest-asyncio>=1.5.6
+
 # Core dependencies (auto-installed)
 pydantic>=2.11.7
 typing-extensions>=4.14.1

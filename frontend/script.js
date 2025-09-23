@@ -459,3 +459,31 @@ woodstockChat.messageInput.value = "Give comprehensive analytics for 407-288-604
 `);
 
 console.log('📁 Woodstock Chat script loaded successfully!');
+
+// Demo functionality
+function showDemoInstructions() {
+    const demoMessage = `🔥 **CROSS-CHANNEL MEMORY DEMO**
+
+Ready to see the magic? Here's how to test our cross-channel memory system:
+
+1. **Ask me to call you**: Type something like "Can you call me at [your phone number]?"
+2. **Answer the call** from April (our AI assistant)  
+3. **Tell her your preferences** - colors, furniture types, budget, etc.
+4. **Hang up** when you're done
+5. **Return here and ask**: "What did I tell you on the phone?"
+6. **Watch the magic** - I'll remember everything! ✨
+
+This demonstrates how conversations persist between web chat and phone calls. Try it now!`;
+
+    // Add the demo message to the chat
+    if (window.woodstockChat && window.woodstockChat.addMessage) {
+        window.woodstockChat.addMessage(demoMessage, 'assistant');
+    }
+    
+    // Auto-focus the input
+    const input = document.getElementById('messageInput');
+    if (input) {
+        input.focus();
+        input.placeholder = 'Try: "Can you call me at 555-123-4567?"';
+    }
+}
