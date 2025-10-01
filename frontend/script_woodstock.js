@@ -180,7 +180,7 @@ class WoodstockChat {
         const logoText = document.querySelector('.woodstock-logo-text');
         const subtitle = document.querySelector('.woodstock-subtitle');
         
-        if (logoText) logoText.textContent = 'WOODSTOCK FURNITURE';
+        if (logoText) logoText.textContent = 'WOODSTOCK OUTLET';
         if (subtitle) subtitle.textContent = 'AI Customer Support';
         
         // Update welcome message for customer

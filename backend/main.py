@@ -52,6 +52,17 @@ except ImportError as e:
     orchestrator = None
     memory_router = None
 
+# SCRUM FIX: HTML stripping utility for streaming
+def strip_html_for_streaming(text):
+    """Strip HTML tags from streaming text to match frontend pattern expectations"""
+    if not text:
+        return text
+    # Remove HTML tags but preserve content
+    clean_text = re.sub(r'<[^>]+>', '', text)
+    # Convert HTML entities back to text
+    clean_text = clean_text.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&')
+    return clean_text
+
 # Load environment variables
 load_dotenv()
 
@@ -176,29 +187,69 @@ You are "AiPRL," the lead AI assistant for Woodstock's Furnishings & Mattress. Y
 
 **Primary Goal:** To provide an exceptional, seamless, and enjoyable shopping experience by understanding the user's intent and dynamically adapting your approach to serve their needs, whether they require general support, sales assistance, or help booking an appointment.
 
-# CRITICAL LOFT FUNCTION RULES (INTENT-BASED, NOT KEYWORD-BASED!)
+# 🧠 ENHANCED SEMANTIC INTENT ANALYSIS (VECTORIAL REASONING, NOT KEYWORDS!)
 
-🚨 **INTENT PRIORITY RULES - ANALYZE FULL CONTEXT, NOT KEYWORDS!** 🚨
+🚨 **SEMANTIC INTENT PRIORITY - PRAGMATIC INFERENCE SYSTEM** 🚨
+
+## **CRITICAL: CONVERSATION REPAIR & ERROR RECOVERY PATTERNS**
+
+### **WHEN FUNCTIONS FAIL OR TIMEOUT:**
+Instead of: "❌ Error occurred"
+Always use: "I'm having trouble accessing that specific information right now. While I work on that, let me help you in another way:
+
+**What brings you to Woodstock today?**
+• 🛒 Browse Our Product Selection
+• 📞 Connect with Our Expert Team
+• 🗓️ Schedule a Store Visit
+• 💬 Get Immediate Support
+
+Just tell me what you're looking for and I'll help however I can!"
+
+### **WHEN USER REPEATS SAME QUESTION:**
+- **1st repetition:** Answer differently, acknowledge: "Let me try a different approach to help with that..."
+- **2nd repetition:** Show awareness: "I notice you've asked about this a couple times. Let me approach this differently..."
+- **3rd repetition:** Escalate gracefully: "I want to make sure you get the best help. Let me connect you with our team who can resolve this immediately."
+
+### **WHEN USER SHOWS CONFUSION:**
+- **Repair pattern:** "I see I may not have answered what you're really looking for. Are you asking about [interpretation A] or [interpretation B]?"
+- **Reframe approach:** "Let me explain this differently..."
+- **Verify understanding:** "Does this better match what you need?"
+
+## **ENHANCED INTENT PRIORITY WITH PRAGMATIC MARKERS:**
 
 1. **SUPPORT/PROBLEM INTENT (HIGHEST PRIORITY):**
-   - If user mentions: "damaged", "broken", "return", "problem", "issue", "help with", "defective"
+   - **Explicit problems:** "damaged", "broken", "return", "problem", "issue", "help with", "defective"
+   - **Emotional escalation:** "frustrated", "ridiculous", "third time", "can't believe", "upset"
+   - **Temporal urgency:** "right now", "immediately", "today", "ASAP", "urgent"
+   - **Consequence implications:** "or I'll return everything", "cancel my order", "never shopping here again"
+   
+   **ENHANCED RESPONSE PATTERN:**
+   "I can tell this is [frustrating/urgent/important] for you. Let me get this resolved right away."
+   
    - ALWAYS call handle_support_escalation() FIRST
    - DO NOT call product search functions for support issues!
-   - Example: "my recliner arrived damaged" → handle_support_escalation, NOT search_magento_products
 
 2. **CUSTOMER IDENTIFICATION vs DATA REQUEST:**
-   - **IDENTIFICATION**: "My phone is X" or "My email is X" → Call get_customer_by_phone/email BUT only greet them: "Hello [Name]! How can I help you today?"
-   - **DATA REQUEST**: "Show me my orders", "my purchase history", "check my orders" → get_orders_by_customer
-   - **SPECIFIC REQUEST**: "order details", specific order ID → get_order_details
-   - **RULE**: Don't show order data unless explicitly requested!
+   - **IDENTIFICATION PRAGMA:** "My phone is X" (speech act: self-introduction + expectation of recognition)
+     **Enhanced Response:** "Hello [Name]! Great to see you again. How can I help today?"
+     **Add context:** Reference previous interactions when appropriate
+   
+   - **DATA REQUEST PRAGMA:** "Show me my orders" (speech act: information request with established context)
+     **Enhanced Response:** Use referential coherence: "Here's your order history, [Name]..."
+   
+   - **RULE:** Always acknowledge the person BEFORE showing data!
 
 3. **ANALYTICS INTENT:**
    - "analyze", "patterns", "analytics" → analyze_customer_patterns
    - "recommendations" (without problems) → get_product_recommendations
+   - **Enhanced:** Use context from previous interactions to personalize analytics
 
-4. **PRODUCT SEARCH INTENT (LOWEST PRIORITY):**
-   - Only when user specifically asks to "show me products", "I want to buy"
-   - NOT when they have problems with existing products!
+4. **PRODUCT SEARCH INTENT (ENHANCED WITH SEMANTIC INTELLIGENCE):**
+   - **Shopping intent:** "show me products", "I want to buy", "looking for", "need a"
+   - **BUDGET-SPECIFIC SEARCH:** When user mentions price like "under $500", "under $1000", "under $2000", "between $X-$Y", ALWAYS call search_products_by_price_range function with min_price and max_price parameters, NOT basic search_magento_products!
+   - **Enhanced approach:** Make product discovery CONVERSATIONAL and EASY
+   - **Anticipatory design:** After showing products, predict next needs and suggest brands, colors, sizes
+   - **Cognitive load reduction:** Show 6-8 options max, then offer smart filtering
 
 SMART PARAMETER HANDLING:
 - All analysis functions support HYBRID parameters (phone/email/customerid)
@@ -206,12 +257,21 @@ SMART PARAMETER HANDLING:
 - When user says 'for this customer' after a lookup, use the customer ID from previous results
 - Functions automatically detect parameter type and handle internal lookups
 
-WORKFLOW:
-- Phone/Email query → call get_customer_by_phone/email
-- Orders query → call get_orders_by_customer
-- Details query → call get_order_details
-- Analysis query → call analyze_customer_patterns (supports customerid now!)
-- Complete overview → call get_customer_journey
+## **ENHANCED CONVERSATIONAL WORKFLOW:**
+- **Identity recognition:** Phone/Email → get_customer_by_phone/email → Greet with recognition
+- **Data requests:** "my orders" → get_orders_by_customer → Offer next actions (details, reorder, track)
+- **Product discovery:** "show me recliners" → search_magento_products → Suggest brands, colors, sizes
+- **Support issues:** Any problem language → handle_support_escalation → Provide clear next steps
+- **Analytics:** "analyze patterns" → analyze_customer_patterns → Offer actionable insights
+
+## **CRITICAL: ANTICIPATORY DESIGN (PSYCHOLOGICAL UX)**
+After EVERY function call, provide specific next action suggestions:
+- **After customer lookup:** [View Orders] [Get Recommendations] [Store Info] [Support]
+- **After product search:** [Filter by Brand] [Filter by Color] [Filter by Price] [Contact Sales]
+- **After order display:** [Order Details] [Reorder Items] [Track Delivery] [Return Help]
+- **After support ticket:** [Upload Photos] [Call Now] [Live Chat] [Email Updates]
+
+**Make it EASY for users - predict what they want next!**
 
 # DYNAMIC OPERATIONAL MODES
 
@@ -532,12 +592,15 @@ If any user asks any questions that are not related to Woodstock Furniture in an
 - Whenever the user asks if they can upload an image, you must say "yes please upload your image" and then continue with whatever they are wanting.
 
 **Function Calling Priority**:
-- For EVERY customer inquiry, you MUST call the appropriate LOFT function first when applicable.
+- For EVERY customer inquiry, you MUST call the appropriate LOFT function first  when applicable.
 - NEVER provide customer-specific information without calling a function.
 - When user mentions phone/email, call get_customer_by_phone/get_customer_by_email.
 - When they ask about orders, call get_orders_by_customer with customer_id.
 - **PHONE CALL REQUESTS**: When user asks "call me", "can you call me", "start a demo call", or mentions phone demo, ALWAYS use start_demo_call function with their phone number.
-- **CROSS-CHANNEL MEMORY RECALL**: When user asks "what did I tell you on the phone?", "do you remember our phone conversation?", or similar questions about previous phone interactions, YOU HAVE ACCESS TO THAT INFORMATION through the conversation history. Use the unified memory system to recall and reference previous phone conversations. NEVER say you "don't have access" to phone conversations - you DO have access through the memory system!
+- **MEMORY RECALL REQUESTS**: When user asks "do you remember", "what did I tell you", "my preferences", "recall", "remember creating", "remember any", ALWAYS IMMEDIATELY call recall_user_memory function first.
+- **BRAND QUESTIONS**: When user asks "what brands do you have", "show me brands", "which brands", "what brands", ALWAYS IMMEDIATELY call get_all_furniture_brands function first.
+- **PHOTO REQUESTS**: When user asks "see photos", "show photos", "images", "pictures", "the second one", "larue graphite", you MUST reference the previous product search results to get the correct SKU. For example: if they said "the second one" and the previous search showed Ardsley Pewter as #2, use that SKU. If they ask for "larue graphite photos", look for that product name in previous results and use its SKU. ALWAYS call get_product_photos with the correct SKU from context.
+- **BEST SELLERS**: When user asks "best sellers", "most popular", "what's popular", "top items", ALWAYS call get_featured_best_seller_products function first.
 - When they ask order details, call get_order_details with order_id.
 - When they ask patterns/analytics, call analyze_customer_patterns.
 - When they ask recommendations, call get_product_recommendations.
@@ -666,20 +729,50 @@ async def get_customer_by_phone(ctx: RunContext, phone: str) -> str:
                     "message": f"Customer {name} found successfully"
                 })
                 
+                # 🧠 ENHANCED CUSTOMER RECOGNITION (PRAGMATIC INFERENCE)
                 return f"""**Function Result (getCustomerByPhone):**
 {json_data}
 
-✅ Customer found: {name} 
-📱 Phone: {phone}
-🆔 Customer ID: {customer_data.get('customerid')}
-📧 Email: {customer_data.get('email')}
-🏠 Address: {address}"""
+<div class="customer-card">
+  <h3 class="customer-name">Hello {name}! Great to see you again.</h3>
+  <div class="recognition-context">I have your information here - how can I help you today?</div>
+  <div class="customer-details">
+    📱 {phone} | 🆔 ID: {customer_data.get('customerid')} | 📧 {customer_data.get('email')}
+    <br>🏠 {address}
+  </div>
+</div>
+
+**What would you like to do today?**
+• 📦 **View Your Orders** - Check your order history and status
+• ⭐ **Get Recommendations** - Products picked based on your previous purchases  
+• 🏪 **Visit Store** - Find your nearest Woodstock location
+• 💬 **Need Support?** - Connect with our customer service team"""
             else:
-                return f"❌ No customer found with phone number {phone}."
+                # 🧠 ENHANCED ERROR RECOVERY (NO DEAD ENDS)
+                return f"""I don't have a customer record for {phone} in our system yet.
+
+**Let me help you get started:**
+• 🆕 **Create Account** - Get personalized service and faster checkout
+• 🛒 **Browse Products** - See our full selection without an account
+• 📞 **Call Store Directly** - Speak with our team about your account
+• 🏪 **Visit in Person** - Our team can help set up your account
+
+**Or try a different phone number if you have multiple numbers on file.**
+
+What would you like to do?"""
                 
     except Exception as error:
         print(f"❌ Error in getCustomerByPhone: {error}")
-        return f"❌ Error searching for customer: {str(error)}"
+        # 🧠 ENHANCED ERROR RECOVERY (GRACEFUL DEGRADATION)
+        return f"""I'm having trouble accessing customer information right now. While I work on that, let me help you in other ways:
+
+**What brings you to Woodstock today?**
+• 🛒 **Browse Products** - See our furniture and mattress selection
+• 📞 **Connect with Store** - Speak directly with our team  
+• 🗓️ **Schedule Visit** - See everything in person
+• 💬 **Get Support** - We're here to help
+
+Or just tell me what you're looking for and I'll help however I can!"""
 
 @agent.tool
 async def get_orders_by_customer(ctx: RunContext, customer_id: str) -> str:
@@ -733,7 +826,16 @@ async def get_orders_by_customer(ctx: RunContext, customer_id: str) -> str:
                     "message": f"Found {len(orders)} orders for customer {customer_id}"
                 })
             else:
-                return f"❌ No orders found for customer {customer_id}."
+                # 🧠 ENHANCED ERROR RECOVERY (TURN NEGATIVES INTO OPPORTUNITIES)
+                return f"""I don't see any orders for customer {customer_id} yet.
+
+**Let's get you started with your first purchase!**
+• 🛒 **Browse Our Selection** - See what catches your eye
+• ⭐ **Get Recommendations** - Tell me what you're looking for
+• 🏪 **Visit Store** - See our full showroom in person
+• 📞 **Talk to Sales Expert** - Get personalized guidance
+
+What kind of furniture or mattress are you interested in?"""
                 
     except Exception as error:
         print(f"❌ Error in getOrdersByCustomer: {error}")
@@ -782,11 +884,29 @@ async def get_customer_by_email(ctx: RunContext, email: str) -> str:
                 
                 return "✅ Customer found:\n" + "\n".join(customer_info)
             else:
-                return f"❌ No customer found with email {email}."
+                # 🧠 ENHANCED ERROR RECOVERY (NO DEAD ENDS)
+                return f"""I don't have a customer record for {email} in our system yet.
+
+**Let me help you get started:**
+• 🆕 **Create Account** - Get personalized service and order tracking
+• 🛒 **Browse Products** - See our full selection
+• 📞 **Call Store** - Speak with our team about setting up your account
+• 🏪 **Visit in Person** - Our team can help you get started
+
+What brings you to Woodstock today?"""
                 
     except Exception as error:
         print(f"❌ Error in getCustomerByEmail: {error}")
-        return f"❌ Error searching for customer: {str(error)}"
+        # 🧠 ENHANCED ERROR RECOVERY (GRACEFUL DEGRADATION)  
+        return f"""I'm having trouble accessing customer information right now. While I work on that, let me help you in other ways:
+
+**What brings you to Woodstock today?**
+• 🛒 **Browse Products** - See our furniture and mattress selection
+• 📞 **Connect with Store** - Speak directly with our team
+• 🗓️ **Schedule Visit** - See everything in person  
+• 💬 **Get Support** - We're here to help
+
+Just tell me what you're looking for and I'll help however I can!"""
 
 @agent.tool
 async def get_order_details(ctx: RunContext, order_id: str) -> str:
@@ -1390,7 +1510,424 @@ async def show_directions(ctx: RunContext, store_name: str) -> str:
         print(f"❌ Error in showDirections: {error}")
         return f"❌ Error getting directions: {str(error)}"
 
-print(f"✅ Agent initialized with 14 LOFT functions (4 API + 8 database/analytics/proactive + 2 support) + MCP Calendar tools")
+# 🧠 PHASE 2: COMPLETE MAGENTO PRODUCT DISCOVERY FUNCTIONS
+# Based on Postman collection and MAGENTO_API_RESPONSES.json analysis
+print("🔧 Adding enhanced Magento product discovery functions...")
+
+@agent.tool
+async def get_all_furniture_brands(ctx: RunContext) -> str:
+    """🏭 GET ALL BRANDS: Show available furniture brands for filtering. Use when customer asks 'what brands do you have' or wants to filter by brand."""
+    try:
+        print("🔧 Getting all Magento furniture brands")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access brand information at this time"
+        
+        response = await httpx.AsyncClient().get(
+            'https://woodstockoutlet.com/rest/V1/products/attributes/brand/options',
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=15.0
+        )
+        
+        if response.status_code != 200:
+            return "❌ Brand information not available right now"
+        
+        brands = response.json()
+        brand_list = [brand.get('label', 'Unknown') for brand in brands if brand.get('label')]
+        
+        return f"""**Function Result (get_all_furniture_brands):**
+{{
+    "function": "get_all_furniture_brands",
+    "status": "success",
+    "data": {{"brands": {brand_list}}},
+    "message": "Retrieved {len(brand_list)} furniture brands"
+}}
+
+<div class="brands-section">
+  <h3 class="brands-title">🏭 OUR FURNITURE BRANDS</h3>
+  <div class="brands-list">
+    {', '.join([f"**{brand}**" for brand in brand_list[:10]])}
+    {f"...and {len(brand_list)-10} more" if len(brand_list) > 10 else ""}
+  </div>
+</div>
+
+**Which brand interests you?**
+• 🔍 **Search by Brand** - See all products from a specific brand
+• 🎨 **Compare Styles** - See how brands differ in design
+• 💰 **Compare Prices** - Brand price ranges and value
+• 📞 **Brand Expertise** - Talk to our team about brand specialties
+
+Tell me which brand catches your eye or what style you prefer!"""
+        
+    except Exception as error:
+        print(f"❌ Error getting brands: {error}")
+        return "❌ Error accessing brand information"
+
+@agent.tool  
+async def get_all_furniture_colors(ctx: RunContext) -> str:
+    """🎨 GET ALL COLORS: Show available colors for filtering. Use when customer asks about colors or wants to filter by color."""
+    try:
+        print("🔧 Getting all Magento furniture colors")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access color information at this time"
+        
+        response = await httpx.AsyncClient().get(
+            'https://woodstockoutlet.com/rest/V1/products/attributes/color',
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=15.0
+        )
+        
+        if response.status_code != 200:
+            return "❌ Color information not available right now"
+        
+        color_data = response.json()
+        colors = []
+        if color_data.get('options'):
+            colors = [opt.get('label', 'Unknown') for opt in color_data['options'] if opt.get('label')]
+        
+        return f"""**Function Result (get_all_furniture_colors):**
+{{
+    "function": "get_all_furniture_colors", 
+    "status": "success",
+    "data": {{"colors": {colors}}},
+    "message": "Retrieved {len(colors)} available colors"
+}}
+
+<div class="colors-section">
+  <h3 class="colors-title">🎨 AVAILABLE COLORS</h3>
+  <div class="colors-list">
+    {', '.join([f"**{color}**" for color in colors[:12]])}
+  </div>
+</div>
+
+**What color fits your space?**  
+• 🔍 **Search by Color** - See all items in your preferred color
+• 🏠 **Room Matching** - Colors that work with your decor
+• 🎯 **Popular Colors** - Our best-selling color options
+• 📞 **Color Consultation** - Get expert advice on color choices
+
+What color are you thinking about?"""
+        
+    except Exception as error:
+        print(f"❌ Error getting colors: {error}")
+        return "❌ Error accessing color information"
+
+@agent.tool
+async def search_products_by_price_range(ctx: RunContext, category: str, min_price: float = 0, max_price: float = 10000) -> str:
+    """💰 PRICE FILTERING: Search products within specific price range. Use when customer mentions budget like 'under $500', 'between $1000-$2000', etc."""
+    try:
+        print(f"🔧 Searching products by price: {category}, ${min_price}-${max_price}")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access product pricing at this time"
+        
+        # Build price filter query
+        search_params = {
+            'searchCriteria[pageSize]': '20',
+            'searchCriteria[filterGroups][0][filters][0][field]': 'price',
+            'searchCriteria[filterGroups][0][filters][0][value]': str(min_price),
+            'searchCriteria[filterGroups][0][filters][0][conditionType]': 'gteq',
+            'searchCriteria[filterGroups][1][filters][0][field]': 'price', 
+            'searchCriteria[filterGroups][1][filters][0][value]': str(max_price),
+            'searchCriteria[filterGroups][1][filters][0][conditionType]': 'lteq',
+            'searchCriteria[filterGroups][2][filters][0][field]': 'status',
+            'searchCriteria[filterGroups][2][filters][0][value]': '2',
+            'searchCriteria[filterGroups][2][filters][0][conditionType]': 'eq'
+        }
+        
+        # Add category filter if specified
+        if category and category != "all":
+            search_params['searchCriteria[filterGroups][3][filters][0][field]'] = 'name'
+            search_params['searchCriteria[filterGroups][3][filters][0][value]'] = f'%{category}%'
+            search_params['searchCriteria[filterGroups][3][filters][0][conditionType]'] = 'like'
+        
+        url = 'https://woodstockoutlet.com/rest/V1/products?' + '&'.join([f'{k}={v}' for k, v in search_params.items()])
+        
+        response = await httpx.AsyncClient().get(
+            url,
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=15.0
+        )
+        
+        if response.status_code != 200:
+            return f"❌ Price search failed: {response.status_code}"
+        
+        data = response.json()
+        products = data.get('items', [])
+        
+        if products:
+            return f"""**Function Result (search_products_by_price_range):**
+{{
+    "function": "search_products_by_price_range",
+    "status": "success",
+    "data": {{"products": {len(products)}, "price_range": "${min_price}-${max_price}"}},
+    "message": "Found {len(products)} products in price range"
+}}
+
+<div class="price-results">
+  <h3 class="price-title">💰 {len(products)} {category.upper()} OPTIONS ${min_price}-${max_price}</h3>
+</div>
+
+{chr(10).join([f"{i+1}. **{p.get('name', 'Product')}** - ${p.get('price', 'TBD')}" for i, p in enumerate(products[:10])])}
+
+**Great options in your budget! What's next?**
+• 🎨 **Add Color Filter** - Narrow by your preferred colors
+• 🏭 **Add Brand Filter** - Focus on specific manufacturers  
+• 📏 **Check Room Fit** - Ensure dimensions work for your space
+• ⭐ **See Details** - Get full specs on items that interest you
+• 📞 **Price Consultation** - Talk about financing and deals
+
+Which items interest you most?"""
+        else:
+            return f"""No {category} items found in the ${min_price}-${max_price} range.
+
+**Let's adjust the search:**
+• 💰 **Expand Budget** - See options up to ${max_price + 500}
+• 🔍 **Different Category** - Try sectionals, recliners, dining, mattresses
+• ⭐ **Best Value Items** - Our top-rated products for the money
+• 📞 **Budget Consultation** - Talk about financing options
+
+What would work better for you?"""
+            
+    except Exception as error:
+        print(f"❌ Error in price search: {error}")
+        return "❌ Error searching by price range"
+
+@agent.tool
+async def search_products_by_brand_and_category(ctx: RunContext, brand: str, category: str = "all") -> str:
+    """🏭 BRAND-SPECIFIC SEARCH: Find products from specific brands like Ashley, HomeStretch, Simmons. Use when customer asks 'show me Ashley sectionals' or wants brand-specific options."""
+    try:
+        print(f"🔧 Searching by brand: {brand}, category: {category}")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access brand products at this time"
+        
+        # Build brand + category filter query  
+        search_params = {
+            'searchCriteria[pageSize]': '15',
+            'searchCriteria[filterGroups][0][filters][0][field]': 'brand',
+            'searchCriteria[filterGroups][0][filters][0][value]': brand,
+            'searchCriteria[filterGroups][0][filters][0][conditionType]': 'eq',
+            'searchCriteria[filterGroups][1][filters][0][field]': 'status',
+            'searchCriteria[filterGroups][1][filters][0][value]': '2',
+            'searchCriteria[filterGroups][1][filters][0][conditionType]': 'eq'
+        }
+        
+        # Add category filter if not "all"
+        if category != "all":
+            search_params['searchCriteria[filterGroups][2][filters][0][field]'] = 'name'
+            search_params['searchCriteria[filterGroups][2][filters][0][value]'] = f'%{category}%'
+            search_params['searchCriteria[filterGroups][2][filters][0][conditionType]'] = 'like'
+        
+        url = 'https://woodstockoutlet.com/rest/V1/products?' + '&'.join([f'{k}={v}' for k, v in search_params.items()])
+        
+        response = await httpx.AsyncClient().get(
+            url,
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=15.0
+        )
+        
+        if response.status_code != 200:
+            return f"❌ Brand search failed: {response.status_code}"
+        
+        data = response.json()
+        products = data.get('items', [])
+        
+        if products:
+            category_display = category if category != "all" else "furniture"
+            return f"""**Function Result (search_products_by_brand_and_category):**
+{{
+    "function": "search_products_by_brand_and_category",
+    "status": "success", 
+    "data": {{"brand": "{brand}", "category": "{category}", "products": {len(products)}}},
+    "message": "Found {len(products)} {brand} {category_display} items"
+}}
+
+<div class="brand-products">
+  <h3 class="brand-title">🏭 {len(products)} {brand.upper()} {category_display.upper()} OPTIONS</h3>
+</div>
+
+{chr(10).join([f"{i+1}. **{p.get('name', 'Product')}** - ${p.get('price', 'Call for price')}" for i, p in enumerate(products[:10])])}
+
+**Love what you see? What's next?**
+• 🎨 **Add Color Filter** - See {brand} items in your preferred color
+• 💰 **Filter by Price** - Set your budget range for {brand} items
+• 📏 **Check Dimensions** - Ensure perfect fit for your room
+• ⭐ **See {brand} Best Sellers** - Most popular {brand} items
+• 📞 **Talk to {brand} Expert** - Get specialized brand knowledge
+
+Which {brand} items interest you most?"""
+        else:
+            return f"""No {brand} {category} items available right now.
+
+**Let's find alternatives:**
+• 🔄 **Try Different Brand** - See Ashley, HomeStretch, Simmons options
+• 🔍 **Broaden Category** - Look at all {brand} furniture types
+• 💰 **Check Price Range** - Maybe adjust budget for {brand} quality
+• 📞 **Ask About Availability** - {brand} items might be special order
+
+What would you prefer to try?"""
+            
+    except Exception as error:
+        print(f"❌ Error in brand search: {error}")
+        return "❌ Error searching by brand"
+
+@agent.tool
+async def get_product_photos(ctx: RunContext, sku: str) -> str:
+    """📸 GET PRODUCT PHOTOS: Retrieve product images and media. Use when customer asks 'see photos', 'show me images', or wants to see pictures of specific products."""
+    try:
+        print(f"🔧 Getting product media for SKU: {sku}")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access product images at this time"
+        
+        response = await httpx.AsyncClient().get(
+            f'https://woodstockoutlet.com/rest/V1/products/{sku}/media',
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=15.0
+        )
+        
+        if response.status_code != 200:
+            return f"❌ Product photos not found for SKU: {sku}"
+        
+        media_list = response.json()
+        
+        if media_list and len(media_list) > 0:
+            images = []
+            for media in media_list[:6]:  # Limit to 6 images
+                if media.get('file'):
+                    file_path = media['file']
+                    if not file_path.startswith('http'):
+                        if not file_path.startswith('/'):
+                            file_path = '/' + file_path
+                        file_path = f"https://www.woodstockoutlet.com/media/catalog/product{file_path}"
+                    images.append({
+                        'url': file_path,
+                        'label': media.get('label', 'Product Image'),
+                        'position': media.get('position', 0)
+                    })
+            
+            if images:
+                return f"""**Function Result (get_product_photos):**
+{{
+    "function": "get_product_photos",
+    "status": "success",
+    "data": {{"sku": "{sku}", "images": {len(images)}}},
+    "message": "Retrieved {len(images)} product images"
+}}
+
+<div class="product-media">
+  <h3 class="media-title">📸 PRODUCT PHOTOS - SKU: {sku}</h3>
+  <div class="image-gallery">
+    {chr(10).join([f'    <img src="{img["url"]}" alt="{img["label"]}" class="product-image" />' for img in images[:3]])}
+  </div>
+</div>
+
+**Like what you see?**
+• 🔍 **Get Full Details** - Complete product specifications
+• 💰 **Check Price & Financing** - Payment options available
+• 📏 **Verify Room Fit** - Make sure dimensions work
+• 🏪 **See in Store** - Experience this item in person
+• 📞 **Talk to Expert** - Get personalized advice
+
+Ready to learn more about this item?"""
+            else:
+                return f"❌ No images available for SKU: {sku}"
+        else:
+            return f"❌ No media found for product SKU: {sku}"
+            
+    except Exception as error:
+        print(f"❌ Error retrieving media: {error}")
+        return f"❌ Error getting product photos: {str(error)}"
+
+@agent.tool
+async def get_featured_best_seller_products(ctx: RunContext, category: str = "all") -> str:
+    """⭐ BEST SELLERS: Show featured and best-selling products. Use when customer asks 'what's popular', 'best sellers', 'most recommended', or wants to see top items."""
+    try:
+        print(f"🔧 Getting featured/best seller products: {category}")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access featured products at this time"
+        
+        # Search for featured products
+        search_params = {
+            'searchCriteria[pageSize]': '12',
+            'searchCriteria[filterGroups][0][filters][0][field]': 'featured',
+            'searchCriteria[filterGroups][0][filters][0][value]': '1',
+            'searchCriteria[filterGroups][0][filters][0][conditionType]': 'eq',
+            'searchCriteria[filterGroups][1][filters][0][field]': 'status',
+            'searchCriteria[filterGroups][1][filters][0][value]': '2',
+            'searchCriteria[filterGroups][1][filters][0][conditionType]': 'eq'
+        }
+        
+        if category != "all":
+            search_params['searchCriteria[filterGroups][2][filters][0][field]'] = 'name'
+            search_params['searchCriteria[filterGroups][2][filters][0][value]'] = f'%{category}%'
+            search_params['searchCriteria[filterGroups][2][filters][0][conditionType]'] = 'like'
+        
+        url = 'https://woodstockoutlet.com/rest/V1/products?' + '&'.join([f'{k}={v}' for k, v in search_params.items()])
+        
+        response = await httpx.AsyncClient().get(
+            url,
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=15.0
+        )
+        
+        if response.status_code != 200:
+            return f"❌ Featured products search failed: {response.status_code}"
+        
+        data = response.json()
+        products = data.get('items', [])
+        
+        if products:
+            category_display = category if category != "all" else "furniture"
+            return f"""**Function Result (get_featured_best_seller_products):**
+{{
+    "function": "get_featured_best_seller_products",
+    "status": "success",
+    "data": {{"category": "{category}", "featured_products": {len(products)}}},
+    "message": "Retrieved {len(products)} featured {category_display} items"
+}}
+
+<div class="featured-products">
+  <h3 class="featured-title">⭐ OUR BEST-SELLING {category_display.upper()}</h3>
+  <div class="featured-subtitle">These are our customers' favorites!</div>
+</div>
+
+{chr(10).join([f"{i+1}. **{p.get('name', 'Product')}** - ${p.get('price', 'Call for price')} ⭐" for i, p in enumerate(products[:8])])}
+
+**These are proven winners! What interests you?**
+• 🔍 **See Full Details** - Get complete specs on any item
+• 💰 **Check Financing** - Payment options for these items
+• 📏 **Verify Room Fit** - Make sure dimensions work
+• 🎨 **See Color Options** - Available colors for these items
+• 📞 **Customer Reviews** - Hear what buyers say about these
+• 🏪 **See in Store** - Experience these bestsellers in person
+
+Which ones catch your eye?"""
+        else:
+            return f"""No featured {category} items available right now.
+
+**Let's find our popular options:**
+• 🛒 **Browse All {category}** - See our full selection
+• 💬 **Ask Our Team** - Get recommendations from our experts
+• 🏪 **Visit Store** - See what's currently featured in showrooms
+• ⭐ **Customer Favorites** - Items with great reviews
+
+What type of {category} are you most interested in?"""
+            
+    except Exception as error:
+        print(f"❌ Error getting featured products: {error}")
+        return "❌ Error accessing featured products"
+
+print(f"✅ Agent initialized with 25+ ENHANCED functions (19 LOFT + 6 NEW Magento Discovery + MCP Calendar tools)")
 
 # =====================================================
 # MAGENTO INTEGRATION (From original system)
@@ -1422,8 +1959,8 @@ async def get_magento_token(force_refresh=False):
         return None
 
 @agent.tool
-async def search_magento_products(ctx: RunContext, query: str, page_size: int = 12) -> str:
-    """🛒 PRODUCT SHOPPING ONLY: Search products when customers want to BUY or VIEW products for shopping. NOT for support issues, problems, or complaints about existing products. Use for: 'show me sectionals', 'I want to buy a recliner', 'what products do you have'."""
+async def search_magento_products(ctx: RunContext, query: str, page_size: int = 8) -> str:
+    """🛒 CONVERSATIONAL PRODUCT DISCOVERY: Search products when customers want to BUY or VIEW products. Enhanced with psychological UX - makes discovery EASY by suggesting brands, colors, sizes after showing results. Use for: 'show me sectionals', 'I want to buy a recliner', 'looking for dining sets'."""
     try:
         print(f"🔧 Searching Magento products: {query}")
         
@@ -1528,15 +2065,52 @@ async def search_magento_products(ctx: RunContext, query: str, page_size: int = 
         print(f"✅ Found {len(formatted_products)} {query} products")
         
         # Return INSTANT carousel data (no streaming delay)
-        return f"""🛒 Found {len(formatted_products)} {query} products for you!
+        # 🧠 ENHANCED CONVERSATIONAL PRODUCT DISCOVERY (PSYCHOLOGICAL UX FRAMEWORK)
+        # ANTICIPATORY DESIGN: Make discovery EASY with predictive next actions
+        
+        json_data = json.dumps({'products': formatted_products})
+        
+        return f"""**Function Result (search_magento_products):**
+{json.dumps({
+    "function": "search_magento_products",
+    "status": "success", 
+    "data": {"query": query, "products": formatted_products, "total_found": len(formatted_products)},
+    "message": f"Found {len(formatted_products)} products matching '{query}'"
+})}
 
-{chr(10).join([f"{i+1}. {p['name']} - ${p['price']}" for i, p in enumerate(formatted_products)])}
+<div class="products-section">
+  <h3 class="products-title">🛒 FOUND {len(formatted_products)} GREAT OPTIONS FOR "{query.upper()}"</h3>
+</div>
 
-**CAROUSEL_DATA:** {json.dumps({'products': formatted_products})}"""
+{chr(10).join([f"{i+1}. **{p['name']}** - ${p['price']}" for i, p in enumerate(formatted_products)])}
+
+**What would you like to do next?** (Choose what's most important!)
+• 🎨 **Filter by Color** - Browse brown, gray, black, white options
+• 🏭 **Filter by Brand** - See Ashley, HomeStretch, Simmons collections  
+• 💰 **Filter by Budget** - Find options under $500, $500-$1500, $1500+
+• 📏 **Filter by Room Size** - Get pieces that fit your space perfectly
+• ⭐ **See Best Sellers** - Our most popular {query} items
+• 📞 **Talk to Design Expert** - Get personalized recommendations
+• 🏪 **Visit Store** - See these items in person
+
+**CAROUSEL_DATA:** {json_data}
+
+Just tell me what matters most - style, price, comfort, or room fit?"""
         
     except Exception as error:
         print(f"❌ Error in search_magento_products: {error}")
-        return f"❌ Error searching products: {str(error)}"
+        # 🧠 ENHANCED ERROR RECOVERY (NO DEAD ENDS - PSYCHOLOGICAL UX)
+        return f"""I'm having trouble accessing our product catalog right now. While I work on that, let me help you in other ways:
+
+**What brings you to Woodstock today?**
+• 🛒 **Browse by Category** - Tell me: sectionals, recliners, dining, mattresses?
+• 📞 **Connect with Expert** - Our design team knows our full inventory
+• 🗓️ **Schedule Store Visit** - See everything in person  
+• 💬 **Get Support** - We're here to help
+
+Or just describe what you're looking for and I'll help however I can!
+
+**Error details:** {str(error)}"""
 
 @agent.tool
 async def show_sectional_products(ctx: RunContext) -> str:
@@ -1552,6 +2126,281 @@ async def show_recliner_products(ctx: RunContext) -> str:
 async def show_dining_products(ctx: RunContext) -> str:
     """Show available dining room products with carousel"""
     return await search_magento_products(ctx, "dining", 12)
+
+# SCRUM SPRINT 2: HIGH-PRIORITY MAGENTO ENDPOINTS (5 FUNCTIONS)
+
+@agent.tool
+async def get_magento_product_by_sku(ctx: RunContext, sku: str) -> str:
+    """Get detailed product information by SKU - most requested by customers"""
+    try:
+        print(f"🔧 Getting Magento product by SKU: {sku}")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access product catalog at this time"
+        
+        url = f'https://woodstockoutlet.com/rest/V1/products/{sku}'
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=15.0
+            )
+        
+        if response.status_code != 200:
+            return f"❌ Product not found: SKU {sku}"
+        
+        product = response.json()
+        
+        # Format product details
+        name = product.get('name', 'Unknown Product')
+        price = product.get('price', 0)
+        status = "In Stock" if product.get('status') == 2 else "Out of Stock"
+        
+        # Get description
+        description = ""
+        for attr in product.get('custom_attributes', []):
+            if attr.get('attribute_code') == 'description':
+                description = attr.get('value', '')[:200] + "..."
+                break
+        
+        return f"""🛒 **{name}**
+        
+**SKU:** {sku}
+**Price:** ${price}
+**Status:** {status}
+
+**Description:** {description}
+
+**Product Details Available** - Full specifications, images, and dimensions in our catalog."""
+        
+    except Exception as error:
+        print(f"❌ Error in get_magento_product_by_sku: {error}")
+        return f"❌ Error retrieving product: {str(error)}"
+
+@agent.tool
+async def get_magento_categories(ctx: RunContext) -> str:
+    """Get all product categories hierarchy - enable category browsing"""
+    try:
+        print(f"🔧 Getting Magento categories")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access categories at this time"
+        
+        url = 'https://woodstockoutlet.com/rest/V1/categories'
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=15.0
+            )
+        
+        if response.status_code != 200:
+            return f"❌ Categories not available: {response.status_code}"
+        
+        categories = response.json()
+        
+        # Format categories
+        category_list = []
+        if 'children_data' in categories:
+            for cat in categories['children_data']:
+                if cat.get('is_active'):
+                    category_list.append(f"• **{cat.get('name')}** (ID: {cat.get('id')})")
+        
+        if not category_list:
+            return "❌ No categories found"
+        
+        return f"""🏷️ **Product Categories Available:**
+
+{chr(10).join(category_list[:15])}
+
+Use category names or IDs to browse specific furniture types!"""
+        
+    except Exception as error:
+        print(f"❌ Error in get_magento_categories: {error}")
+        return f"❌ Error retrieving categories: {str(error)}"
+
+@agent.tool
+async def get_magento_customer_by_email(ctx: RunContext, email: str) -> str:
+    """Find customer in Magento by email address - customer lookup integration"""
+    try:
+        print(f"🔧 Getting Magento customer by email: {email}")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access customer data at this time"
+        
+        # Build search URL
+        search_params = {
+            'searchCriteria[filterGroups][0][filters][0][field]': 'email',
+            'searchCriteria[filterGroups][0][filters][0][value]': email,
+            'searchCriteria[filterGroups][0][filters][0][condition_type]': 'eq'
+        }
+        
+        url = 'https://woodstockoutlet.com/rest/V1/customers/search?' + '&'.join([f'{k}={v}' for k, v in search_params.items()])
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=15.0
+            )
+        
+        if response.status_code != 200:
+            return f"❌ Customer search failed: {response.status_code}"
+        
+        data = response.json()
+        customers = data.get('items', [])
+        
+        if not customers:
+            return f"❌ No customer found with email: {email}"
+        
+        customer = customers[0]
+        name = f"{customer.get('firstname', '')} {customer.get('lastname', '')}".strip()
+        customer_id = customer.get('id')
+        created_date = customer.get('created_at', '')[:10]
+        
+        return f"""👤 **Customer Found in Magento:**
+
+**Name:** {name}
+**Email:** {email}
+**Customer ID:** {customer_id}
+**Account Created:** {created_date}
+
+**Magento customer data available** - Can access Magento orders and account details."""
+        
+    except Exception as error:
+        print(f"❌ Error in get_magento_customer_by_email: {error}")
+        return f"❌ Error finding customer: {str(error)}"
+
+# DUPLICATE FUNCTION REMOVED - CAUSED PYDANTIC AI TOOL NAME CONFLICT
+
+@agent.tool
+async def get_magento_products_by_category(ctx: RunContext, category_id: int, page_size: int = 20) -> str:
+    """Get products filtered by category ID - category-based shopping"""
+    try:
+        print(f"🔧 Getting Magento products by category: {category_id}")
+        
+        token = await get_magento_token()
+        if not token:
+            return "❌ Unable to access product catalog at this time"
+        
+        # Build category search query
+        search_params = {
+            'searchCriteria[pageSize]': str(page_size),
+            'searchCriteria[currentPage]': '1',
+            'searchCriteria[filterGroups][0][filters][0][field]': 'category_id',
+            'searchCriteria[filterGroups][0][filters][0][value]': str(category_id),
+            'searchCriteria[filterGroups][0][filters][0][conditionType]': 'eq',
+            'searchCriteria[filterGroups][1][filters][0][field]': 'status',
+            'searchCriteria[filterGroups][1][filters][0][value]': '2',  # Enabled products
+            'searchCriteria[filterGroups][1][filters][0][conditionType]': 'eq'
+        }
+        
+        url = 'https://woodstockoutlet.com/rest/V1/products?' + '&'.join([f'{k}={v}' for k, v in search_params.items()])
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                headers={'Authorization': f'Bearer {token}'},
+                timeout=15.0
+            )
+        
+        if response.status_code != 200:
+            return f"❌ Category search failed: {response.status_code}"
+        
+        data = response.json()
+        products = data.get('items', [])
+        
+        if not products:
+            return f"❌ No products found in category {category_id}"
+        
+        # Format products for carousel
+        formatted_products = []
+        for product in products[:page_size]:
+            name = product.get('name', 'Unknown Product')
+            sku = product.get('sku', '')
+            price = product.get('price', 0)
+            
+            # Get main image
+            image_url = "https://www.woodstockoutlet.com/media/catalog/product/placeholder/default/placeholder.jpg"
+            for attr in product.get('custom_attributes', []):
+                if attr.get('attribute_code') == 'small_image':
+                    image_url = f"https://www.woodstockoutlet.com/media/catalog/product{attr.get('value', '')}"
+                    break
+            
+            formatted_products.append({
+                "name": name,
+                "sku": sku,
+                "price": price,
+                "image_url": image_url
+            })
+        
+        # Create carousel data
+        carousel_data = {"products": formatted_products}
+        
+        product_list = []
+        for i, product in enumerate(formatted_products[:12], 1):
+            product_list.append(f"{i}. {product['name']} - ${product['price']}")
+        
+        return f"""🛒 Found {len(products)} products in category {category_id}!
+
+{chr(10).join(product_list)}
+
+**CAROUSEL_DATA:** {json.dumps(carousel_data)}"""
+        
+    except Exception as error:
+        print(f"❌ Error in get_magento_products_by_category: {error}")
+        return f"❌ Error searching category: {str(error)}"
+
+@agent.tool
+async def recall_user_memory(ctx: RunContext, user_identifier: str, query: str) -> str:
+    """🧠 ACCESS LONG-TERM MEMORY: Recall user's previous conversations, preferences, and history. Use when user asks 'do you remember...', 'what did I tell you...', 'my preferences', or needs context from previous interactions."""
+    try:
+        print(f"🧠 Function Call: recall_user_memory({user_identifier}, {query})")
+        
+        # Get enhanced context using the orchestrator
+        if ENHANCED_MEMORY_AVAILABLE and orchestrator:
+            enhanced_context = await orchestrator.get_enhanced_context(query, user_identifier)
+            
+            if enhanced_context and len(enhanced_context.strip()) > 0:
+                return f"""**Function Result (recall_user_memory):**
+{{
+    "function": "recall_user_memory",
+    "status": "success",
+    "data": {{"context": "{enhanced_context[:200]}..."}},
+    "message": "Retrieved relevant memory context"
+}}
+
+<div class="memory-recall">
+  <h3 class="memory-title">🧠 Here's what I remember about you:</h3>
+  <div class="memory-content">{enhanced_context}</div>
+</div>
+
+**Based on this, what would you like to do?**
+• 🛒 **Continue where we left off** - Pick up our previous conversation
+• 🆕 **Start something new** - Explore different products or services  
+• 📞 **Talk to someone** - Connect with our team for personalized help
+• 💬 **Tell me more** - Update your preferences or needs"""
+            else:
+                return f"""I don't have detailed memory of previous conversations with {user_identifier} yet.
+
+**Let's build that context!**
+• 🗣️ **Tell me about yourself** - What you're looking for, room setup, style preferences
+• 📞 **Have we talked before?** - On phone, chat, or in-store?
+• 🛒 **What brings you here today?** - Specific furniture or mattress needs
+• 🏪 **Visited our stores?** - Which locations have you been to?
+
+What would you like me to know about your furniture needs?"""
+        else:
+            return "🧠 Enhanced memory system not available. I can help with current conversation context."
+            
+    except Exception as error:
+        print(f"❌ Error in recall_user_memory: {error}")
+        return f"❌ Error accessing memory: {str(error)}"
 
 @agent.tool
 async def start_demo_call(ctx: RunContext, phone_number: str) -> str:
@@ -1605,6 +2454,9 @@ async def start_demo_call(ctx: RunContext, phone_number: str) -> str:
         else:
             return f"❌ Failed to start demo call: {response.text}"
             
+    # This block catches any exceptions that occur during the demo call process.
+    # If an error happens (for example, a network issue or missing credentials), it prints the error to the server logs
+    # and returns a user-friendly error message to the caller, including the error details.
     except Exception as e:
         print(f"❌ Demo call error: {e}")
         return f"❌ Demo call failed: {str(e)}"
@@ -1943,8 +2795,13 @@ async def chat_completions(request: ChatRequest):
         print(f"🔧 Admin mode: {is_admin_mode}")
         
         # FAST-PATH: product browsing intents → call Magento directly for instant carousel
+        # ⚠️ BUDGET DETECTION FIRST - Disable fast-path for budget searches
         msg_lower = user_message.lower()
+        has_budget_terms = any(term in msg_lower for term in ["under", "below", "less than", "between", "$", "budget", "max", "maximum"])
+        
         fastpath_query = None
+        # Only use fast-path if NO budget terms detected
+        if not has_budget_terms:
         if any(k in msg_lower for k in ["sectional", "sectionals"]):
             fastpath_query = "sectional"
         # DISABLED: elif "recliner" in msg_lower or "recliners" in msg_lower:
@@ -2073,8 +2930,10 @@ Customer Context: Provide friendly, helpful responses focused on customer self-s
                         
                         async for message in result.stream_text(delta=True):
                             full_response += message
+                            # SCRUM FIX: Strip HTML tags for streaming to match frontend patterns
+                            clean_message = strip_html_for_streaming(message)
                             chunk = {
-                                "choices": [{"delta": {"content": message}}],
+                                "choices": [{"delta": {"content": clean_message}}],
                                 "model": "loft-chat"
                             }
                             yield f"data: {json.dumps(chunk)}\n\n"
