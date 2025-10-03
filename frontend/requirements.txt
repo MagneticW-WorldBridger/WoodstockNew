@@ -1,0 +1,2 @@
+# No dependencies needed - server.py uses only Python standard library
+# This file exists only to satisfy Railway's automatic build detection

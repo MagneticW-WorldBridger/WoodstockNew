@@ -2802,12 +2802,12 @@ async def chat_completions(request: ChatRequest):
         fastpath_query = None
         # Only use fast-path if NO budget terms detected
         if not has_budget_terms:
-        if any(k in msg_lower for k in ["sectional", "sectionals"]):
-            fastpath_query = "sectional"
-        # DISABLED: elif "recliner" in msg_lower or "recliners" in msg_lower:
-        #     fastpath_query = "recliner"
-        elif "dining" in msg_lower:
-            fastpath_query = "dining"
+            if any(k in msg_lower for k in ["sectional", "sectionals"]):
+                fastpath_query = "sectional"
+            # DISABLED: elif "recliner" in msg_lower or "recliners" in msg_lower:
+            #     fastpath_query = "recliner"
+            elif "dining" in msg_lower:
+                fastpath_query = "dining"
 
         if fastpath_query:
             try:
