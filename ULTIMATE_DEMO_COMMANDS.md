@@ -93,46 +93,185 @@ COMPONENT: Customer journey card with timeline
 
 ---
 
-## 🚀 **RAPID-FIRE TESTING COMMANDS**
+## 🚀 **ALL 30+ FUNCTIONS - RAPID-FIRE TESTING**
 
-### **Customer Mode Quick Tests:**
+### **📱 CUSTOMER FUNCTIONS (14 LOFT API):**
 ```javascript
-// Copy/paste these in browser console for rapid testing:
-
-// Test 1: Customer lookup
-woodstockChat.messageInput.value = "My phone is 407-288-6040"; 
+// === CUSTOMER IDENTIFICATION ===
+woodstockChat.messageInput.value = "My phone number is 407-288-6040"; 
 woodstockChat.handleSubmit(new Event('submit'));
 
-// Test 2: Purchase history
-woodstockChat.messageInput.value = "Show me my purchase history"; 
+woodstockChat.messageInput.value = "My email is jdan4sure@yahoo.com"; 
 woodstockChat.handleSubmit(new Event('submit'));
 
-// Test 3: Order details
-woodstockChat.messageInput.value = "I want to see my order details"; 
+// === ORDER MANAGEMENT ===
+woodstockChat.messageInput.value = "Show me my order history"; 
 woodstockChat.handleSubmit(new Event('submit'));
 
-// Test 4: Support ticket
-woodstockChat.messageInput.value = "I need help with a return, item arrived damaged"; 
+woodstockChat.messageInput.value = "Show me details for order 0710544II27"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "Show my complete customer journey"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+// === ANALYTICS & RECOMMENDATIONS ===
+woodstockChat.messageInput.value = "Analyze patterns for customer 9318667506"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "What products do you recommend for me?"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "Show customer analytics for 407-288-6040"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+// === SUPPORT & SERVICES ===
+woodstockChat.messageInput.value = "I need help with a damaged delivery"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "I need to speak to someone"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "How do I get to your store in Acworth?"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "How is my loyalty status?"; 
 woodstockChat.handleSubmit(new Event('submit'));
 ```
 
-### **Admin Mode Quick Tests:**
+### **🛒 PRODUCT FUNCTIONS (16 MAGENTO API):**
 ```javascript
-// Test 1: Customer lookup
-woodstockChat.messageInput.value = "Look up customer 407-288-6040"; 
+// === GENERAL PRODUCT SEARCH ===
+woodstockChat.messageInput.value = "Show me sectional sofas"; 
 woodstockChat.handleSubmit(new Event('submit'));
 
-// Test 2: Analytics
-woodstockChat.messageInput.value = "Analyze customer patterns for 9318667506"; 
+woodstockChat.messageInput.value = "What brands do you carry?"; 
 woodstockChat.handleSubmit(new Event('submit'));
 
-// Test 3: Order details
-woodstockChat.messageInput.value = "Show order details for 0710544II27"; 
+woodstockChat.messageInput.value = "What colors are available?"; 
 woodstockChat.handleSubmit(new Event('submit'));
 
-// Test 4: Customer journey
-woodstockChat.messageInput.value = "Get customer journey for 407-288-6040"; 
+woodstockChat.messageInput.value = "What are your best sellers?"; 
 woodstockChat.handleSubmit(new Event('submit'));
+
+// === FILTERED SEARCHES ===
+woodstockChat.messageInput.value = "Show me recliners under $500"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "Show me Ashley sectionals"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+// === CATEGORY BROWSING ===
+woodstockChat.messageInput.value = "Show me sectionals"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "Show me recliners"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "Show me dining room furniture"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+// === ADVANCED PRODUCT FUNCTIONS ===
+woodstockChat.messageInput.value = "Show me photos of SKU 1234567890"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "Tell me about product SKU 1234567890"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "What product categories do you have?"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+woodstockChat.messageInput.value = "Show me category 123 products"; 
+woodstockChat.handleSubmit(new Event('submit'));
+```
+
+### **🧠 MEMORY & COMMUNICATION FUNCTIONS:**
+```javascript
+// === MEMORY FUNCTIONS ===
+woodstockChat.messageInput.value = "Do you remember what I told you about my living room?"; 
+woodstockChat.handleSubmit(new Event('submit'));
+
+// === PHONE INTEGRATION ===
+woodstockChat.messageInput.value = "Call me at +13323339453"; 
+woodstockChat.handleSubmit(new Event('submit'));
+```
+
+---
+
+## 🎬 **CONVERSATIONAL FLOW TESTING (ADVANCED)**
+
+### **🧪 Complete Customer Journey Test:**
+```
+1. "My phone number is 407-288-6040"
+   → Should trigger: get_customer_by_phone
+   → Expected: "Hello Janice Daniels!"
+
+2. "Show me my order history"
+   → Should trigger: get_orders_by_customer  
+   → Expected: Order History Card
+
+3. "Show me details for that order"
+   → Should trigger: get_order_details
+   → Expected: Order Details Card
+
+4. "Based on my history, what do you recommend?"
+   → Should trigger: get_product_recommendations
+   → Expected: AI Recommendations
+
+5. "Show me Ashley sectionals under $2000"
+   → Should trigger: search_products_by_brand_and_category + price filter
+   → Expected: Filtered Product Carousel
+
+6. "Show me photos of the second one"
+   → Should trigger: get_product_photos (with SKU from previous)
+   → Expected: Photo Gallery
+
+7. "What are your best sellers?"
+   → Should trigger: get_featured_best_seller_products
+   → Expected: Best Sellers Grid
+
+8. "I need help with a damaged delivery"
+   → Should trigger: handle_support_escalation
+   → Expected: Support Ticket Creation
+
+9. "Do you remember what I told you?"
+   → Should trigger: recall_user_memory
+   → Expected: Memory Recall Results
+
+10. "Call me at +13323339453"
+    → Should trigger: start_demo_call
+    → Expected: Phone Call Initiation
+```
+
+### **🎯 Cross-Channel Memory Test:**
+```
+1. Start conversation in webchat
+2. "My phone is 407-288-6040, I'm looking for a recliner"
+3. "Call me at +13323339453"  
+4. Answer phone call → Tell April about preferences
+5. End call → Webhook saves transcript
+6. Start NEW webchat session
+7. "My phone is 407-288-6040" 
+   → Should remember phone conversation context!
+```
+
+### **🔥 Admin Power User Test:**
+```
+// Open: https://your-frontend-url/?admin=true
+
+1. "Look up customer 407-288-6040"
+   → Enhanced customer profile with admin data
+
+2. "Analyze patterns for customer 9318667506"
+   → Advanced analytics dashboard
+
+3. "Get customer journey for 407-288-6040"
+   → Complete timeline visualization
+
+4. "Show customer analytics"
+   → System-wide analytics
+
+5. "Get recommendations for this customer"
+   → AI-powered personalization
 ```
 
 ---
