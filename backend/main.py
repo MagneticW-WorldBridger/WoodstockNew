@@ -4,7 +4,7 @@ import json
 import asyncio
 import re
 
-# FIX TASKGROUP ERROR: nest-asyncio for PydanticAI + MCP compatibility (Context7 solution!)
+# FIX TASKGROUP ERROR: nest-asyncio for PydanticAI + MCP compatibility (Railway compatible!)
 try:
     import nest_asyncio
     nest_asyncio.apply()
@@ -16,6 +16,14 @@ except ImportError:
     import nest_asyncio
     nest_asyncio.apply()
     print("✅ nest-asyncio installed and applied!")
+except ValueError as e:
+    # Railway uses uvloop which can't be patched by nest-asyncio
+    if "Can't patch loop" in str(e):
+        print("ℹ️ uvloop detected (Railway) - skipping nest-asyncio patch")
+    else:
+        print(f"⚠️ nest-asyncio error: {e}")
+except Exception as e:
+    print(f"⚠️ nest-asyncio failed: {e} - continuing without patch")
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
@@ -31,11 +39,16 @@ import httpx
 # Import MCP optionally to prevent Railway crashes
 try:
     from pydantic_ai.mcp import MCPServerSSE
-    MCP_AVAILABLE = True  # NEVER DISABLE MCP!
+    MCP_AVAILABLE = True
+    print("✅ MCP integration available")
+except ImportError:
+    print("ℹ️ MCP not available in current pydantic-ai version")
+    MCPServerSSE = None
+    MCP_AVAILABLE = False
 except Exception as _e:
     MCPServerSSE = None
     MCP_AVAILABLE = False
-    print(f"⚠️ MCP no disponible: {type(_e).__name__}: {_e}")
+    print(f"⚠️ MCP disabled: {type(_e).__name__}: {_e}")
 
 from schemas import ChatRequest, ChatResponse, ChatMessage
 from conversation_memory import memory
