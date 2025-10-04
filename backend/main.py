@@ -133,6 +133,30 @@ agent_kwargs = {
 prompt_content = (
     # UNIFIED WOODSTOCK FURNISHINGS AI ASSISTANT PROMPT
     """
+🚨 **CRITICAL: MANDATORY FUNCTION CALLING RULES** 🚨
+
+**YOU MUST CALL THESE FUNCTIONS IMMEDIATELY WHEN TRIGGERED:**
+
+🔥 **NEVER GIVE GENERIC RESPONSES FOR THESE TRIGGERS:**
+
+📞 **PHONE CALLS:** "call me", "can you call me" → IMMEDIATELY call start_demo_call()
+🧠 **MEMORY:** "do you remember", "what did I tell you" → IMMEDIATELY call recall_user_memory()  
+🚨 **SUPPORT:** "damaged", "broken", "problem", "return" → IMMEDIATELY call handle_support_escalation()
+📊 **ANALYTICS:** "customer analytics", "show analytics" → IMMEDIATELY call get_customer_analytics()
+🏭 **BRANDS:** "what brands", "show me brands" → IMMEDIATELY call get_all_furniture_brands()
+📦 **ORDERS:** "my orders", "order history" → IMMEDIATELY call get_orders_by_customer()
+👤 **CUSTOMER:** "my phone is", "my email is" → IMMEDIATELY call get_customer_by_phone/email()
+
+**DO NOT:**
+- Give excuses like "I'm unable to" or "technical limitation"  
+- Ask for more details when function should be called
+- Provide generic responses when specific functions exist
+
+**DO:**
+- CALL THE FUNCTION FIRST
+- Use the function result
+- Provide helpful next steps
+
 # CRITICAL: BEAUTIFUL HTML RESPONSE FORMATTING 🎨
 
 **MANDATORY: BEAUTIFUL HTML TAG RESPONSES! 🎨**
@@ -609,8 +633,8 @@ If any user asks any questions that are not related to Woodstock Furniture in an
 - NEVER provide customer-specific information without calling a function.
 - When user mentions phone/email, call get_customer_by_phone/get_customer_by_email.
 - When they ask about orders, call get_orders_by_customer with customer_id.
-- **PHONE CALL REQUESTS**: When user asks "call me", "can you call me", "start a demo call", or mentions phone demo, ALWAYS use start_demo_call function with their phone number.
-- **MEMORY RECALL REQUESTS**: When user asks "do you remember", "what did I tell you", "my preferences", "recall", "remember creating", "remember any", ALWAYS IMMEDIATELY call recall_user_memory function first.
+- **PHONE CALL REQUESTS**: When user asks "call me", "can you call me", "start a demo call", mentions phone demo, or provides a phone number to call, YOU MUST IMMEDIATELY call start_demo_call function with their phone number. Do not provide generic responses - USE THE FUNCTION.
+- **MEMORY RECALL REQUESTS**: When user asks "do you remember", "what did I tell you", "my preferences", "recall", "remember creating", "remember any", or asks about previous conversations, YOU MUST IMMEDIATELY call recall_user_memory function first. Do not say you don't remember - USE THE FUNCTION.
 - **BRAND QUESTIONS**: When user asks "what brands do you have", "show me brands", "which brands", "what brands", ALWAYS IMMEDIATELY call get_all_furniture_brands function first.
 - **PHOTO REQUESTS**: When user asks "see photos", "show photos", "images", "pictures", "the second one", "larue graphite", you MUST reference the previous product search results to get the correct SKU. For example: if they said "the second one" and the previous search showed Ardsley Pewter as #2, use that SKU. If they ask for "larue graphite photos", look for that product name in previous results and use its SKU. ALWAYS call get_product_photos with the correct SKU from context.
 - **BEST SELLERS**: When user asks "best sellers", "most popular", "what's popular", "top items", ALWAYS call get_featured_best_seller_products function first.
@@ -1151,7 +1175,7 @@ async def get_product_recommendations(ctx: RunContext, identifier: str, type: st
 
 @agent.tool
 async def get_customer_analytics(ctx: RunContext, identifier: str, type: str = "phone") -> str:
-    """Get comprehensive customer analytics and insights"""
+    """📊 MANDATORY ANALYTICS: When user asks 'show customer analytics', 'analytics for customer', or mentions customer analytics/insights, YOU MUST call this function. Do not give generic responses - GET THE ACTUAL DATA."""
     try:
         print(f"🔧 ANALYTICS Function: getCustomerAnalytics({identifier}, {type})")
         
@@ -1233,7 +1257,7 @@ async def handle_order_confirmation_cross_sell(ctx: RunContext, identifier: str,
 
 @agent.tool
 async def handle_support_escalation(ctx: RunContext, identifier: str, issue_description: str, type: str = "auto") -> str:
-    """🎫 SUPPORT ISSUES ONLY: Handle damaged items, returns, defects, problems, complaints, or any customer service issues. Creates support tickets. Use when customer has problems with existing products, NOT for product searches."""
+    """🚨 MANDATORY SUPPORT ESCALATION: When user mentions 'damaged', 'broken', 'return', 'problem', 'issue', 'help with', 'defective', or ANY support issues, YOU MUST immediately call this function to create a support ticket. Do not ask for more details first - ESCALATE IMMEDIATELY."""
     try:
         print(f"🔧 PROACTIVE Function: handleSupportEscalation({identifier}, {issue_description}, {type})")
         
@@ -2371,7 +2395,7 @@ async def get_magento_products_by_category(ctx: RunContext, category_id: int, pa
 
 @agent.tool
 async def recall_user_memory(ctx: RunContext, user_identifier: str, query: str) -> str:
-    """🧠 ACCESS LONG-TERM MEMORY: Recall user's previous conversations, preferences, and history. Use when user asks 'do you remember...', 'what did I tell you...', 'my preferences', or needs context from previous interactions."""
+    """🧠 MANDATORY MEMORY RECALL: When user asks 'do you remember', 'what did I tell you', 'my preferences', 'recall', or mentions previous conversations, YOU MUST call this function immediately. Do not say you don't remember - SEARCH THE MEMORY DATABASE FIRST."""
     try:
         print(f"🧠 Function Call: recall_user_memory({user_identifier}, {query})")
         
@@ -2417,18 +2441,27 @@ What would you like me to know about your furniture needs?"""
 
 @agent.tool
 async def start_demo_call(ctx: RunContext, phone_number: str) -> str:
-    """Start a phone call to demonstrate cross-channel memory. Use when customer asks to call them, wants a phone demo, or requests to test phone integration. Phone number should be in format +1XXXXXXXXXX."""
+    """📞 MANDATORY PHONE CALLS: When user says 'call me', 'can you call me', 'start a demo call', or provides a phone number to call, ALWAYS use this function. Do not give excuses - make the call! Phone number should be in format +1XXXXXXXXXX."""
     print(f"🔥🔥🔥 START_DEMO_CALL FUNCTION CALLED! 🔥🔥🔥")
     print(f"📞 DEMO: Starting call to {phone_number}")
     
     try:
-        # Get VAPI credentials
+        # Get VAPI credentials with debugging
         vapi_private_key = os.getenv('VAPI_PRIVATE_KEY')
         vapi_assistant_id = os.getenv('VAPI_ASSISTANT_ID') 
         vapi_phone_number_id = os.getenv('VAPI_PHONE_NUMBER_ID')
         
+        print(f"🔑 VAPI Private Key: {'✅ Found' if vapi_private_key else '❌ MISSING'}")
+        print(f"🔑 VAPI Assistant ID: {'✅ Found' if vapi_assistant_id else '❌ MISSING'}")  
+        print(f"🔑 VAPI Phone Number ID: {'✅ Found' if vapi_phone_number_id else '❌ MISSING'}")
+        
         if not all([vapi_private_key, vapi_assistant_id, vapi_phone_number_id]):
-            return "❌ Demo call feature not configured. Please contact support."
+            return f"""❌ VAPI Configuration Missing:
+- Private Key: {'✅' if vapi_private_key else '❌ MISSING'}
+- Assistant ID: {'✅' if vapi_assistant_id else '❌ MISSING'}
+- Phone Number ID: {'✅' if vapi_phone_number_id else '❌ MISSING'}
+
+Add these to Railway environment variables in WoodstockNew service."""
         
         # Make VAPI call
         import requests

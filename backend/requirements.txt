@@ -31,3 +31,4 @@ mcp>=1.0.0
 
 # Railway compatibility
 nest-asyncio>=1.6.0
+requests>=2.31.0
