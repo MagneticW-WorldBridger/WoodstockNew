@@ -1400,74 +1400,7 @@ async def handle_loyalty_upgrade(ctx: RunContext, identifier: str, type: str = "
         print(f"❌ Error in handleLoyaltyUpgrade: {error}")
         return f"❌ Error with loyalty upgrade: {str(error)}"
 
-@agent.tool
-async def handle_product_recommendations(ctx: RunContext, identifier: str, type: str = "auto") -> str:
-    """Handle personalized product recommendations - supports phone, email, or customerid"""
-    try:
-        print(f"🔧 PROACTIVE Function: handleProductRecommendations({identifier}, {type})")
-        
-        # SMART PARAMETER DETECTION
-        customer_result = None
-        customer_name = "Customer"
-        customer_id = None
-        
-        # If it's already a customer ID (numeric), use it directly
-        if identifier.isdigit() and len(identifier) >= 7:
-            print(f"🆔 Detected customerid: {identifier}")
-            customer_id = identifier
-            customer_name = f"Customer ID {identifier}"
-        
-        # If it looks like a phone number
-        elif any(char.isdigit() for char in identifier) and ('-' in identifier or len(identifier.replace('-', '').replace(' ', '')) >= 10):
-            print(f"📱 Detected phone: {identifier}")
-            customer_result = await get_customer_by_phone(ctx, identifier)
-        
-        # If it looks like an email
-        elif '@' in identifier:
-            print(f"📧 Detected email: {identifier}")
-            customer_result = await get_customer_by_email(ctx, identifier)
-        
-        # If type is explicitly specified
-        elif type == "phone":
-            customer_result = await get_customer_by_phone(ctx, identifier)
-        elif type == "email":
-            customer_result = await get_customer_by_email(ctx, identifier)
-        elif type == "customerid":
-            customer_id = identifier
-            customer_name = f"Customer ID {identifier}"
-        else:
-            return f"❌ Could not determine identifier type for: {identifier}. Please specify phone, email, or customerid."
-        
-        # Extract customer info if we got customer_result
-        if customer_result and "❌" not in customer_result:
-            import re
-            name_match = re.search(r'Name: ([^\\n]+)', customer_result)
-            if name_match:
-                customer_name = name_match.group(1)
-            
-            customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
-            if customer_id_match:
-                customer_id = customer_id_match.group(1)
-        
-        if not customer_id:
-            return f"❌ Cannot generate recommendations - no customer ID found for: {identifier}"
-        
-        # Get recommendations using the updated function
-        recommendations_result = await get_product_recommendations(ctx, customer_id)
-        
-        proactive_recs = []
-        proactive_recs.append(f"🎯 PERSONALIZED RECOMMENDATIONS for {customer_name}:")
-        proactive_recs.append("")
-        proactive_recs.append(recommendations_result)
-        proactive_recs.append("")
-        proactive_recs.append("📞 Ready to order? Call 1-800-WOODSTOCK")
-        proactive_recs.append("🏪 Visit our showroom for hands-on experience!")
-        
-        return "\\n".join(proactive_recs)
-        
-    except Exception as error:
-        print(f"❌ Error in handleProductRecommendations: {error}")
-        return f"❌ Error handling recommendations: {str(error)}"
+# DUPLICATE FUNCTION REMOVED - Use get_product_recommendations instead
 
 # MCP Calendar tools are automatically available through the agent's toolsets
 # No need for custom book_appointment function - the agent will use MCP tools directly
