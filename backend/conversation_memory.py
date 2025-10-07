@@ -87,37 +87,63 @@ class SimpleMemory:
             return []
     
     async def save_user_message(self, conversation_id: str, content: str):
-        """Save user message"""
+        """Save user message with validation (BUG-016 & BUG-017 FIX)"""
         try:
+            # 🔥 BUG-016 FIX: Validate content is not empty/null
+            if not content or not content.strip():
+                print(f"⚠️ Skipping empty user message (BUG-016 prevention)")
+                return None
+            
+            # 🔥 BUG-017 FIX: Truncate messages over 5000 characters
+            if len(content) > 5000:
+                print(f"⚠️ Truncating long user message: {len(content)} chars → 5000 chars (BUG-017 prevention)")
+                content = content[:4950] + "\n\n[...message truncated for length...]"
+            
             async with self.pool.acquire() as conn:
-                await conn.execute("""
+                message_id = await conn.fetchval("""
                     INSERT INTO chatbot_messages (conversation_id, message_role, message_content)
                     VALUES ($1, 'user', $2)
+                    RETURNING message_id
                 """, conversation_id, content)
-                print(f"💾 User message saved")
+                print(f"💾 User message saved (ID: {message_id}, length: {len(content)} chars)")
+                return message_id
         except Exception as e:
             print(f"❌ Error saving user message: {e}")
+            return None
     
     async def save_assistant_message(self, conversation_id: str, content: str, 
                                    function_name: Optional[str] = None,
                                    function_args: Optional[Dict] = None,
                                    function_result: Optional[Any] = None):
-        """Save assistant message with optional function data"""
+        """Save assistant message with optional function data (BUG-016 & BUG-017 FIX)"""
         try:
+            # 🔥 BUG-016 FIX: Validate content is not empty/null
+            if not content or not content.strip():
+                print(f"⚠️ Skipping empty assistant message (BUG-016 prevention)")
+                return None
+            
+            # 🔥 BUG-017 FIX: Truncate messages over 5000 characters
+            if len(content) > 5000:
+                print(f"⚠️ Truncating long assistant message: {len(content)} chars → 5000 chars (BUG-017 prevention)")
+                content = content[:4950] + "\n\n[...message truncated for length...]"
+            
             async with self.pool.acquire() as conn:
-                await conn.execute("""
+                message_id = await conn.fetchval("""
                     INSERT INTO chatbot_messages (
                         conversation_id, message_role, message_content,
                         executed_function_name, function_input_parameters, function_output_result
                     ) VALUES ($1, 'assistant', $2, $3, $4, $5)
+                    RETURNING message_id
                 """, 
                     conversation_id, content, function_name,
                     json.dumps(function_args) if function_args else None,
                     json.dumps(function_result) if function_result else None
                 )
-                print(f"💾 Assistant message saved")
+                print(f"💾 Assistant message saved (ID: {message_id}, length: {len(content)} chars)")
+                return message_id
         except Exception as e:
             print(f"❌ Error saving assistant message: {e}")
+            return None
     
     async def get_recent_messages(self, conversation_id: str, limit: int = 10) -> List[Dict]:
         """Get recent messages from conversation"""

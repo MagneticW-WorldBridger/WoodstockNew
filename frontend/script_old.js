@@ -1,7 +1,8 @@
 // LOFT Chat Frontend - JavaScript Logic
 class LoftChat {
     constructor() {
-        this.apiBase = 'http://localhost:8001';
+        // 🔥 BUG-007 FIX: Use environment-based URL configuration
+        this.apiBase = (typeof window !== 'undefined' && window.BACKEND_URL) ? window.BACKEND_URL : 'http://localhost:8001';
         this.isConnected = false;
         this.isThinking = false;
         

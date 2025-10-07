@@ -133,29 +133,65 @@ agent_kwargs = {
 prompt_content = (
     # UNIFIED WOODSTOCK FURNISHINGS AI ASSISTANT PROMPT
     """
-🚨 **CRITICAL: MANDATORY FUNCTION CALLING RULES** 🚨
+═══════════════════════════════════════════════════════════════════
+🚨🚨🚨 ABSOLUTE MANDATORY FUNCTION CALLING - NO EXCEPTIONS 🚨🚨🚨
+═══════════════════════════════════════════════════════════════════
 
-**YOU MUST CALL THESE FUNCTIONS IMMEDIATELY WHEN TRIGGERED:**
+CRITICAL RULE: YOU HAVE FUNCTIONS. USE THEM. DO NOT MAKE EXCUSES.
 
-🔥 **NEVER GIVE GENERIC RESPONSES FOR THESE TRIGGERS:**
+IF USER SAYS THIS → YOU MUST DO THIS (NO THINKING, JUST DO IT):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 "call me" / "can you call"           → start_demo_call(phone_number)
+🧠 "remember" / "what did I tell you"   → recall_user_memory(identifier, query)
+🚨 "damaged" / "broken" / "problem"     → handle_support_escalation(identifier, issue)
+📊 "analytics" / "show analytics"       → get_customer_analytics(identifier)
+🏭 "what brands" / "show brands"        → get_all_furniture_brands()
+🎨 "what colors" / "show colors"        → get_all_furniture_colors()
+📦 "my orders" / "order history"        → get_orders_by_customer(customer_id)
+👤 "my phone is X"                      → get_customer_by_phone(phone)
+📧 "my email is X"                      → get_customer_by_email(email)
+📸 "show photos" / "see pictures"       → get_product_photos(sku)
+💰 "under $X" / "$X to $Y"              → search_products_by_price_range(category, min, max)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📞 **PHONE CALLS:** "call me", "can you call me" → IMMEDIATELY call start_demo_call()
-🧠 **MEMORY:** "do you remember", "what did I tell you" → IMMEDIATELY call recall_user_memory()  
-🚨 **SUPPORT:** "damaged", "broken", "problem", "return" → IMMEDIATELY call handle_support_escalation()
-📊 **ANALYTICS:** "customer analytics", "show analytics" → IMMEDIATELY call get_customer_analytics()
-🏭 **BRANDS:** "what brands", "show me brands" → IMMEDIATELY call get_all_furniture_brands()
-📦 **ORDERS:** "my orders", "order history" → IMMEDIATELY call get_orders_by_customer()
-👤 **CUSTOMER:** "my phone is", "my email is" → IMMEDIATELY call get_customer_by_phone/email()
+🔥 FORBIDDEN RESPONSES - NEVER SAY THESE:
+❌ "I'm unable to..."
+❌ "I don't have the ability to..."
+❌ "That's a technical limitation..."
+❌ "I can't remember..."
+❌ "Let me check if I can..."
 
-**DO NOT:**
-- Give excuses like "I'm unable to" or "technical limitation"  
-- Ask for more details when function should be called
-- Provide generic responses when specific functions exist
+✅ REQUIRED BEHAVIOR:
+1. DETECT trigger keyword
+2. CALL THE FUNCTION IMMEDIATELY
+3. USE the function result
+4. RESPOND with the data
 
-**DO:**
-- CALL THE FUNCTION FIRST
-- Use the function result
-- Provide helpful next steps
+🎨 CRITICAL: PRESERVE **CAROUSEL_DATA:**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+When a function returns **CAROUSEL_DATA:** with JSON, YOU MUST:
+✅ INCLUDE the **CAROUSEL_DATA:** {json} line EXACTLY as the function returned it
+✅ DO NOT reformat, simplify, or remove the carousel data
+✅ DO NOT convert carousel to plain list
+✅ You can ADD friendly text before/after, but PRESERVE the **CAROUSEL_DATA:**
+
+Example CORRECT response:
+"Here are some great recliners I found for you!
+
+1. Product A - $999
+2. Product B - $1499
+
+**CAROUSEL_DATA:** {"products": [full json here]}
+
+Would you like to filter by color or brand?"
+
+❌ WRONG - DO NOT DO THIS:
+"Here are recliners: 1. Product A, 2. Product B" (missing CAROUSEL_DATA)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+═══════════════════════════════════════════════════════════════════
+END MANDATORY RULES - IGNORE AT YOUR OWN PERIL
+═══════════════════════════════════════════════════════════════════
 
 # CRITICAL: BEAUTIFUL HTML RESPONSE FORMATTING 🎨
 
@@ -1907,8 +1943,12 @@ async def get_magento_token(force_refresh=False):
     """Get Magento admin token with auto-refresh"""
     try:
         # Use credentials from environment or fallback
-        username = os.getenv('MAGENTO_USERNAME', 'jlasse@aiprlassist.com')
-        password = os.getenv('MAGENTO_PASSWORD', 'bV38.O@3&/a{')
+        # 🔥 BUG-004 FIX: Remove hardcoded credentials - use environment variables only
+        username = os.getenv('MAGENTO_USERNAME')
+        password = os.getenv('MAGENTO_PASSWORD')
+        
+        if not username or not password:
+            raise ValueError("❌ MAGENTO_USERNAME and MAGENTO_PASSWORD must be set in environment variables")
         
         response = await httpx.AsyncClient().post(
             'https://woodstockoutlet.com/rest/all/V1/integration/admin/token',
@@ -2850,7 +2890,7 @@ async def chat_completions(request: ChatRequest):
         # Get conversation history from EXISTING tables - USE UNIFIED CROSS-CHANNEL MEMORY!
         db_messages = await memory.get_unified_conversation_history(user_identifier, limit=10)
         
-        # Convert to PydanticAI ModelMessage format (THE CORRECT WAY!)        
+        # Convert to PydanticAI ModelMessage format with 🔥 BUG-005 FIX: Include function call context!
         message_history = []
         for msg in db_messages:
             if msg["role"] == "user":
@@ -2858,8 +2898,29 @@ async def chat_completions(request: ChatRequest):
                     ModelRequest(parts=[UserPromptPart(content=msg["content"])])
                 )
             elif msg["role"] == "assistant":
+                # 🔥 BUG-005 FIX: Include function execution context in message history
+                assistant_content = msg["content"]
+                
+                # If this message had a function call, append that context for OpenAI to see
+                if msg.get("executed_function_name"):
+                    func_name = msg.get("executed_function_name")
+                    func_args = msg.get("function_input_parameters")
+                    func_result = msg.get("function_output_result")
+                    
+                    # Add function context BEFORE the response so AI sees: "I called X() and got Y, so..."
+                    function_context = f"\n\n[Function Call Context: {func_name}("
+                    if func_args:
+                        try:
+                            args_dict = json.loads(func_args) if isinstance(func_args, str) else func_args
+                            function_context += f"{json.dumps(args_dict)}"
+                        except:
+                            function_context += "..."
+                    function_context += f") executed]"
+                    
+                    assistant_content = function_context + "\n\n" + assistant_content
+                
                 message_history.append(
-                    ModelResponse(parts=[TextPart(content=msg["content"])])
+                    ModelResponse(parts=[TextPart(content=assistant_content)])
                 )
         
         # ONLY pass the history, not the current message (that goes as user_prompt)
