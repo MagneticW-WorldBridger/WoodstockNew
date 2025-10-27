@@ -537,14 +537,63 @@ class WoodstockChat {
                             );
                             contentDiv.innerHTML = carouselHTML;
                             
-                            // 🔥 Initialize Swiffy Slider after DOM insertion
+                            // 🔥 Initialize Swiffy Slider after DOM insertion and image loading
                             setTimeout(() => {
                                 const carouselEl = contentDiv.querySelector('[id^="carousel-"]');
                                 if (carouselEl && window.swiffyslider) {
                                     console.log('🎨 Initializing Swiffy Slider for:', carouselEl.id);
-                                    window.swiffyslider.init(carouselEl);
+                                    
+                                    // Wait for images to load before initializing slider
+                                    const images = carouselEl.querySelectorAll('img');
+                                    let imagesLoaded = 0;
+                                    const totalImages = images.length;
+                                    
+                                    if (totalImages === 0) {
+                                        // No images, initialize immediately
+                                        this.initializeSwiffySlider(carouselEl);
+                                        return;
+                                    }
+                                    
+                                    const onImageLoad = () => {
+                                        imagesLoaded++;
+                                        console.log(`🖼️ Image loaded ${imagesLoaded}/${totalImages}`);
+                                        
+                                        if (imagesLoaded === totalImages) {
+                                            console.log('✅ All images loaded, initializing Swiffy Slider');
+                                            this.initializeSwiffySlider(carouselEl);
+                                        }
+                                    };
+                                    
+                                    const onImageError = (img) => {
+                                        console.log('⚠️ Image failed to load, using fallback');
+                                        img.src = 'https://via.placeholder.com/400x300/002147/FFFFFF?text=Woodstock+Furniture';
+                                        onImageLoad();
+                                    };
+                                    
+                                    // Set up image load handlers
+                                    images.forEach(img => {
+                                        if (img.complete) {
+                                            onImageLoad();
+                                        } else {
+                                            img.addEventListener('load', onImageLoad);
+                                            img.addEventListener('error', () => onImageError(img));
+                                        }
+                                    });
+                                    
+                                    // Fallback timeout in case images don't load
+                                    setTimeout(() => {
+                                        if (imagesLoaded < totalImages) {
+                                            console.log('⚠️ Image loading timeout, initializing anyway');
+                                            this.initializeSwiffySlider(carouselEl);
+                                        }
+                                    }, 3000);
+                                    
+                                } else {
+                                    console.error('❌ Carousel element or Swiffy Slider not found');
+                                    console.log('Carousel element:', carouselEl);
+                                    console.log('Swiffy Slider:', window.swiffyslider);
                                 }
-                            }, 300);
+                            }, 100);
                             return;
                         } else {
                             console.error('❌ woodstockCarousel not available or no products');
@@ -1116,6 +1165,16 @@ class WoodstockChat {
                 container.scrollTop = container.scrollHeight;
             }
         });
+    }
+
+    initializeSwiffySlider(carouselEl) {
+        try {
+            // Use the correct Swiffy Slider initialization method
+            window.swiffyslider.initSlider(carouselEl);
+            console.log('✅ Swiffy Slider initialized successfully');
+        } catch (error) {
+            console.error('❌ Swiffy Slider initialization failed:', error);
+        }
     }
 }
 

@@ -218,7 +218,7 @@ You must collect all of the following details before confirming the appointment:
 
 **Rome, GA Furniture Store**
 - **Address**: 📍 10 Central Plaza, Rome, GA 30161
-- **Phone**: 📞 (706) 503-7698
+- **Phone**: 📞 (706) 503-7854
 - **Text**: 📱 (706) 403-4210
 - **Hours**: Monday - Saturday: 9:00 AM - 6:00 PM (Closed Wednesday). Sunday: Closed.
 
@@ -309,8 +309,12 @@ You must collect all of the following details before confirming the appointment:
 - **How To Change Your Order**: If you need to change something about your order, such as a color, finish type, product or quantity, simply contact customer service by phone. Since your items could possibly ship the same day you place your order, we cannot guarantee your change will be made.
 
 **Customer Pickup Policy**:
-- Pick up is available at our Distribution Center in Acworth from 9am-6pm Monday-Saturday.
-- Expect to wait 20-25 minutes for your furniture to be pulled. You can also call ahead (678) 554-4508, ext 200 to save time!
+- **Customer Pickup Location**: 6050 Old Alabama Rd., Acworth, GA 30102
+- **Customer Pickup Phone**: (678) 554-4500
+- **Distribution Center Location**: 2700 Cherokee Pkwy. West, Acworth, GA 30102  
+- **Distribution Center Phone**: (678) 554-4508
+- Pick up is available at our Customer Pickup Center from 9am-6pm Monday-Saturday.
+- Expect to wait 20-25 minutes for your furniture to be pulled. You can also call ahead (678) 554-4500 to save time!
 - We will load the furniture in its carton. We do not assemble furniture that is picked up, that fee is included in our Delivery charge.
 - If you choose to pick up your furniture and discover defects or damage, we will send a certified technician out to repair the furniture or you can return it to the store for an exchange. It will be your responsibility to transport damaged merchandise back to the store or pay a delivery charge.
 
@@ -1228,7 +1232,7 @@ async def connect_to_support(ctx: RunContext, name: str, email: str, location: s
         elif "Dallas" in location or "Hiram" in location:
             support_info.append("📞 Direct Line: (678) 841-7158")
         elif "Rome" in location:
-            support_info.append("📞 Direct Line: (706) 503-7698")
+            support_info.append("📞 Direct Line: (706) 503-7854")
         elif "Covington" in location:
             support_info.append("📞 Direct Line: (470) 205-2566")
         elif "Canton" in location:

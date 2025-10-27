@@ -444,9 +444,9 @@ Beautiful, rich UI components for function results
 }
 
 /* Swiffy Slider Responsive Configuration - NO OVERLAP GUARANTEE */
-.product-carousel .slider-item-show4 .slider-container > * {
-    flex: 0 0 calc(25% - 2rem);
-    max-width: calc(25% - 2rem);
+.product-carousel .slider-item-show3 .slider-container > * {
+    flex: 0 0 calc(33.333% - 2rem);
+    max-width: calc(33.333% - 2rem);
     margin: 0 1rem;
     box-sizing: border-box;
 }
@@ -454,6 +454,13 @@ Beautiful, rich UI components for function results
 .product-carousel .slider-item-show2-sm .slider-container > * {
     flex: 0 0 calc(50% - 2rem);
     max-width: calc(50% - 2rem);
+    margin: 0 1rem;
+    box-sizing: border-box;
+}
+
+.product-carousel .slider-item-show1-xs .slider-container > * {
+    flex: 0 0 calc(100% - 2rem);
+    max-width: calc(100% - 2rem);
     margin: 0 1rem;
     box-sizing: border-box;
 }
@@ -481,14 +488,14 @@ Beautiful, rich UI components for function results
 
 /* Responsive Adjustments - Context7 Wisdom */
 @media (max-width: 991.98px) {
-    .product-carousel .slider-item-show4 .slider-container > * {
+    .product-carousel .slider-item-show3 .slider-container > * {
         flex: 0 0 50%; /* 2 cards on tablets */
         max-width: 50%;
     }
 }
 
 @media (max-width: 767.98px) {
-    .product-carousel .slider-item-show4 .slider-container > *,
+    .product-carousel .slider-item-show3 .slider-container > *,
     .product-carousel .slider-item-show2-sm .slider-container > * {
         flex: 0 0 100%; /* 1 card on mobile */
         max-width: 100%;
@@ -555,6 +562,9 @@ Beautiful, rich UI components for function results
     transition: all 0.3s ease;
     min-width: 280px;
     max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .product-card:hover {
@@ -618,6 +628,10 @@ Beautiful, rich UI components for function results
 
 .product-card .product-info {
     padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .product-card .product-brand {
@@ -644,9 +658,14 @@ Beautiful, rich UI components for function results
 .product-card .product-price {
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--woodstock-red);
+    color: var(--woodstock-white);
+    background: var(--woodstock-red);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
     margin-bottom: 1rem;
     font-family: var(--font-serif);
+    display: inline-block;
+    text-align: center;
 }
 
 .product-card .product-availability {

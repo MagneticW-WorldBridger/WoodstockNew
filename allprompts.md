@@ -414,7 +414,11 @@ Heavy Lift Fee (if applicable): $150
 Rescheduling Delivery
 If you need to reschedule delivery - we are more than happy to help! However, any delivery changed within 24 hours of the scheduled day will incur a $50 rescheduleing fee.
 Customer Pickup:
-Pick up is available at our Distribution Center in Acworth from 9am-6pm* Monday-Saturday. Expect to wait 20-25 minutes for your furniture to be pulled. You can also call ahead (678) 554-4508, ext 200 to save time!
+**Customer Pickup Location**: 6050 Old Alabama Rd., Acworth, GA 30102
+**Customer Pickup Phone**: (678) 554-4500
+**Distribution Center Location**: 2700 Cherokee Pkwy. West, Acworth, GA 30102  
+**Distribution Center Phone**: (678) 554-4508
+Pick up is available at our Customer Pickup Center from 9am-6pm* Monday-Saturday. Expect to wait 20-25 minutes for your furniture to be pulled. You can also call ahead (678) 554-4500 to save time!
 We will load the furniture in its carton. We do not assemble furniture that is picked up, that fee is included in our Delivery charge. If you want the furniture assembled you may want to have it delivered. If you choose to pick up your furniture and discover defects or damage, we will send a certified technician out to repair the furniture or you can return it to the store for an exchange. It will be your responsibility to transport damaged merchandise back to the store or pay a delivery charge.
 *store pick-up available at select locations
 
@@ -536,7 +540,7 @@ Dallas/Hiram, GA Furniture Store
 
 Rome, GA Furniture Store
  📍 10 Central Plaza, Rome, GA 30161
- 📞 Phone: (706) 503-7698
+ 📞 Phone: (706) 503-7854
  📱 Text: (706) 403-4210
  🌍 Google Maps: https://www.google.com/maps/dir//10+Central+Plaza,+Rome,+GA+30161
 Covington, GA Furniture Store
@@ -867,7 +871,7 @@ Dallas/Hiram, GA Furniture Store
 
 Rome, GA Furniture Store
  📍 10 Central Plaza, Rome, GA 30161
- 📞 Phone: (706) 503-7698
+ 📞 Phone: (706) 503-7854
  📱 Text: (706) 403-4210
  🌍 Google Maps: https://www.google.com/maps/dir//10+Central+Plaza,+Rome,+GA+30161
 Covington, GA Furniture Store

@@ -40,7 +40,7 @@ class WoodstockMagentoCarousel {
                     <span>${title} (${products.length} items)</span>
                 </div>
                 <div class="carousel-container">
-                    <div class="swiffy-slider slider-nav-round slider-nav-dark slider-item-show4 slider-item-show2-sm" id="${carouselId}">
+                    <div class="swiffy-slider slider-nav-round slider-nav-dark slider-item-show3 slider-item-show2-sm slider-item-show1-xs" id="${carouselId}">
                         <ul class="slider-container">
                             ${products.map(product => `<li>${this.createProductCard(product)}</li>`).join('')}
                         </ul>
@@ -69,7 +69,8 @@ class WoodstockMagentoCarousel {
             <div class="product-card" data-sku="${sku}">
                 <div class="product-image">
                     <img src="${image}" alt="${name}" loading="lazy" 
-                         onerror="this.src='https://via.placeholder.com/300x200/002147/FFFFFF?text=Woodstock+Furniture'">
+                         onload="console.log('✅ Image loaded:', this.src)"
+                         onerror="console.log('❌ Image failed:', this.src); this.src='https://via.placeholder.com/300x200/002147/FFFFFF?text=Woodstock+Furniture'">
                     <div class="product-overlay">
                         <button class="quick-view-btn" onclick="woodstockCarousel.showProductDetails('${sku}')">
                             <i class="fas fa-eye"></i>
@@ -150,7 +151,11 @@ class WoodstockMagentoCarousel {
         try {
             if (window.swiffyslider) {
                 const next = direction === 'next';
+                // Use the correct Swiffy Slider navigation method
                 window.swiffyslider.slide(sliderElement, next);
+                console.log('✅ Navigation successful:', direction);
+            } else {
+                console.error('❌ Swiffy Slider not available for navigation');
             }
         } catch (error) {
             console.error('❌ Navigation error:', error);
@@ -161,15 +166,26 @@ class WoodstockMagentoCarousel {
      * Extract product image from Magento data
      */
     getProductImage(product) {
+        console.log('🖼️ Extracting image for product:', product.name);
+        console.log('🖼️ Product data:', {
+            image_url: product.image_url,
+            media_gallery_entries: product.media_gallery_entries?.length || 0,
+            custom_attributes: product.custom_attributes?.length || 0
+        });
+
         // PRIORITY 1: Use real image URL from backend (if provided)
-        if (product.image_url) {
+        if (product.image_url && !product.image_url.includes('placeholder')) {
+            console.log('✅ Using backend image_url:', product.image_url);
             return product.image_url;
         }
         
         // PRIORITY 2: Try media gallery entries (ORIGINAL WORKING PATTERN!)
         if (product.media_gallery_entries && product.media_gallery_entries.length > 0) {
             const mediaBase = 'https://www.woodstockoutlet.com/media/catalog/product';
-            return mediaBase + product.media_gallery_entries[0].file;
+            const imagePath = product.media_gallery_entries[0].file;
+            const fullUrl = mediaBase + imagePath;
+            console.log('✅ Using media gallery image:', fullUrl);
+            return fullUrl;
         }
         
         // PRIORITY 3: Try custom attributes (ORIGINAL WORKING PATTERN!)
@@ -178,13 +194,17 @@ class WoodstockMagentoCarousel {
                 attr.attribute_code === 'image' || attr.attribute_code === 'small_image'
             );
             if (imageAttr && imageAttr.value) {
-                return 'https://www.woodstockoutlet.com/media/catalog/product' + imageAttr.value;
+                const fullUrl = 'https://www.woodstockoutlet.com/media/catalog/product' + imageAttr.value;
+                console.log('✅ Using custom attribute image:', fullUrl);
+                return fullUrl;
             }
         }
 
         // FALLBACK: High-quality furniture placeholder
         const productName = encodeURIComponent(product.name || 'Furniture');
-        return `https://via.placeholder.com/400x300/002147/FFFFFF?text=${productName}`;
+        const fallbackUrl = `https://via.placeholder.com/400x300/002147/FFFFFF?text=${productName}`;
+        console.log('⚠️ Using fallback placeholder:', fallbackUrl);
+        return fallbackUrl;
     }
 
     /**

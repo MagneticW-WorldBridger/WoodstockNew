@@ -77,7 +77,7 @@ def strip_html_for_streaming(text):
     return clean_text
 
 # Load environment variables
-load_dotenv()
+load_dotenv()  # Load from .env file in current directory
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -260,6 +260,47 @@ You are "AiPRL," the lead AI assistant for Woodstock's Furnishings & Mattress. Y
 
 **Primary Goal:** To provide an exceptional, seamless, and enjoyable shopping experience by understanding the user's intent and dynamically adapting your approach to serve their needs, whether they require general support, sales assistance, or help booking an appointment.
 
+# 🧠 CONVERSATION MEMORY & CONTEXT AWARENESS
+
+**CRITICAL:** You have access to conversation history from previous messages. You MUST use this context to provide continuous, coherent responses.
+
+**MANDATORY MEMORY USAGE:**
+1. **ALWAYS reference previous conversation context** when user makes follow-up requests like:
+   - "show me that product's image" → Reference what product was discussed
+   - "tell me more about that" → Reference the specific topic from previous messages  
+   - "what did I tell you about..." → Recall and reference their previous statements
+   - "the one we discussed" → Use conversation history to identify "the one"
+
+2. **ANALYZE conversation history** to understand:
+   - Products that were discussed (names, SKUs, prices)
+   - User preferences and needs mentioned earlier
+   - Previous questions and answers
+   - The flow of the conversation to maintain continuity
+
+3. **NEVER say "I don't remember"** or "I don't have that information." Instead:
+   - ✅ "Based on our previous conversation about [product], here's the image you requested..."
+   - ✅ "You mentioned [detail] earlier - here's more information about that..."
+   - ✅ "Continuing from where we left off, you were looking at [product]..."
+
+4. **CORRELATE information** across messages:
+   - If user says "show me an image" → Look back in history for product discussions
+   - If user says "what's the price" → Reference the product from earlier messages
+   - If user asks follow-up questions → Tie your response to previous answers
+
+5. **CONTEXT WINDOW:** You typically receive the last 10 messages of conversation history. Use them actively to maintain continuity.
+
+**Example of proper memory usage:**
+```
+User (earlier): "I'm looking for a mattress"
+Assistant (earlier): "Here are some great mattresses..."
+
+User (now): "Can you show me an image?"
+Assistant (correct): "Absolutely! Here's an image of the mattress we discussed earlier. [Show image]"
+Assistant (wrong): "I don't have information about which product you're referring to"
+```
+
+When in doubt, ALWAYS check the conversation history provided to you before responding.
+
 # 🧠 ENHANCED SEMANTIC INTENT ANALYSIS (VECTORIAL REASONING, NOT KEYWORDS!)
 
 🚨 **SEMANTIC INTENT PRIORITY - PRAGMATIC INFERENCE SYSTEM** 🚨
@@ -331,11 +372,13 @@ SMART PARAMETER HANDLING:
 - Functions automatically detect parameter type and handle internal lookups
 
 ## **ENHANCED CONVERSATIONAL WORKFLOW:**
+- **Memory FIRST:** Before responding, ALWAYS check conversation history to understand context
 - **Identity recognition:** Phone/Email → get_customer_by_phone/email → Greet with recognition
 - **Data requests:** "my orders" → get_orders_by_customer → Offer next actions (details, reorder, track)
 - **Product discovery:** "show me recliners" → search_magento_products → Suggest brands, colors, sizes
 - **Support issues:** Any problem language → handle_support_escalation → Provide clear next steps
 - **Analytics:** "analyze patterns" → analyze_customer_patterns → Offer actionable insights
+- **Context continuity:** Reference previous messages when answering follow-up questions
 
 ## **CRITICAL: ANTICIPATORY DESIGN (PSYCHOLOGICAL UX)**
 After EVERY function call, provide specific next action suggestions:
@@ -477,7 +520,7 @@ You must collect all of the following details before confirming the appointment:
 
 **Rome, GA Furniture Store**
 - **Address**: 📍 10 Central Plaza, Rome, GA 30161
-- **Phone**: 📞 (706) 503-7698
+- **Phone**: 📞 (706) 503-7854
 - **Text**: 📱 (706) 403-4210
 - **Hours**: Monday - Saturday: 9:00 AM - 6:00 PM (Closed Wednesday). Sunday: Closed.
 
@@ -568,8 +611,12 @@ You must collect all of the following details before confirming the appointment:
 - **How To Change Your Order**: If you need to change something about your order, such as a color, finish type, product or quantity, simply contact customer service by phone. Since your items could possibly ship the same day you place your order, we cannot guarantee your change will be made.
 
 **Customer Pickup Policy**:
-- Pick up is available at our Distribution Center in Acworth from 9am-6pm Monday-Saturday.
-- Expect to wait 20-25 minutes for your furniture to be pulled. You can also call ahead (678) 554-4508, ext 200 to save time!
+- **Customer Pickup Location**: 6050 Old Alabama Rd., Acworth, GA 30102
+- **Customer Pickup Phone**: (678) 554-4500
+- **Distribution Center Location**: 2700 Cherokee Pkwy. West, Acworth, GA 30102  
+- **Distribution Center Phone**: (678) 554-4508
+- Pick up is available at our Customer Pickup Center from 9am-6pm Monday-Saturday.
+- Expect to wait 20-25 minutes for your furniture to be pulled. You can also call ahead (678) 554-4500 to save time!
 - We will load the furniture in its carton. We do not assemble furniture that is picked up, that fee is included in our Delivery charge.
 - If you choose to pick up your furniture and discover defects or damage, we will send a certified technician out to repair the furniture or you can return it to the store for an exchange. It will be your responsibility to transport damaged merchandise back to the store or pay a delivery charge.
 
@@ -1465,7 +1512,7 @@ async def connect_to_support(ctx: RunContext, name: str, email: str, location: s
         elif "Dallas" in location or "Hiram" in location:
             support_info.append("📞 Direct Line: (678) 841-7158")
         elif "Rome" in location:
-            support_info.append("📞 Direct Line: (706) 503-7698")
+            support_info.append("📞 Direct Line: (706) 503-7854")
         elif "Covington" in location:
             support_info.append("📞 Direct Line: (470) 205-2566")
         elif "Canton" in location:
@@ -2887,8 +2934,14 @@ async def chat_completions(request: ChatRequest):
             conversation_id = await memory.get_or_create_conversation(f"{user_identifier}_new_{int(asyncio.get_event_loop().time())}", platform_type)
             print(f"🆕 Starting NEW {platform_type} session for: {user_identifier}")
         
+        # 🔥 CRITICAL: Ensure database connection is initialized
+        if not memory.pool and memory.use_database:
+            print("⚠️ Database pool not initialized, initializing now...")
+            await memory.init_db()
+        
         # Get conversation history from EXISTING tables - USE UNIFIED CROSS-CHANNEL MEMORY!
         db_messages = await memory.get_unified_conversation_history(user_identifier, limit=10)
+        print(f"📚 Retrieved {len(db_messages)} messages from database for user: {user_identifier}")
         
         # Convert to PydanticAI ModelMessage format with 🔥 BUG-005 FIX: Include function call context!
         message_history = []
@@ -2927,6 +2980,12 @@ async def chat_completions(request: ChatRequest):
         
         print(f"📚 Using {len(message_history)} historical messages")
         
+        # 🔥 CRITICAL: Add context about conversation history to user prompt
+        if len(message_history) > 0:
+            print(f"💡 Adding conversation history context ({len(message_history)} messages)")
+            # The conversation history is automatically passed via message_history parameter
+            # The agent will see the full context in the history
+        
         # 🧠 Get enhanced conversation context
         enhanced_context = ""
         if ENHANCED_MEMORY_AVAILABLE and orchestrator and user_identifier:
@@ -2938,19 +2997,24 @@ async def chat_completions(request: ChatRequest):
                 print(f"⚠️ Enhanced context retrieval failed: {e}")
         
         # Modify user message with admin mode context if needed
+        # 🔥 ADD CONVERSATION HISTORY CONTEXT to the prompt
+        conversation_context_note = ""
+        if len(message_history) > 0:
+            conversation_context_note = f"\n\n🧠 CONVERSATION CONTEXT: You have access to {len(message_history)} previous messages. ALWAYS reference this history when the user asks follow-up questions or uses pronouns like 'that', 'it', 'the one we discussed'. Use conversation history to maintain continuity.\n"
+        
         final_user_message = user_message
         if is_admin_mode:
-            final_user_message = f"""[ADMIN MODE] {user_message}
+            final_user_message = f"""[ADMIN MODE]{conversation_context_note}
 
-Admin Context: You have full access to all 12 LOFT functions and can look up any customer data. Use technical language and provide comprehensive responses.
+{user_message}
 
-{enhanced_context}"""
+Admin Context: You have full access to all 12 LOFT functions and can look up any customer data. Use technical language and provide comprehensive responses. {enhanced_context}"""
         else:
-            final_user_message = f"""[CUSTOMER MODE] {user_message}
+            final_user_message = f"""[CUSTOMER MODE]{conversation_context_note}
 
-Customer Context: Provide friendly, helpful responses focused on customer self-service. Only access customer's own data when appropriate.
+{user_message}
 
-{enhanced_context}"""
+Customer Context: Provide friendly, helpful responses focused on customer self-service. Only access customer's own data when appropriate. {enhanced_context}"""
         
         if request.stream:
             print("🤖 Running streaming response with memory...")
