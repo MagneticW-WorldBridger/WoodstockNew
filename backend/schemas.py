@@ -20,6 +20,12 @@ class ChatRequest(BaseModel):
     user_identifier: Optional[str] = Field(default=None, description="User identifier (phone, email, etc.)")
     platform_type: Optional[str] = Field(default="webchat", description="Platform: webchat, phone, sms, facebook, instagram")
     channel_metadata: Optional[Dict] = Field(default=None, description="Channel-specific metadata (call_id, phone_number, etc.)")
+    
+    # 🔐 URL PARAMETER AUTHENTICATION - NEW!
+    customer_id: Optional[str] = Field(default=None, description="Customer ID from URL parameters (authenticated user)")
+    loft_id: Optional[str] = Field(default=None, description="LOFT customer ID from URL parameters")
+    email: Optional[str] = Field(default=None, description="Customer email from URL parameters (authenticated user)")
+    auth_level: Optional[str] = Field(default="anonymous", description="Authentication level: anonymous, authenticated, admin")
 
 class ChatResponse(BaseModel):
     """Chat response model"""

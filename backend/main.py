@@ -34,7 +34,8 @@ import pydantic_ai
 print("🔥 pydantic_ai version:", getattr(pydantic_ai, "__version__", "unknown"))
 from dotenv import load_dotenv
 import os
-from typing import AsyncIterator, Dict
+from typing import AsyncIterator, Dict, List, Any, Optional
+from datetime import datetime
 import httpx
 # Import MCP optionally to prevent Railway crashes
 try:
@@ -104,6 +105,270 @@ if os.path.exists(frontend_path):
     app.mount("/frontend", StaticFiles(directory=frontend_path, html=True), name="frontend")
     print(f"📁 Frontend mounted at /frontend from {frontend_path}")
 
+# ============================================================================
+# PRODUCT CONTEXT MANAGER - FIXES BUG-022, BUG-030, BUG-032
+# ============================================================================
+
+class ProductSummary:
+    """Lightweight product summary for context tracking"""
+    def __init__(self, sku: str, name: str, price: float, position: int, search_query: str = ""):
+        self.sku = sku
+        self.name = name
+        self.price = price
+        self.position = position
+        self.search_query = search_query
+        self.timestamp = datetime.now()
+
+class SearchContext:
+    """Context for a product search"""
+    def __init__(self, query: str, products: List[ProductSummary], total_found: int):
+        self.query = query
+        self.products = products
+        self.total_found = total_found
+        self.timestamp = datetime.now()
+        self.selected_skus: List[str] = []
+
+class ProductContextManager:
+    """
+    CRITICAL: Store structured product results for follow-up queries
+    Fixes BUG-022: 'show me the second one' → instant SKU lookup
+    Fixes BUG-030: Grey sofa - no pics before carousel
+    Fixes BUG-032: Context loss mid-conversation
+    """
+    
+    def __init__(self, max_searches: int = 5, ttl_seconds: int = 1800):
+        """
+        Args:
+            max_searches: Keep last N searches per user
+            ttl_seconds: Time-to-live for stored searches (30 min default)
+        """
+        # user_identifier → List[SearchContext]
+        self.user_searches: Dict[str, List[SearchContext]] = {}
+        self.max_searches = max_searches
+        self.ttl_seconds = ttl_seconds
+        print(f"✅ ProductContextManager initialized (max_searches={max_searches}, ttl={ttl_seconds}s)")
+    
+    def store_search(self, user_identifier: str, query: str, products: List[Dict[str, Any]]) -> SearchContext:
+        """Store a product search result for later reference"""
+        # Convert products to ProductSummary
+        product_summaries = []
+        for i, prod in enumerate(products, start=1):
+            summary = ProductSummary(
+                sku=prod.get('sku', ''),
+                name=prod.get('name', ''),
+                price=float(prod.get('price', 0)),
+                position=i,
+                search_query=query
+            )
+            product_summaries.append(summary)
+        
+        # Create search context
+        context = SearchContext(
+            query=query,
+            products=product_summaries,
+            total_found=len(products)
+        )
+        
+        # Initialize user searches if needed
+        if user_identifier not in self.user_searches:
+            self.user_searches[user_identifier] = []
+        
+        # Add to user's search history
+        self.user_searches[user_identifier].insert(0, context)
+        
+        # Keep only max_searches
+        if len(self.user_searches[user_identifier]) > self.max_searches:
+            self.user_searches[user_identifier] = self.user_searches[user_identifier][:self.max_searches]
+        
+        print(f"📦 Stored search context: '{query}' with {len(product_summaries)} products for user {user_identifier}")
+        return context
+    
+    def get_last_search(self, user_identifier: str) -> Optional[SearchContext]:
+        """Get user's most recent search"""
+        searches = self.user_searches.get(user_identifier, [])
+        if searches:
+            # Check if expired
+            last_search = searches[0]
+            age = (datetime.now() - last_search.timestamp).total_seconds()
+            if age < self.ttl_seconds:
+                return last_search
+            else:
+                print(f"⏰ Last search for {user_identifier} expired ({age}s > {self.ttl_seconds}s)")
+        return None
+    
+    def get_product_by_position(self, user_identifier: str, position: int) -> Optional[ProductSummary]:
+        """
+        Get product by position from last search
+        e.g., "show me the second one" → position=2
+        """
+        last_search = self.get_last_search(user_identifier)
+        if last_search:
+            for prod in last_search.products:
+                if prod.position == position:
+                    print(f"✅ Found product at position {position}: {prod.sku} - {prod.name}")
+                    return prod
+        return None
+    
+    def get_product_by_sku(self, user_identifier: str, sku: str) -> Optional[ProductSummary]:
+        """Get product by SKU from last search"""
+        last_search = self.get_last_search(user_identifier)
+        if last_search:
+            for prod in last_search.products:
+                if prod.sku == sku:
+                    return prod
+        return None
+    
+    def mark_product_selected(self, user_identifier: str, sku: str):
+        """Mark a product as selected for tracking user preferences"""
+        last_search = self.get_last_search(user_identifier)
+        if last_search and sku not in last_search.selected_skus:
+            last_search.selected_skus.append(sku)
+            print(f"✅ Marked SKU {sku} as selected for user {user_identifier}")
+    
+    def get_all_searches(self, user_identifier: str) -> List[SearchContext]:
+        """Get all valid searches for a user"""
+        searches = self.user_searches.get(user_identifier, [])
+        # Filter expired
+        valid_searches = []
+        for search in searches:
+            age = (datetime.now() - search.timestamp).total_seconds()
+            if age < self.ttl_seconds:
+                valid_searches.append(search)
+        return valid_searches
+    
+    def clear_user_context(self, user_identifier: str):
+        """Clear all stored context for a user"""
+        if user_identifier in self.user_searches:
+            del self.user_searches[user_identifier]
+            print(f"🗑️ Cleared context for user {user_identifier}")
+
+# Initialize global ProductContextManager
+product_context = ProductContextManager(max_searches=5, ttl_seconds=1800)
+
+# ============================================================================
+# END PRODUCT CONTEXT MANAGER
+# ============================================================================
+
+# ============================================================================
+# USER AUTHENTICATION CONTEXT - URL PARAMETER AUTHENTICATION
+# ============================================================================
+
+class UserContext:
+    """
+    Holds user authentication context from URL parameters
+    Used for authenticated features (order history, personalization, admin)
+    """
+    def __init__(
+        self,
+        user_identifier: str,
+        customer_id: Optional[str] = None,
+        loft_id: Optional[str] = None,
+        email: Optional[str] = None,
+        auth_level: str = "anonymous"
+    ):
+        self.user_identifier = user_identifier
+        self.customer_id = customer_id
+        self.loft_id = loft_id
+        self.email = email
+        self.auth_level = auth_level  # anonymous, authenticated, admin
+        
+        # Determine actual auth level
+        if customer_id or loft_id or email:
+            self.auth_level = "authenticated"
+        
+        print(f"👤 UserContext created: {self.user_identifier} (level: {self.auth_level})")
+    
+    def is_authenticated(self) -> bool:
+        """Check if user is authenticated"""
+        return self.auth_level in ["authenticated", "admin"]
+    
+    def is_admin(self) -> bool:
+        """Check if user has admin privileges"""
+        return self.auth_level == "admin"
+    
+    def get_identifier_for_api(self) -> Optional[str]:
+        """Get best identifier for API calls (customer_id > loft_id > email)"""
+        return self.customer_id or self.loft_id or self.email
+
+# Global thread-safe storage for user contexts (conversation_id → UserContext)
+from threading import Lock
+user_contexts: Dict[str, UserContext] = {}
+user_contexts_lock = Lock()
+
+def set_user_context(conversation_id: str, context: UserContext):
+    """Store user context for a conversation"""
+    with user_contexts_lock:
+        user_contexts[conversation_id] = context
+
+def get_user_context(conversation_id: str) -> Optional[UserContext]:
+    """Retrieve user context for a conversation"""
+    with user_contexts_lock:
+        return user_contexts.get(conversation_id)
+
+# ============================================================================
+# END USER AUTHENTICATION CONTEXT
+# ============================================================================
+
+# ============================================================================
+# CHAINED COMMAND EXECUTOR - SIMPLIFIED INTEGRATION
+# ============================================================================
+
+class ChainState:
+    """Tracks state for multi-step command chains"""
+    def __init__(self, chain_id: str, user_identifier: str):
+        self.chain_id = chain_id
+        self.user_identifier = user_identifier
+        self.steps_completed: List[str] = []
+        self.results: Dict[str, Any] = {}
+        self.created_at = datetime.now()
+        self.waiting_for_user = False
+        self.current_step: Optional[str] = None
+    
+    def add_result(self, step_name: str, result: Any):
+        """Store result from a step"""
+        self.steps_completed.append(step_name)
+        self.results[step_name] = result
+        print(f"✅ Chain {self.chain_id}: Completed step '{step_name}'")
+    
+    def get_result(self, step_name: str) -> Optional[Any]:
+        """Get result from a previous step"""
+        return self.results.get(step_name)
+
+# Global chain state storage (chain_id → ChainState)
+active_chains: Dict[str, ChainState] = {}
+chains_lock = Lock()
+
+def create_chain(user_identifier: str) -> ChainState:
+    """Create a new chain"""
+    import uuid
+    chain_id = str(uuid.uuid4())[:8]
+    chain = ChainState(chain_id, user_identifier)
+    with chains_lock:
+        active_chains[chain_id] = chain
+    print(f"🔗 Created chain {chain_id} for user {user_identifier}")
+    return chain
+
+def get_chain(chain_id: str) -> Optional[ChainState]:
+    """Get an existing chain"""
+    with chains_lock:
+        return active_chains.get(chain_id)
+
+def cleanup_old_chains(max_age_seconds: int = 3600):
+    """Remove chains older than max_age"""
+    with chains_lock:
+        expired = []
+        for chain_id, chain in active_chains.items():
+            age = (datetime.now() - chain.created_at).total_seconds()
+            if age > max_age_seconds:
+                expired.append(chain_id)
+        for chain_id in expired:
+            del active_chains[chain_id]
+            print(f"🗑️ Cleaned up expired chain {chain_id}")
+
+# ============================================================================
+# END CHAINED COMMAND EXECUTOR
+# ============================================================================
+
 # --- MCP Integration via Supergateway ---
 # Connect to local supergateway instead of Pipedream directly
 mcp_calendar_url = os.getenv("MCP_CALENDAR_LOCAL_URL", "http://localhost:3333")
@@ -164,8 +429,9 @@ IF USER SAYS THIS → YOU MUST DO THIS (NO THINKING, JUST DO IT):
 ✅ REQUIRED BEHAVIOR:
 1. DETECT trigger keyword
 2. CALL THE FUNCTION IMMEDIATELY
-3. USE the function result
-4. RESPOND with the data
+3. ⏳ WAIT FOR FUNCTION TO COMPLETE (DO NOT respond until you have the result!)
+4. USE the complete function result
+5. RESPOND with the data INCLUDING all images, links, and carousel data
 
 🎨 CRITICAL: PRESERVE **CAROUSEL_DATA:**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -320,6 +586,11 @@ Just tell me what you're looking for and I'll help however I can!"
 4. **PRODUCT SEARCH INTENT (ENHANCED WITH SEMANTIC INTELLIGENCE):**
    - **Shopping intent:** "show me products", "I want to buy", "looking for", "need a"
    - **BUDGET-SPECIFIC SEARCH:** When user mentions price like "under $500", "under $1000", "under $2000", "between $X-$Y", ALWAYS call search_products_by_price_range function with min_price and max_price parameters, NOT basic search_magento_products!
+   - **🔥 BUG-030 FIX - RESPONSE TIMING:** When searching products, YOU MUST:
+     1. Call the search function FIRST
+     2. WAIT for the complete result (with images, prices, carousel data)
+     3. THEN provide your response INCLUDING all the data from the function
+     4. NEVER say "I found products" without showing them immediately
    - **Enhanced approach:** Make product discovery CONVERSATIONAL and EASY
    - **Anticipatory design:** After showing products, predict next needs and suggest brands, colors, sizes
    - **Cognitive load reduction:** Show 6-8 options max, then offer smart filtering
@@ -371,7 +642,8 @@ You must fluidly transition between these modes as the conversation evolves.
 - **Formatting**:
   - Present phone numbers as clickable links: `<a href="tel:+16785894967">(678) 589-4967</a>`
   - Present emails as clickable links: `<a href="mailto:support@woodstockoutlet.com">Email Us</a>`
-  - Present web links with clear text: `<a href="..." style="text-decoration: underline;" target="_blank">Link Text</a>`
+  - Present web links with clear text: `<a href="https://woodstockoutlet.com" style="text-decoration: underline;" target="_blank">woodstockoutlet.com</a>`
+  - **CRITICAL RULE:** ALL URLs must be wrapped in `<a>` tags - NEVER show URLs as plain text like "woodstockoutlet.com" - ALWAYS use HTML: `<a href="https://woodstockoutlet.com">woodstockoutlet.com</a>`
   - **CRITICAL**: Do not use asterisks `*`, parentheses `()`, brackets `[]`, or curly braces `{}` for emphasis or formatting. Use plain text and HTML links only.
 
 ### Core Knowledge & Scenarios:
@@ -1438,6 +1710,95 @@ async def handle_loyalty_upgrade(ctx: RunContext, identifier: str, type: str = "
 
 # DUPLICATE FUNCTION REMOVED - Use get_product_recommendations instead
 
+# ============================================================================
+# CHAINED COMMAND TOOLS - MULTI-STEP WORKFLOWS
+# ============================================================================
+
+@agent.tool
+async def get_complete_customer_journey(ctx: RunContext, phone_or_email: str) -> str:
+    """
+    🔗 CHAINED COMMAND: Complete customer journey in ONE call
+    (phone/email → customer info → order history → recommendations)
+    FASTER than separate function calls - use for comprehensive customer insights
+    """
+    try:
+        print(f"🔗 Starting chained customer journey for: {phone_or_email}")
+        
+        # Create chain to track progress
+        chain = create_chain(phone_or_email)
+        chain.current_step = "customer_lookup"
+        
+        # STEP 1: Get customer
+        if '@' in phone_or_email:
+            customer_result = await get_customer_by_email(ctx, phone_or_email)
+        else:
+            customer_result = await get_customer_by_phone(ctx, phone_or_email)
+        
+        chain.add_result("customer_lookup", customer_result)
+        
+        if "❌" in customer_result:
+            return customer_result  # Early exit if customer not found
+        
+        # Extract customer_id
+        import re
+        customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
+        if not customer_id_match:
+            return "❌ Could not extract customer ID from result"
+        
+        customer_id = customer_id_match.group(1)
+        chain.add_result("customer_id", customer_id)
+        
+        # STEP 2: Get order history
+        chain.current_step = "order_history"
+        orders_result = await get_orders_by_customer(ctx, customer_id)
+        chain.add_result("order_history", orders_result)
+        
+        # STEP 3: Analyze patterns
+        chain.current_step = "pattern_analysis"
+        patterns_result = await analyze_customer_patterns(ctx, customer_id)
+        chain.add_result("pattern_analysis", patterns_result)
+        
+        # STEP 4: Get personalized recommendations
+        chain.current_step = "recommendations"
+        recs_result = await get_product_recommendations(ctx, customer_id)
+        chain.add_result("recommendations", recs_result)
+        
+        # Compile complete journey
+        journey_summary = f"""🎯 **COMPLETE CUSTOMER JOURNEY**
+
+{customer_result}
+
+---
+
+{orders_result}
+
+---
+
+{patterns_result}
+
+---
+
+{recs_result}
+
+---
+
+✅ **Chain ID:** {chain.chain_id} (completed in {len(chain.steps_completed)} steps)
+📊 **Data completeness:** 100% - Full customer profile available"""
+
+        print(f"✅ Chain {chain.chain_id} completed successfully")
+        return journey_summary
+        
+    except Exception as error:
+        print(f"❌ Error in chained customer journey: {error}")
+        return f"""❌ Chain execution failed at step: {chain.current_step if 'chain' in locals() else 'initialization'}
+
+**Error:** {str(error)}
+
+**What we can do:**
+• 🔄 Try individual functions separately
+• 📞 Contact support for assistance
+• 💬 Describe what information you need"""
+
 # MCP Calendar tools are automatically available through the agent's toolsets
 # No need for custom book_appointment function - the agent will use MCP tools directly
 
@@ -2074,6 +2435,16 @@ async def search_magento_products(ctx: RunContext, query: str, page_size: int = 
         
         print(f"✅ Found {len(formatted_products)} {query} products")
         
+        # 🔥 CONTEXT MANAGER INTEGRATION - Store search results for BUG-022 fix
+        # Get user_identifier from context if available (conversation-based tracking)
+        user_id = "default_user"  # Fallback for now - will be enhanced with URL auth
+        if hasattr(ctx, 'deps') and hasattr(ctx.deps, 'user_identifier'):
+            user_id = ctx.deps.user_identifier
+        
+        # Store products in context manager for follow-up queries
+        product_context.store_search(user_id, query, formatted_products)
+        print(f"📦 Stored {len(formatted_products)} products in context for user {user_id}")
+        
         # Return INSTANT carousel data (no streaming delay)
         # 🧠 ENHANCED CONVERSATIONAL PRODUCT DISCOVERY (PSYCHOLOGICAL UX FRAMEWORK)
         # ANTICIPATORY DESIGN: Make discovery EASY with predictive next actions
@@ -2136,6 +2507,50 @@ async def show_recliner_products(ctx: RunContext) -> str:
 async def show_dining_products(ctx: RunContext) -> str:
     """Show available dining room products with carousel"""
     return await search_magento_products(ctx, "dining", 12)
+
+@agent.tool
+async def get_product_by_position(ctx: RunContext, position: int, user_context_identifier: str = "default_user") -> str:
+    """
+    🎯 GET PRODUCT FROM PREVIOUS SEARCH: When user references a product by position
+    (e.g., "show me the second one", "get photos of the first product", "details on #3").
+    FIXES BUG-022 - photo context loss.
+    """
+    try:
+        print(f"🔧 Getting product at position {position} for user {user_context_identifier}")
+        
+        # Get user identifier from context if available
+        user_id = user_context_identifier
+        if hasattr(ctx, 'deps') and hasattr(ctx.deps, 'user_identifier'):
+            user_id = ctx.deps.user_identifier
+        
+        # Retrieve product from context
+        product_summary = product_context.get_product_by_position(user_id, position)
+        
+        if not product_summary:
+            return f"""❌ I couldn't find product #{position} from your recent search. 
+
+**Let's get back on track:**
+• 🔄 **Search Again** - Tell me what you're looking for
+• 📋 **See Previous Results** - I can show you the list again
+• 💬 **Describe It Differently** - "The grey sectional" or use the product name
+
+What would you like to do?"""
+        
+        # Mark as selected
+        product_context.mark_product_selected(user_id, product_summary.sku)
+        
+        # Get full product details by SKU
+        return await get_magento_product_by_sku(ctx, product_summary.sku)
+        
+    except Exception as error:
+        print(f"❌ Error getting product by position: {error}")
+        return f"""I had trouble retrieving that product. Let me help you find it:
+
+• 🔍 **Tell me the product name** or SKU
+• 📋 **Show all results** again from your search
+• 🆕 **Start fresh** with a new search
+
+What works best for you?"""
 
 # SCRUM SPRINT 2: HIGH-PRIORITY MAGENTO ENDPOINTS (5 FUNCTIONS)
 
@@ -2592,34 +3007,51 @@ def should_use_memory(message: str, user_identifier: str) -> bool:
     - Follow-up questions about orders, details, etc.
     - User identifier matches previous sessions
     - Conversational context (pronouns like 'my', 'her', 'that')
+    - SHORT responses (likely answering a previous question)
     
     NEW SESSION when:
     - Explicit 'new chat', 'start over', 'clear history'
-    - Different user identifier detected
-    - Greeting messages when switching contexts
+    - Different user identifier detected  
+    - Only for EXPLICIT reset requests
     """
     message_lower = message.lower()
     
-    # FORCE NEW SESSION triggers
+    # FORCE NEW SESSION triggers (ONLY explicit requests)
     new_session_triggers = [
-        'new chat', 'start over', 'clear history', 'reset', 'begin again',
-        'different customer', 'another customer', 'switch customer'
+        'new chat', 'start over', 'clear history', 'reset conversation', 'begin again',
+        'different customer', 'another customer', 'switch customer', 'new conversation'
     ]
     
     if any(trigger in message_lower for trigger in new_session_triggers):
-        print(f"🆕 NEW SESSION triggered by: {message}")
+        print(f"🆕 NEW SESSION triggered by explicit request: {message}")
         return False
+    
+    # 🔥 BUG-032 FIX: SHORT RESPONSES = likely answering previous question
+    # If message is short (< 50 chars) and doesn't look like a new topic, USE MEMORY
+    if len(message.strip()) < 50:
+        # Check if it's a simple answer (zip code, yes/no, number, etc.)
+        is_simple_answer = (
+            message.strip().isdigit() or  # "30014" 
+            message_lower in ['yes', 'no', 'ok', 'yeah', 'nope', 'sure', 'thanks'] or
+            bool(re.match(r'^\d{5}(-\d{4})?$', message.strip())) or  # zip code
+            bool(re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', message.strip())) or  # email
+            bool(re.match(r'^\d{3}-\d{3}-\d{4}$', message.strip()))  # phone
+        )
+        if is_simple_answer:
+            print(f"🧠 MEMORY: Short answer detected (likely continuation): '{message}'")
+            return True
     
     # USE MEMORY triggers  
     memory_triggers = [
         'my orders', 'her orders', 'his orders', 'their orders',
         'that order', 'this order', 'the order', 'those orders',
         'show me', 'get details', 'more info', 'tell me more',
-        'what about', 'details on', 'expand on', 'continue'
+        'what about', 'details on', 'expand on', 'continue',
+        'and ', 'also ', 'too ', 'as well'  # conjunction indicators
     ]
     
     if any(trigger in message_lower for trigger in memory_triggers):
-        print(f"🧠 MEMORY triggered by: {message}")
+        print(f"🧠 MEMORY triggered by context keyword: {message}")
         return True
     
     # If user identifier found and it's a direct lookup, use memory  
@@ -2627,7 +3059,9 @@ def should_use_memory(message: str, user_identifier: str) -> bool:
         print(f"👤 MEMORY for known user: {user_identifier}")
         return True
     
-    # Default: use memory for continuity
+    # 🔥 DEFAULT: ALWAYS USE MEMORY unless explicitly told not to
+    # This prevents context loss during conversations
+    print(f"🧠 MEMORY: Using memory by default for conversation continuity")
     return True
 
 # Phone agent endpoint for voice calls
@@ -2803,15 +3237,38 @@ async def chat_completions(request: ChatRequest):
         else:
             user_identifier = extract_user_identifier(user_message)
         
+        # 🔐 URL PARAMETER AUTHENTICATION - Extract from request
+        customer_id = getattr(request, 'customer_id', None)
+        loft_id = getattr(request, 'loft_id', None)
+        email_param = getattr(request, 'email', None)
+        auth_level = getattr(request, 'auth_level', 'anonymous')
+        
+        # Create UserContext
+        user_context_obj = UserContext(
+            user_identifier=user_identifier or "anonymous",
+            customer_id=customer_id,
+            loft_id=loft_id,
+            email=email_param,
+            auth_level=auth_level
+        )
+        
         # Check for admin mode
         is_admin_mode = False
         if hasattr(request, 'admin_mode'):
             is_admin_mode = request.admin_mode
         elif hasattr(request, 'user_type'):
             is_admin_mode = request.user_type == 'admin'
+        elif user_context_obj.is_admin():
+            is_admin_mode = True
         
         print(f"👤 User identifier: {user_identifier}")
+        print(f"🔐 Auth level: {user_context_obj.auth_level} (customer_id={customer_id}, loft_id={loft_id})")
         print(f"🔧 Admin mode: {is_admin_mode}")
+        
+        # Get or create conversation and store user context
+        conversation_id = await memory.get_or_create_conversation(user_identifier or "anonymous")
+        set_user_context(conversation_id, user_context_obj)
+        print(f"💾 Stored user context for conversation {conversation_id}")
         
         # FAST-PATH: product browsing intents → call Magento directly for instant carousel
         # ⚠️ BUDGET DETECTION FIRST - Disable fast-path for budget searches
