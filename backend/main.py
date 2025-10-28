@@ -417,6 +417,7 @@ IF USER SAYS THIS → YOU MUST DO THIS (NO THINKING, JUST DO IT):
 📧 "my email is X"                      → get_customer_by_email(email)
 📸 "show photos" / "see pictures"       → get_product_photos(sku)
 💰 "under $X" / "$X to $Y"              → search_products_by_price_range(category, min, max)
+🔗 "tell me everything" / "complete info" → get_complete_customer_journey(phone_or_email)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 🔥 FORBIDDEN RESPONSES - NEVER SAY THESE:

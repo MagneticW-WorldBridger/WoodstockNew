@@ -130,6 +130,9 @@ class WoodstockChat {
             clearCacheBtn.addEventListener('click', () => this.clearCache());
         }
         
+        // 🔥 BUG-033 FIX: Event delegation for links in messages
+        this.messagesContainer.addEventListener('click', (e) => this.handleMessageClick(e));
+        
         // Auto-resize textarea
         this.messageInput.addEventListener('input', () => this.autoResize());
         
@@ -559,8 +562,44 @@ class WoodstockChat {
             }
         }
         
+        // PRIORITY CHECK: CAROUSEL_DATA indicates product search - handle this FIRST
+        if (fullResponse.includes('CAROUSEL_DATA:')) {
+            console.log('🔍 CAROUSEL_DATA detected - prioritizing product search rendering');
+            const carouselMatch = fullResponse.match(/CAROUSEL_DATA:\s*(\{.*?\})/s);
+            if (carouselMatch && window.woodstockComponents) {
+                try {
+                    const carouselData = JSON.parse(carouselMatch[1]);
+                    const componentHTML = window.woodstockComponents.renderFunctionResult('search_magento_products', {
+                        data: { products: carouselData.products || [] }
+                    });
+                    contentDiv.innerHTML = componentHTML;
+                    
+                    // Initialize carousel
+                    if (window.woodstockCarousel) {
+                        setTimeout(() => {
+                            const carouselId = contentDiv.querySelector('[id^="carousel-"]')?.id;
+                            if (carouselId) {
+                                window.woodstockCarousel.initializeCarousel(carouselId);
+                            }
+                        }, 100);
+                    }
+                    return; // Exit early - carousel handled
+                } catch (error) {
+                    console.error('❌ Carousel parsing failed:', error);
+                    // Fall through to pattern matching
+                }
+            }
+        }
+        
         // Check if this response contains function call results - ALL 14 FUNCTIONS
         const functionPatterns = [
+            // Magento Product Search - HIGH PRIORITY (before order patterns)
+            {
+                pattern: /(?:FOUND \d+ GREAT OPTIONS|Here are available|available sectionals)/i,
+                func: 'search_magento_products',
+                trigger: /(?:sectional|recliner|sofa|dining|mattress|Lyndon|Ardsley|Repose Avenue)/i
+            },
+            
             // Core API Functions (4) - EXACT BACKEND RESPONSES
             { 
                 pattern: /(?:Janice Daniels has.*order on record|Hello.*jdan4sure@yahoo\.com)/i, 
@@ -573,9 +612,9 @@ class WoodstockChat {
                 trigger: /(?:Order Number: 0710544II27|Total Amount: \$1997\.50|Status: Completed)/i 
             },
             { 
-                pattern: /(?:Here are the details for your order|Items Included:|Repose Avenue.*Sectional)/i, 
+                pattern: /(?:Here are the details for your order|Order Details.*Order ID:|📦.*Order Details)/i, 
                 func: 'get_order_details', 
-                trigger: /(?:Items Included:|Repose Avenue.*Defender Sand|Order total: \$1997\.50|\$460\.14)/i 
+                trigger: /(?:Items Included:|Order total:|Order Date:|Delivery Address:)/i 
             },
             
             // Analytics Functions (2)
@@ -1095,9 +1134,47 @@ class WoodstockChat {
                 <strong>Error:</strong> ${message}
             </div>
         `;
-        
+
         this.messagesContainer.appendChild(errorDiv);
         this.scrollToBottom();
+    }
+
+    // 🔥 BUG-033 FIX: Handle clicks on links within messages
+    handleMessageClick(event) {
+        const target = event.target;
+        
+        // Check if clicked element is a link or inside a link
+        const link = target.closest('a');
+        if (!link) return;
+        
+        const href = link.getAttribute('href');
+        if (!href) return;
+        
+        console.log('🔗 Link clicked:', href);
+        
+        // Handle different link types
+        if (href.startsWith('tel:')) {
+            // Phone links - let browser handle natively
+            return;
+        } else if (href.startsWith('mailto:')) {
+            // Email links - let browser handle natively
+            return;
+        } else if (href.startsWith('http://') || href.startsWith('https://')) {
+            // External links - open in new tab
+            event.preventDefault();
+            window.open(href, '_blank', 'noopener,noreferrer');
+        } else if (href.startsWith('#')) {
+            // Internal anchors - scroll to element
+            event.preventDefault();
+            const targetId = href.substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth' });
+            }
+        } else {
+            // Relative links - navigate normally
+            return;
+        }
     }
 
     scrollToBottom() {
