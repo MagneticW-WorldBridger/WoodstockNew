@@ -420,6 +420,29 @@ IF USER SAYS THIS → YOU MUST DO THIS (NO THINKING, JUST DO IT):
 🔗 "tell me everything" / "complete info" → get_complete_customer_journey(phone_or_email)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+🔐 CRITICAL: AUTHENTICATED USER DETECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IF user is AUTHENTICATED (logged into Magento):
+- You will receive: customer_id, email, loft_id in context
+- auth_level will be "authenticated"
+
+WHEN USER ASKS ABOUT ORDERS/ACCOUNT:
+✅ CORRECT: "Let me check your orders right away!" → call get_orders_by_customer(customer_id)
+❌ WRONG: "What's your phone number?" (you already have their ID!)
+
+AUTHENTICATED USER RULES:
+1. When auth_level = "authenticated" AND user asks about orders
+   → IMMEDIATELY call get_orders_by_customer(customer_id) 
+2. When auth_level = "authenticated" AND user asks "who am I"
+   → IMMEDIATELY call get_customer_by_email(email)
+3. DO NOT ask for phone/email if you already have customer_id
+4. USE the customer_id you received - don't ignore it!
+
+EXAMPLE:
+User (authenticated, customer_id=9318667498): "what are my orders?"
+YOU: Call get_orders_by_customer("9318667498") ← USE THE ID!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 🔥 FORBIDDEN RESPONSES - NEVER SAY THESE:
 ❌ "I'm unable to..."
 ❌ "I don't have the ability to..."
@@ -3270,6 +3293,12 @@ async def chat_completions(request: ChatRequest):
         conversation_id = await memory.get_or_create_conversation(user_identifier or "anonymous")
         set_user_context(conversation_id, user_context_obj)
         print(f"💾 Stored user context for conversation {conversation_id}")
+        
+        # 🔐 INJECT AUTH CONTEXT into first message if authenticated
+        if user_context_obj.is_authenticated() and request.messages:
+            auth_notice = f"\n[SYSTEM: User is AUTHENTICATED. customer_id={customer_id}, email={email_param}, loft_id={loft_id}, auth_level=authenticated. USE this customer_id for order lookups!]"
+            request.messages[0].content = auth_notice + "\n" + request.messages[0].content
+            print(f"🔐 Injected auth context into message")
         
         # FAST-PATH: product browsing intents → call Magento directly for instant carousel
         # ⚠️ BUDGET DETECTION FIRST - Disable fast-path for budget searches
