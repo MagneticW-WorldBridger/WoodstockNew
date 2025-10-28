@@ -393,13 +393,24 @@ class WoodstockChat {
                               message.toLowerCase().includes('recliner') ||
                               message.toLowerCase().includes('directions');
 
+        // 🔐 READ URL PARAMS FOR MALCOLM'S AUTH SYSTEM
+        const urlParams = new URLSearchParams(window.location.search);
+        const customer_id = urlParams.get('customer_id');
+        const customer_email = urlParams.get('customer_email');
+        const loft_ids = urlParams.get('loft_ids');
+        
         const requestBody = {
             messages: this.messageHistory.slice(-10), // Send last 10 messages for context
             stream: !isFunctionCall, // Non-streaming for ALL function calls, streaming only for chat
             session_id: this.sessionId,
             user_identifier: this.userIdentifier,
             user_type: this.isAdminMode ? 'admin' : 'customer',
-            admin_mode: this.isAdminMode
+            admin_mode: this.isAdminMode,
+            // 🔐 MALCOLM'S AUTH - Pass through to backend
+            customer_id: customer_id,
+            email: customer_email,
+            loft_id: loft_ids,
+            auth_level: customer_id ? 'authenticated' : 'anonymous'
         };
 
         const response = await fetch(`${this.apiBase}/v1/chat/completions`, {
