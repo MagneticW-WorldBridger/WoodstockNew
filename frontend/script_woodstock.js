@@ -814,32 +814,88 @@ class WoodstockChat {
         }
 
         else if (functionName === 'getDetailsByOrder' || functionName === 'get_order_details') {
-            // Extract order details from backend response
+            // Extract order details from backend response - HANDLES MULTIPLE FORMATS
             console.log('🔍 EXTRACTING ORDER DETAILS from:', text);
             const items = [];
             
-            // Look for "Items Included:" or "Items Ordered:" section
-            const itemsSection = text.match(/Items (?:Included|Ordered):\s*([\s\S]*?)(?:\n\n|$)/i);
-            if (itemsSection) {
-                const itemsText = itemsSection[1];
-                console.log('🛒 Items section found:', itemsText);
-                
-                // Extract each item line (starts with -)
-                const itemLines = itemsText.match(/- ([^\n\r]+)/g);
-                if (itemLines) {
-                    itemLines.forEach(line => {
-                        const cleanLine = line.replace(/^- /, '').trim();
-                        
-                        // Try to extract price from line
-                        const priceMatch = cleanLine.match(/\$([0-9,]+\.?[0-9]*)/);
-                        const price = priceMatch ? priceMatch[1].replace(',', '') : '0.00';
-                        
-                        // Get description (everything before price or full line)
-                        const description = priceMatch ? 
-                            cleanLine.substring(0, cleanLine.indexOf('$')).trim() : 
-                            cleanLine;
-                        
-                        if (description) {
+            // FORMAT 1: Numbered list format (AI reformatted) - "1. Description – $Price"
+            // Example: "1. SAPPHIRE CANYON MANUAL ROCKER RECLINER – $788.96"
+            // Handle both em dash (U+2013) and regular dash/hyphen
+            const numberedListPattern = /(\d+)\.\s*(.+?)\s*[–\-]\s*\$([0-9,]+\.?[0-9]*)/g;
+            let match;
+            while ((match = numberedListPattern.exec(text)) !== null) {
+                const description = match[2].trim();
+                const price = match[3].replace(/,/g, '');
+                // Skip benefit plans and empty descriptions
+                if (description && 
+                    !description.toLowerCase().includes('benefit plan') &&
+                    description.length > 3) {
+                    items.push({
+                        description: description,
+                        productid: 'N/A',
+                        qtyordered: '1',
+                        itemprice: price
+                    });
+                }
+            }
+            
+            // FORMAT 2: Backend format with emojis - "🛍️ Item #1: ... 📦 Description ... 💰 $Price"
+            if (items.length === 0) {
+                const backendItemPattern = /🛍️\s*Item\s*#\d+:\s*\n\s*📦\s*([^\n]+)\s*\n\s*💰\s*\$([0-9,]+\.?[0-9]*)/g;
+                while ((match = backendItemPattern.exec(text)) !== null) {
+                    const description = match[1].trim();
+                    const price = match[2].replace(/,/g, '');
+                    if (description && !description.toLowerCase().includes('benefit plan')) {
+                        items.push({
+                            description: description,
+                            productid: 'N/A',
+                            qtyordered: '1',
+                            itemprice: price
+                        });
+                    }
+                }
+            }
+            
+            // FORMAT 3: Bullet points format - "- Description – $Price" or "- Description $Price"
+            if (items.length === 0) {
+                const bulletPattern = /[-•]\s*([^–-$]+?)\s*[–-]?\s*\$([0-9,]+\.?[0-9]*)/g;
+                while ((match = bulletPattern.exec(text)) !== null) {
+                    const description = match[1].trim();
+                    const price = match[2].replace(/,/g, '');
+                    if (description && !description.toLowerCase().includes('benefit plan')) {
+                        items.push({
+                            description: description,
+                            productid: 'N/A',
+                            qtyordered: '1',
+                            itemprice: price
+                        });
+                    }
+                }
+            }
+            
+            // FORMAT 4: Simple line format - "Description: $Price" or "Description $Price"
+            if (items.length === 0) {
+                // Look for lines that have a description followed by a price
+                const lines = text.split('\n');
+                lines.forEach(line => {
+                    // Skip header lines and totals
+                    if (line.match(/Order (?:ID|Total|Details)/i) || 
+                        line.match(/Total:/i) || 
+                        line.match(/^\s*$/)) {
+                        return;
+                    }
+                    
+                    // Match: description (with optional colon) followed by $price
+                    const simplePattern = /^(.+?)(?:\s*:)?\s+\$([0-9,]+\.?[0-9]*)\s*$/;
+                    const simpleMatch = line.match(simplePattern);
+                    if (simpleMatch) {
+                        const description = simpleMatch[1].trim();
+                        const price = simpleMatch[2].replace(/,/g, '');
+                        // Skip if it's a total line or empty
+                        if (description && 
+                            !description.toLowerCase().includes('total') &&
+                            !description.toLowerCase().includes('benefit plan') &&
+                            price !== '0') {
                             items.push({
                                 description: description,
                                 productid: 'N/A',
@@ -847,11 +903,12 @@ class WoodstockChat {
                                 itemprice: price
                             });
                         }
-                    });
-                }
+                    }
+                });
             }
             
             console.log('🔍 EXTRACTED ITEMS:', items);
+            console.log('📊 Total items found:', items.length);
 
             data.data.entry = items;
         }

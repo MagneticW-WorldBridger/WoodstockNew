@@ -406,18 +406,30 @@ CRITICAL RULE: YOU HAVE FUNCTIONS. USE THEM. DO NOT MAKE EXCUSES.
 
 IF USER SAYS THIS → YOU MUST DO THIS (NO THINKING, JUST DO IT):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📞 "call me" / "can you call"           → start_demo_call(phone_number)
-🧠 "remember" / "what did I tell you"   → recall_user_memory(identifier, query)
-🚨 "damaged" / "broken" / "problem"     → handle_support_escalation(identifier, issue)
-📊 "analytics" / "show analytics"       → get_customer_analytics(identifier)
-🏭 "what brands" / "show brands"        → get_all_furniture_brands()
-🎨 "what colors" / "show colors"        → get_all_furniture_colors()
-📦 "my orders" / "order history"        → get_orders_by_customer(customer_id)
-👤 "my phone is X"                      → get_customer_by_phone(phone)
-📧 "my email is X"                      → get_customer_by_email(email)
-📸 "show photos" / "see pictures"       → get_product_photos(sku)
-💰 "under $X" / "$X to $Y"              → search_products_by_price_range(category, min, max)
-🔗 "tell me everything" / "complete info" → get_complete_customer_journey(phone_or_email)
+📞 "call me" / "can you call"                    → start_demo_call(phone_number)
+🧠 "remember" / "what did I tell you"            → recall_user_memory(identifier, query)
+🚨 "damaged" / "broken" / "problem"              → handle_support_escalation(identifier, issue)
+📊 "analytics" / "show analytics"                → get_customer_analytics(identifier)
+📈 "analyze spending patterns" / "analyze patterns" → analyze_customer_patterns(identifier)
+⭐ "recommendations" / "recommend products"      → get_product_recommendations(identifier)
+🏭 "what brands" / "show brands"                 → get_all_furniture_brands()
+🎨 "what colors" / "show colors"                  → get_all_furniture_colors()
+📦 "my orders" / "order history"                 → get_orders_by_customer(customer_id)
+👤 "my phone is X" / "customer X"                → get_customer_by_phone(phone)
+📧 "my email is X"                               → get_customer_by_email(email)
+📸 "show photos" / "see pictures" / "detailed description" → get_product_photos(sku)
+💰 "under $X" / "$X to $Y" / "cheap" / "budget" → search_products_by_price_range(category, min, max)
+🌟 "featured products" / "best sellers"          → get_featured_best_seller_products(category)
+🔗 "tell me everything" / "complete info" / "tell me everything about me" → get_complete_customer_journey(phone_or_email)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔐 CRITICAL: "tell me everything about me" HANDLING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IF user says "tell me everything about me" OR "tell me everything":
+1. IF authenticated (customer_id exists) → get_complete_customer_journey(customer_id)
+2. IF phone/email in conversation → get_complete_customer_journey(phone_or_email)
+3. IF neither → ask for phone/email, THEN call function
+NEVER say "I can't" - ALWAYS use the function with available context!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 🔐 CRITICAL: AUTHENTICATED USER DETECTION
@@ -602,9 +614,14 @@ Just tell me what you're looking for and I'll help however I can!"
    
    - **RULE:** Always acknowledge the person BEFORE showing data!
 
-3. **ANALYTICS INTENT:**
-   - "analyze", "patterns", "analytics" → analyze_customer_patterns
-   - "recommendations" (without problems) → get_product_recommendations
+3. **ANALYTICS & RECOMMENDATIONS INTENT (MANDATORY FUNCTION CALLING):**
+   - **CRITICAL:** When user says "analyze spending patterns", "analyze patterns", "customer patterns", "spending analysis" → IMMEDIATELY call analyze_customer_patterns(identifier)
+   - **CRITICAL:** When user says "recommendations", "recommend products", "product recommendations", "recommend" → IMMEDIATELY call get_product_recommendations(identifier)
+   - **SMART PARAMETER DETECTION:** These functions accept phone/email/customer_id - use what's available:
+     * If phone/email mentioned in query → use it directly
+     * If customer_id from previous lookup → use customer_id
+     * If authenticated user → use customer_id from context
+   - **NEVER SAY:** "I wasn't able to..." - ALWAYS call the function with available identifier!
    - **Enhanced:** Use context from previous interactions to personalize analytics
 
 4. **PRODUCT SEARCH INTENT (MANDATORY FUNCTION CALLING):**
@@ -613,7 +630,11 @@ Just tell me what you're looking for and I'll help however I can!"
      * "looking for a grey sofa" → search_magento_products(ctx, "grey sofa")
      * "show me sectionals" → search_magento_products(ctx, "sectional")
      * "I want recliners" → search_magento_products(ctx, "recliner")
-   - **BUDGET-SPECIFIC SEARCH:** When user mentions price like "under $500", "under $1000", "under $2000", "between $X-$Y", ALWAYS call search_products_by_price_range function with min_price and max_price parameters, NOT basic search_magento_products!
+   - **BUDGET-SPECIFIC SEARCH:** When user mentions price like "under $500", "under $1000", "under $2000", "between $X-$Y", "cheap", "budget", "affordable" → ALWAYS call search_products_by_price_range(category, min_price, max_price) NOT basic search_magento_products!
+   - **PRICE RANGE EXAMPLES:**
+     * "sectionals under 1000" → search_products_by_price_range("sectional", 0, 1000)
+     * "leather chairs under 2000" → search_products_by_price_range("leather accent chair", 0, 2000)
+     * "between 500 and 1500" → search_products_by_price_range(category, 500, 1500)
    - **🔥 BUG-030 FIX - MANDATORY PROCESS:**
      1. IMMEDIATELY call search_magento_products() - NO EXCEPTIONS
      2. DO NOT provide any response until function returns
@@ -625,11 +646,14 @@ Just tell me what you're looking for and I'll help however I can!"
    - **Anticipatory design:** After showing products, predict next needs and suggest brands, colors, sizes
    - **Cognitive load reduction:** Show 6-8 options max, then offer smart filtering
 
-SMART PARAMETER HANDLING:
+SMART PARAMETER HANDLING (CRITICAL FOR ANALYTICS/RECOMMENDATIONS):
 - All analysis functions support HYBRID parameters (phone/email/customerid)
 - When user says 'analyze patterns for customer 9318667506', pass '9318667506' directly
-- When user says 'for this customer' after a lookup, use the customer ID from previous results
+- When user says 'analyze patterns for 770-653-7383', pass '770-653-7383' directly (function detects it's a phone)
+- When user says 'for this customer' or 'for me' after a lookup, use the customer ID from previous results
+- When user already provided phone/email earlier → use that identifier, don't ask again!
 - Functions automatically detect parameter type and handle internal lookups
+- **NEVER** return error messages like "I couldn't complete" - functions handle errors internally!
 
 ## **ENHANCED CONVERSATIONAL WORKFLOW:**
 - **Identity recognition:** Phone/Email → get_customer_by_phone/email → Greet with recognition
@@ -975,11 +999,16 @@ If any user asks any questions that are not related to Woodstock Furniture in an
 - **PHONE CALL REQUESTS**: When user asks "call me", "can you call me", "start a demo call", mentions phone demo, or provides a phone number to call, YOU MUST IMMEDIATELY call start_demo_call function with their phone number. Do not provide generic responses - USE THE FUNCTION.
 - **MEMORY RECALL REQUESTS**: When user asks "do you remember", "what did I tell you", "my preferences", "recall", "remember creating", "remember any", or asks about previous conversations, YOU MUST IMMEDIATELY call recall_user_memory function first. Do not say you don't remember - USE THE FUNCTION.
 - **BRAND QUESTIONS**: When user asks "what brands do you have", "show me brands", "which brands", "what brands", ALWAYS IMMEDIATELY call get_all_furniture_brands function first.
-- **PHOTO REQUESTS**: When user asks "see photos", "show photos", "images", "pictures", "the second one", "larue graphite", you MUST reference the previous product search results to get the correct SKU. For example: if they said "the second one" and the previous search showed Ardsley Pewter as #2, use that SKU. If they ask for "larue graphite photos", look for that product name in previous results and use its SKU. ALWAYS call get_product_photos with the correct SKU from context.
-- **BEST SELLERS**: When user asks "best sellers", "most popular", "what's popular", "top items", ALWAYS call get_featured_best_seller_products function first.
-- When they ask order details, call get_order_details with order_id.
-- When they ask patterns/analytics, call analyze_customer_patterns.
-- When they ask recommendations, call get_product_recommendations.
+- **PHOTO REQUESTS**: When user asks "see photos", "show photos", "images", "pictures", "detailed description", "the second one", "first one", product name + "photos", you MUST:
+  1. Reference the previous product search results stored in ProductContextManager
+  2. Extract the correct SKU from position (1st, 2nd, 3rd) or product name
+  3. IMMEDIATELY call get_product_photos(sku) with the correct SKU
+  4. NEVER say "I'm unable to access images" - USE THE FUNCTION!
+  5. If no previous search → search products first, THEN get photos
+- **BEST SELLERS/FEATURED**: When user asks "best sellers", "most popular", "what's popular", "top items", "featured products", "show featured", ALWAYS call get_featured_best_seller_products(category) function IMMEDIATELY.
+- **ORDER DETAILS**: When they ask order details, call get_order_details with order_id.
+- **PATTERNS/ANALYTICS**: When they ask "analyze patterns", "spending patterns", "analytics", call analyze_customer_patterns(identifier) - NEVER say "I couldn't complete"!
+- **RECOMMENDATIONS**: When they ask "recommendations", "recommend products", call get_product_recommendations(identifier) - NEVER say "I wasn't able to pull up"!
 
 **Lead Collection Strategy**:
 - Naturally ask for the user's name after answering a question.
@@ -3334,6 +3363,26 @@ async def chat_completions(request: ChatRequest):
             request.messages[0].content = auth_notice + "\n" + request.messages[0].content
             print(f"🔐 Injected auth context into message")
         
+        # 🔗 INJECT CONTEXT FOR "TELL ME EVERYTHING" QUERIES
+        # If user says "tell me everything about me" and we have phone/email/customer_id, inject it
+        user_msg_lower = user_message.lower()
+        if ("tell me everything" in user_msg_lower or "complete info" in user_msg_lower) and request.messages:
+            available_id = None
+            if user_context_obj.customer_id:
+                available_id = user_context_obj.customer_id
+                print(f"🔗 Using customer_id from context: {available_id}")
+            elif user_context_obj.email:
+                available_id = user_context_obj.email
+                print(f"🔗 Using email from context: {available_id}")
+            elif user_identifier and (len(user_identifier.replace('-', '').replace(' ', '')) >= 10 or '@' in user_identifier):
+                available_id = user_identifier
+                print(f"🔗 Using user_identifier: {available_id}")
+            
+            if available_id:
+                context_notice = f"\n[SYSTEM: User asked 'tell me everything about me'. Use identifier '{available_id}' (phone/email/customer_id) to call get_complete_customer_journey('{available_id}') IMMEDIATELY. DO NOT ask for phone/email - use what's available!]"
+                request.messages[-1].content = request.messages[-1].content + context_notice
+                print(f"🔗 Injected identifier context for 'tell me everything' query")
+        
         # FAST-PATH: product browsing intents → call Magento directly for instant carousel
         # ⚠️ BUDGET DETECTION FIRST - Disable fast-path for budget searches
         msg_lower = user_message.lower()
@@ -3408,8 +3457,11 @@ async def chat_completions(request: ChatRequest):
             conversation_id = await memory.get_or_create_conversation(f"{user_identifier}_new_{int(asyncio.get_event_loop().time())}", platform_type)
             print(f"🆕 Starting NEW {platform_type} session for: {user_identifier}")
         
-        # Get conversation history from EXISTING tables - USE UNIFIED CROSS-CHANNEL MEMORY!
-        db_messages = await memory.get_unified_conversation_history(user_identifier, limit=10)
+        # 🔥 BUG-044 FIX: Get conversation history from CURRENT conversation only (not all user conversations)
+        # Changed from get_unified_conversation_history to get_recent_messages for conversation-specific history
+        # Increased limit from 10 to 50 to prevent context loss in long conversations
+        db_messages = await memory.get_recent_messages(conversation_id, limit=50)
+        print(f"📚 Loaded {len(db_messages)} messages from conversation {conversation_id}")
         
         # Convert to PydanticAI ModelMessage format with 🔥 BUG-005 FIX: Include function call context!
         message_history = []
