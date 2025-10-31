@@ -508,16 +508,18 @@ class WoodstockChat {
     }
 
     detectAndRenderComponents(fullResponse, contentDiv) {
-        // 🔥 BUG-030 FIX: Check for CAROUSEL_DATA first (Magento products)
+        // 🔥 BUG-030 FIX: Single CAROUSEL_DATA detection block to prevent conflicts
         if (fullResponse.includes('CAROUSEL_DATA:')) {
-            console.log('🛒 PRIORITY: CAROUSEL_DATA detected - rendering product carousel');
+            console.log('🛒 CAROUSEL_DATA detected - rendering product carousel immediately');
             
-            // 🔥 FIX: Robust JSON extraction that handles nested objects/arrays
+            // Try multiple extraction methods for robust JSON parsing
+            let carouselData = null;
+            
+            // Method 1: Look for **CAROUSEL_DATA:** pattern (robust brace counting)
             const startMarker = '**CAROUSEL_DATA:**';
             const startIndex = fullResponse.indexOf(startMarker);
             
             if (startIndex !== -1) {
-                // Find the start of JSON object
                 let jsonStart = fullResponse.indexOf('{', startIndex);
                 
                 if (jsonStart !== -1) {
@@ -538,67 +540,83 @@ class WoodstockChat {
                     const jsonString = fullResponse.substring(jsonStart, jsonEnd);
                     
                     try {
-                        console.log('🎯 Extracted JSON length:', jsonString.length, 'chars');
-                        const carouselData = JSON.parse(jsonString);
-                        console.log('✅ Parsed carousel data - products:', carouselData.products?.length || 0);
-                        
-                        // 🔥 FIX: Direct carousel rendering
-                        if (window.woodstockCarousel && carouselData.products && carouselData.products.length > 0) {
-                            console.log('🎨 Rendering carousel with woodstockCarousel.createProductCarousel()');
-                            const carouselHTML = window.woodstockCarousel.createProductCarousel(
-                                carouselData.products, 
-                                `Found ${carouselData.products.length} Products`
-                            );
-                            contentDiv.innerHTML = carouselHTML;
-                            
-                            // 🔥 Initialize Swiffy Slider after DOM insertion
-                            setTimeout(() => {
-                                const carouselEl = contentDiv.querySelector('[id^="carousel-"]');
-                                if (carouselEl && window.swiffyslider) {
-                                    console.log('🎨 Initializing Swiffy Slider for:', carouselEl.id);
-                                    window.swiffyslider.init(carouselEl);
-                                }
-                            }, 300);
-                            return;
-                        } else {
-                            console.error('❌ woodstockCarousel not available or no products');
-                            console.log('Debug - woodstockCarousel:', !!window.woodstockCarousel);
-                            console.log('Debug - products:', carouselData.products?.length);
-                        }
+                        carouselData = JSON.parse(jsonString);
+                        console.log('✅ Method 1: Parsed carousel data - products:', carouselData.products?.length || 0);
                     } catch (error) {
-                        console.error('❌ CAROUSEL_DATA JSON parsing failed:', error);
-                        console.error('❌ Failed JSON:', jsonString.substring(0, 200) + '...');
+                        console.log('⚠️ Method 1 parsing failed, trying method 2');
                     }
                 }
             }
-        }
-        
-        // PRIORITY CHECK: CAROUSEL_DATA indicates product search - handle this FIRST
-        if (fullResponse.includes('CAROUSEL_DATA:')) {
-            console.log('🔍 CAROUSEL_DATA detected - prioritizing product search rendering');
-            const carouselMatch = fullResponse.match(/CAROUSEL_DATA:\s*(\{.*?\})/s);
-            if (carouselMatch && window.woodstockComponents) {
-                try {
-                    const carouselData = JSON.parse(carouselMatch[1]);
-                    const componentHTML = window.woodstockComponents.renderFunctionResult('search_magento_products', {
-                        data: { products: carouselData.products || [] }
-                    });
-                    contentDiv.innerHTML = componentHTML;
-                    
-                    // Initialize carousel
-                    if (window.woodstockCarousel) {
-                        setTimeout(() => {
-                            const carouselId = contentDiv.querySelector('[id^="carousel-"]')?.id;
-                            if (carouselId) {
-                                window.woodstockCarousel.initializeCarousel(carouselId);
-                            }
-                        }, 100);
+            
+            // Method 2: Regex fallback if Method 1 failed
+            if (!carouselData) {
+                const carouselMatch = fullResponse.match(/CAROUSEL_DATA:\s*(\{.*?\})/s);
+                if (carouselMatch) {
+                    try {
+                        carouselData = JSON.parse(carouselMatch[1]);
+                        console.log('✅ Method 2: Parsed carousel data - products:', carouselData.products?.length || 0);
+                    } catch (error) {
+                        console.error('❌ Both parsing methods failed:', error);
                     }
-                    return; // Exit early - carousel handled
-                } catch (error) {
-                    console.error('❌ Carousel parsing failed:', error);
-                    // Fall through to pattern matching
                 }
+            }
+            
+            // Render carousel if we have data
+            if (carouselData && carouselData.products && carouselData.products.length > 0) {
+                
+                // Try woodstockCarousel first (preferred method)
+                if (window.woodstockCarousel) {
+                    console.log('🎨 Rendering with woodstockCarousel.createProductCarousel()');
+                    try {
+                        const carouselHTML = window.woodstockCarousel.createProductCarousel(
+                            carouselData.products, 
+                            `Found ${carouselData.products.length} Products`
+                        );
+                        contentDiv.innerHTML = carouselHTML;
+                        
+                        // Initialize Swiffy Slider after DOM insertion
+                        setTimeout(() => {
+                            const carouselEl = contentDiv.querySelector('[id^="carousel-"]');
+                            if (carouselEl && window.swiffyslider) {
+                                console.log('🎨 Initializing Swiffy Slider for:', carouselEl.id);
+                                window.swiffyslider.init(carouselEl);
+                            }
+                        }, 300);
+                        return; // Success - exit early
+                    } catch (error) {
+                        console.error('❌ woodstockCarousel rendering failed:', error);
+                    }
+                }
+                
+                // Fallback: Try woodstockComponents
+                if (window.woodstockComponents) {
+                    console.log('🎨 Fallback: Rendering with woodstockComponents');
+                    try {
+                        const componentHTML = window.woodstockComponents.renderFunctionResult('search_magento_products', {
+                            data: { products: carouselData.products }
+                        });
+                        contentDiv.innerHTML = componentHTML;
+                        
+                        // Initialize carousel if needed
+                        if (window.woodstockCarousel) {
+                            setTimeout(() => {
+                                const carouselId = contentDiv.querySelector('[id^="carousel-"]')?.id;
+                                if (carouselId) {
+                                    window.woodstockCarousel.initializeCarousel(carouselId);
+                                }
+                            }, 100);
+                        }
+                        return; // Success - exit early
+                    } catch (error) {
+                        console.error('❌ woodstockComponents rendering failed:', error);
+                    }
+                }
+                
+                console.error('❌ No carousel rendering methods available');
+                console.log('Debug - woodstockCarousel:', !!window.woodstockCarousel);
+                console.log('Debug - woodstockComponents:', !!window.woodstockComponents);
+            } else {
+                console.error('❌ No valid carousel data found or parsed');
             }
         }
         

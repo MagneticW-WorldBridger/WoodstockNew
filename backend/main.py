@@ -675,6 +675,7 @@ You must fluidly transition between these modes as the conversation evolves.
 1. **Welcome & Guidance**:
    - Start chats with a warm welcome: "Hello! Welcome to Woodstock's Furnishing. How can I assist you today?"
    - Politely guide users who go off-topic back to furniture-related subjects.
+   - **UI Language:** When suggesting options, use "🛋️ Shop for Furniture or Décor" instead of "browse best selling" language.
 
 2. **Locations**:
    - If the user asks for locations, first respond with the general overview: "We have multiple locations across Georgia... Could you please share your address or ZIP code so I can find the nearest store for you?"
@@ -1136,7 +1137,7 @@ What would you like to do?"""
         return f"""I'm having trouble accessing customer information right now. While I work on that, let me help you in other ways:
 
 **What brings you to Woodstock today?**
-• 🛒 **Browse Products** - See our furniture and mattress selection
+• 🛋️ **Shop for Furniture or Décor** - See our complete selection
 • 📞 **Connect with Store** - Speak directly with our team  
 • 🗓️ **Schedule Visit** - See everything in person
 • 💬 **Get Support** - We're here to help
@@ -1270,7 +1271,7 @@ What brings you to Woodstock today?"""
         return f"""I'm having trouble accessing customer information right now. While I work on that, let me help you in other ways:
 
 **What brings you to Woodstock today?**
-• 🛒 **Browse Products** - See our furniture and mattress selection
+• 🛋️ **Shop for Furniture or Décor** - See our complete selection
 • 📞 **Connect with Store** - Speak directly with our team
 • 🗓️ **Schedule Visit** - See everything in person  
 • 💬 **Get Support** - We're here to help
@@ -2508,7 +2509,7 @@ Just tell me what matters most - style, price, comfort, or room fit?"""
         return f"""I'm having trouble accessing our product catalog right now. While I work on that, let me help you in other ways:
 
 **What brings you to Woodstock today?**
-• 🛒 **Browse by Category** - Tell me: sectionals, recliners, dining, mattresses?
+• 🛋️ **Shop for Furniture or Décor** - Tell me: sectionals, recliners, dining, mattresses?
 • 📞 **Connect with Expert** - Our design team knows our full inventory
 • 🗓️ **Schedule Store Visit** - See everything in person  
 • 💬 **Get Support** - We're here to help
@@ -3289,10 +3290,37 @@ async def chat_completions(request: ChatRequest):
         print(f"🔐 Auth level: {user_context_obj.auth_level} (customer_id={customer_id}, loft_id={loft_id})")
         print(f"🔧 Admin mode: {is_admin_mode}")
         
-        # Get or create conversation and store user context
+        # Get or create conversation
         conversation_id = await memory.get_or_create_conversation(user_identifier or "anonymous")
+        
+        # 🔥 BUG-032 FIX: Check for existing UserContext to maintain continuity
+        existing_context = get_user_context(conversation_id)
+        if existing_context:
+            print(f"🔄 Found existing context for conversation {conversation_id}")
+            # Update existing context with any new authentication info
+            if customer_id and not existing_context.customer_id:
+                existing_context.customer_id = customer_id
+                existing_context.auth_level = "authenticated"
+                print(f"🔐 Updated existing context with customer_id: {customer_id}")
+            if loft_id and not existing_context.loft_id:
+                existing_context.loft_id = loft_id
+                existing_context.auth_level = "authenticated"
+                print(f"🔐 Updated existing context with loft_id: {loft_id}")
+            if email_param and not existing_context.email:
+                existing_context.email = email_param
+                existing_context.auth_level = "authenticated"
+                print(f"🔐 Updated existing context with email: {email_param}")
+            
+            # Use the existing context (maintains continuity)
+            user_context_obj = existing_context
+            print(f"✅ Using existing UserContext (preserves conversation continuity)")
+        else:
+            # Store new context for first message
+            set_user_context(conversation_id, user_context_obj)
+            print(f"💾 Stored NEW user context for conversation {conversation_id}")
+        
+        # Always update the stored context (in case we modified existing_context)
         set_user_context(conversation_id, user_context_obj)
-        print(f"💾 Stored user context for conversation {conversation_id}")
         
         # 🔐 INJECT AUTH CONTEXT into first message if authenticated
         if user_context_obj.is_authenticated() and request.messages:
