@@ -1781,11 +1781,11 @@ async def get_complete_customer_journey(ctx: RunContext, phone_or_email: str) ->
         
         # Extract customer_id
         import re
-            customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
+        customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
         if not customer_id_match:
             return "❌ Could not extract customer ID from result"
         
-                customer_id = customer_id_match.group(1)
+        customer_id = customer_id_match.group(1)
         chain.add_result("customer_id", customer_id)
         
         # STEP 2: Get order history
