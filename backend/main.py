@@ -1067,7 +1067,24 @@ print("🔧 Adding LOFT functions to agent...")
 
 @agent.tool
 async def get_customer_by_phone(ctx: RunContext, phone: str) -> str:
-    """👤 CUSTOMER IDENTIFICATION: Look up customer by phone number. Use ONLY when customer provides their phone for identification, NOT when they just want order data. Follow up with greeting: 'Hello [Name]! How can I help you today?'"""
+    """Look up customer information using their phone number.
+    
+    Call this function whenever a user provides a phone number to identify
+    a customer or retrieve their profile. This is the primary customer lookup
+    method and should be used for any phone-based customer identification.
+    
+    Args:
+        phone: Customer's phone number in any format (770-653-7383, 7706537383, etc.)
+    
+    Returns:
+        HTML customer card with name, customer ID, email, address, and suggested next actions
+        
+    Examples:
+        - "customer 770-653-7383" → Use this function
+        - "look up 404-555-1234" → Use this function
+        - "my phone is 678-123-4567" → Use this function
+        - "show orders for 770-653-7383" → Use this function FIRST, then get_orders_by_customer
+    """
     API_BASE = os.getenv('WOODSTOCK_API_BASE', 'https://api.woodstockoutlet.com/public/index.php/april')
     
     try:
@@ -1413,7 +1430,35 @@ async def get_customer_journey(ctx: RunContext, identifier: str, type: str = "ph
 
 @agent.tool
 async def analyze_customer_patterns(ctx: RunContext, customer_identifier: str) -> str:
-    """Analyze customer purchase patterns - provide phone, email, or customer ID"""
+    """Analyze customer's purchase history to identify spending patterns and product preferences.
+    
+    Use this function when the user asks to analyze, review, or understand a customer's
+    buying behavior, spending habits, or purchase patterns. This is a composite function
+    that automatically handles the complete analysis workflow.
+    
+    Args:
+        customer_identifier: Phone number (770-653-7383), email (user@email.com), 
+                           or customer_id (9318667375). Function auto-detects the type
+                           and performs necessary lookups automatically.
+    
+    Returns:
+        Analysis report containing total spending, favorite categories, and customer 
+        value tier (high-value vs regular), formatted as readable text
+        
+    Examples:
+        - "analyze spending patterns for 770-653-7383" → Use this function
+        - "what does customer 9318667375 usually buy" → Use this function
+        - "show me purchase patterns for selene@email.com" → Use this function
+        - "analyze patterns for 770-653-7383" → Use this function
+        
+    Workflow:
+        This function automatically chains:
+        1. Customer lookup (by phone/email/id)
+        2. Order history retrieval
+        3. Order details extraction
+        4. Pattern analysis
+        Trust this function to handle the complete workflow internally.
+    """
     try:
         print(f"🔧 DATABASE Function: analyzeCustomerPatterns({customer_identifier})")
         
@@ -1514,7 +1559,36 @@ async def analyze_customer_patterns(ctx: RunContext, customer_identifier: str) -
 
 @agent.tool
 async def get_product_recommendations(ctx: RunContext, identifier: str, type: str = "auto") -> str:
-    """Generate product recommendations - supports phone, email, or customerid"""
+    """Generate personalized product recommendations based on customer's purchase history.
+    
+    Use this function when user asks for product suggestions, recommendations, or
+    wants to see products matched to their preferences and previous purchases.
+    This is a composite function that analyzes purchase patterns and returns
+    relevant product suggestions.
+    
+    Args:
+        identifier: Phone number (770-653-7383), email (user@email.com), or customer_id
+                   Function auto-detects type and performs lookups automatically
+        type: Usually keep as "auto" for automatic detection
+    
+    Returns:
+        Product carousel with 6-8 personalized recommendations based on purchase history,
+        includes CAROUSEL_DATA JSON for frontend rendering
+        
+    Examples:
+        - "get product recommendations for 770-653-7383" → Use this function
+        - "recommend products for customer 9318667375" → Use this function
+        - "what should I buy for selene@email.com" → Use this function
+        - "suggest furniture for 770-653-7383" → Use this function
+        
+    Workflow:
+        This function automatically:
+        1. Analyzes customer patterns (via analyze_customer_patterns)
+        2. Identifies favorite categories
+        3. Searches Magento for matching products
+        4. Returns formatted carousel
+        Trust this function to handle the workflow - it chains analyze + search internally.
+    """
     try:
         print(f"🔧 HYBRID Function: getProductRecommendations({identifier}, {type})")
         
@@ -1577,51 +1651,7 @@ async def get_customer_analytics(ctx: RunContext, identifier: str, type: str = "
         print(f"❌ Error in getCustomerAnalytics: {error}")
         return f"❌ Error getting analytics: {str(error)}"
 
-@agent.tool
-async def handle_order_confirmation_cross_sell(ctx: RunContext, identifier: str, type: str = "auto") -> str:
-    """Handle order confirmation with cross-selling opportunities - supports phone, email, or customerid"""
-    try:
-        print(f"🔧 PROACTIVE Function: handleOrderConfirmationAndCrossSell({identifier}, {type})")
-        
-        # Use the customer journey function which already handles smart parameter detection
-        journey_result = await get_customer_journey(ctx, identifier, type)
-        
-        if "❌" in journey_result:
-            return f"❌ Cannot provide order confirmation - {journey_result}"
-        
-        # Extract customer name and recent order info
-        import re
-        name_match = re.search(r'Name: ([^\\n]+)', journey_result)
-        customer_name = name_match.group(1) if name_match else f"Customer {identifier}"
-        
-        order_ids = re.findall(r'Order ID: ([A-Z0-9]+)', journey_result)
-        
-        if not order_ids:
-            return f"Hi {customer_name}! I don't see any recent orders to confirm. How can I help you today?"
-        
-        recent_order = order_ids[0]
-        
-        confirmation = []
-        confirmation.append(f"✅ ORDER CONFIRMATION for {customer_name}:")
-        confirmation.append(f"📦 Order ID: {recent_order}")
-        confirmation.append("")
-        
-        # Cross-sell opportunities based on order
-        if "Sectional" in journey_result:
-            confirmation.append("🎯 CROSS-SELL OPPORTUNITIES:")
-            confirmation.append("   💡 Complete your living room with:")
-            confirmation.append("   • Matching accent pillows")
-            confirmation.append("   • Coordinating coffee table")
-            confirmation.append("   • Area rug for the space")
-            confirmation.append("   • Extended warranty protection")
-        
-        confirmation.append(f"\n📞 Questions? Call us or visit our showroom!")
-        
-        return "\\n".join(confirmation)
-        
-    except Exception as error:
-        print(f"❌ Error in handleOrderConfirmationAndCrossSell: {error}")
-        return f"❌ Error with order confirmation: {str(error)}"
+# FUNCTION REMOVED: handle_order_confirmation_cross_sell - never used, adds to tool count bloat
 
 @agent.tool
 async def handle_support_escalation(ctx: RunContext, identifier: str, issue_description: str, type: str = "auto") -> str:
@@ -1687,86 +1717,7 @@ async def handle_support_escalation(ctx: RunContext, identifier: str, issue_desc
         print(f"❌ Error in handleSupportEscalation: {error}")
         return f"❌ Error escalating support: {str(error)}"
 
-@agent.tool
-async def handle_loyalty_upgrade(ctx: RunContext, identifier: str, type: str = "auto") -> str:
-    """Handle loyalty tier upgrades and notifications - supports phone, email, or customerid"""
-    try:
-        print(f"🔧 PROACTIVE Function: handleLoyaltyUpgrade({identifier}, {type})")
-        
-        # SMART PARAMETER DETECTION
-        customer_result = None
-        customer_name = "Customer"
-        customer_id = None
-        
-        # If it's already a customer ID (numeric), use it directly
-        if identifier.isdigit() and len(identifier) >= 7:
-            print(f"🆔 Detected customerid: {identifier}")
-            customer_id = identifier
-            customer_name = f"Customer ID {identifier}"
-        
-        # If it looks like a phone number
-        elif any(char.isdigit() for char in identifier) and ('-' in identifier or len(identifier.replace('-', '').replace(' ', '')) >= 10):
-            print(f"📱 Detected phone: {identifier}")
-            customer_result = await get_customer_by_phone(ctx, identifier)
-        
-        # If it looks like an email
-        elif '@' in identifier:
-            print(f"📧 Detected email: {identifier}")
-            customer_result = await get_customer_by_email(ctx, identifier)
-        
-        # If type is explicitly specified
-        elif type == "phone":
-            customer_result = await get_customer_by_phone(ctx, identifier)
-        elif type == "email":
-            customer_result = await get_customer_by_email(ctx, identifier)
-        elif type == "customerid":
-            customer_id = identifier
-            customer_name = f"Customer ID {identifier}"
-        else:
-            return f"❌ Could not determine identifier type for: {identifier}. Please specify phone, email, or customerid."
-        
-        # Extract customer info if we got customer_result
-        if customer_result and "❌" not in customer_result:
-            import re
-            name_match = re.search(r'Name: ([^\\n]+)', customer_result)
-            if name_match:
-                customer_name = name_match.group(1)
-            
-            customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
-            if customer_id_match:
-                customer_id = customer_id_match.group(1)
-        
-        if not customer_id:
-            return f"❌ Could not find customer ID for: {identifier}"
-        
-        # Get patterns for loyalty analysis
-        patterns_result = await analyze_customer_patterns(ctx, customer_id)
-        
-        loyalty = []
-        loyalty.append(f"🏆 LOYALTY STATUS for {customer_name}:")
-        loyalty.append("")
-        
-        if "High-value" in patterns_result:
-            loyalty.append("⭐ PREMIUM MEMBER BENEFITS:")
-            loyalty.append("   • 10% discount on future purchases")
-            loyalty.append("   • Free white-glove delivery")
-            loyalty.append("   • Priority customer service")
-            loyalty.append("   • Exclusive early access to sales")
-            loyalty.append("   • Complimentary interior design consultation")
-        else:
-            loyalty.append("🎯 EARN PREMIUM STATUS:")
-            loyalty.append("   • Spend $500 more to unlock Premium benefits")
-            loyalty.append("   • Current benefits: Standard customer service")
-            loyalty.append("   • Next level: Premium member perks")
-        
-        loyalty.append("")
-        loyalty.append("📞 Questions about loyalty? Call 1-800-WOODSTOCK")
-        
-        return "\\n".join(loyalty)
-        
-    except Exception as error:
-        print(f"❌ Error in handleLoyaltyUpgrade: {error}")
-        return f"❌ Error with loyalty upgrade: {str(error)}"
+# FUNCTION REMOVED: handle_loyalty_upgrade - never used, adds to tool count bloat (31 → 30 tools)
 
 # DUPLICATE FUNCTION REMOVED - Use get_product_recommendations instead
 
@@ -1776,10 +1727,39 @@ async def handle_loyalty_upgrade(ctx: RunContext, identifier: str, type: str = "
 
 @agent.tool
 async def get_complete_customer_journey(ctx: RunContext, phone_or_email: str) -> str:
-    """
-    🔗 CHAINED COMMAND: Complete customer journey in ONE call
-    (phone/email → customer info → order history → recommendations)
-    FASTER than separate function calls - use for comprehensive customer insights
+    """Get complete customer profile, orders, patterns, and recommendations in one operation.
+    
+    Use this function ONLY when user explicitly asks for EVERYTHING or COMPLETE information
+    about a customer. This is a comprehensive composite function that returns the full
+    customer journey including profile, order history, spending analysis, and recommendations.
+    
+    For partial requests (just orders, just patterns), use the individual functions instead.
+    
+    Args:
+        phone_or_email: Customer's phone number (770-653-7383) or email address
+                       Function detects which type and handles lookup automatically
+    
+    Returns:
+        Comprehensive report with:
+        - Customer profile (name, ID, contact info)
+        - Complete order history
+        - Spending pattern analysis
+        - Personalized product recommendations
+        All sections formatted with HTML and CAROUSEL_DATA for products
+        
+    Examples:
+        - "tell me everything about customer 770-653-7383" → Use this function
+        - "give me complete info on 404-555-1234" → Use this function
+        - "show me full customer journey for user@email.com" → Use this function
+        - "tell me everything about me" (after customer identified) → Use this function
+        
+    Workflow:
+        Chains 4 operations automatically:
+        1. get_customer_by_phone or get_customer_by_email
+        2. get_orders_by_customer
+        3. analyze_customer_patterns
+        4. get_product_recommendations
+        Handles all lookups and error recovery internally.
     """
     try:
         print(f"🔗 Starting chained customer journey for: {phone_or_email}")
@@ -1801,11 +1781,11 @@ async def get_complete_customer_journey(ctx: RunContext, phone_or_email: str) ->
         
         # Extract customer_id
         import re
-        customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
+            customer_id_match = re.search(r'Customer ID: (\d+)', customer_result)
         if not customer_id_match:
             return "❌ Could not extract customer ID from result"
         
-        customer_id = customer_id_match.group(1)
+                customer_id = customer_id_match.group(1)
         chain.add_result("customer_id", customer_id)
         
         # STEP 2: Get order history
@@ -2044,7 +2024,27 @@ What color are you thinking about?"""
 
 @agent.tool
 async def search_products_by_price_range(ctx: RunContext, category: str, min_price: float = 0, max_price: float = 10000) -> str:
-    """💰 PRICE FILTERING: Search products within specific price range. Use when customer mentions budget like 'under $500', 'between $1000-$2000', etc."""
+    """Search furniture products within a specific price range.
+    
+    Use this function when user mentions budget constraints, price limits, or asks
+    for products under/over/between certain prices. Returns product carousel with
+    items matching both category and price criteria.
+    
+    Args:
+        category: Product type like 'sectional', 'recliner', 'accent chair', 'mattress', or 'all'
+        min_price: Minimum price in dollars (default 0)
+        max_price: Maximum price in dollars (default 10000)
+    
+    Returns:
+        Product list with CAROUSEL_DATA JSON for frontend rendering, including
+        product names, prices, SKUs, and images
+        
+    Examples:
+        - "sectionals under 2000" → category='sectional', max_price=2000
+        - "leather chairs between 500 and 1000" → category='leather accent chair', min=500, max=1000
+        - "show me cheap recliners" → category='recliner', max_price=500
+        - "mattresses under $1500" → category='mattress', max_price=1500
+    """
     try:
         print(f"🔧 Searching products by price: {category}, ${min_price}-${max_price}")
         
@@ -2087,28 +2087,63 @@ async def search_products_by_price_range(ctx: RunContext, category: str, min_pri
         products = data.get('items', [])
         
         if products:
+            # Format products with images like search_magento_products does
+            formatted_products = []
+            for product in products[:20]:
+                # Extract image URL (same logic as search_magento_products)
+                image_url = 'https://via.placeholder.com/400x300/002147/FFFFFF?text=Woodstock+Furniture'
+                
+                if product.get('media_gallery_entries'):
+                    media_entries = product['media_gallery_entries']
+                    if len(media_entries) > 0 and media_entries[0].get('file'):
+                        raw_path = str(media_entries[0]['file']).strip()
+                        if raw_path:
+                            if raw_path.startswith('http'):
+                                image_url = raw_path.replace('http://', 'https://').replace('woodstockoutlet.com', 'www.woodstockoutlet.com')
+                            else:
+                                path = raw_path
+                                if not path.startswith('/media/catalog/product'):
+                                    if not path.startswith('/'):
+                                        path = '/' + path
+                                    path = '/media/catalog/product' + path
+                                image_url = f"https://www.woodstockoutlet.com{path}"
+                
+                formatted_products.append({
+                    'name': product.get('name', 'Product'),
+                    'sku': product.get('sku', 'N/A'),
+                    'price': product.get('price', 0),
+                    'status': product.get('status', 1),
+                    'image_url': image_url,
+                    'media_gallery_entries': product.get('media_gallery_entries', []),
+                    'custom_attributes': product.get('custom_attributes', [])
+                })
+            
+            # Return with CAROUSEL_DATA like search_magento_products
+            json_data = json.dumps({'products': formatted_products})
+            
             return f"""**Function Result (search_products_by_price_range):**
-{{
+{json.dumps({
     "function": "search_products_by_price_range",
     "status": "success",
-    "data": {{"products": {len(products)}, "price_range": "${min_price}-${max_price}"}},
-    "message": "Found {len(products)} products in price range"
-}}
+    "data": {"category": category, "price_range": f"${min_price}-${max_price}", "products": formatted_products, "total_found": len(formatted_products)},
+    "message": f"Found {len(formatted_products)} {category} products in price range"
+})}
 
 <div class="price-results">
-  <h3 class="price-title">💰 {len(products)} {category.upper()} OPTIONS ${min_price}-${max_price}</h3>
+  <h3 class="price-title">💰 {len(formatted_products)} {category.upper()} OPTIONS ${min_price}-${max_price}</h3>
 </div>
 
-{chr(10).join([f"{i+1}. **{p.get('name', 'Product')}** - ${p.get('price', 'TBD')}" for i, p in enumerate(products[:10])])}
+{chr(10).join([f"{i+1}. **{p['name']}** - ${p['price']}" for i, p in enumerate(formatted_products[:10])])}
+
+**CAROUSEL_DATA:** {json_data}
 
 **Great options in your budget! What's next?**
-• 🎨 **Add Color Filter** - Narrow by your preferred colors
-• 🏭 **Add Brand Filter** - Focus on specific manufacturers  
-• 📏 **Check Room Fit** - Ensure dimensions work for your space
-• ⭐ **See Details** - Get full specs on items that interest you
-• 📞 **Price Consultation** - Talk about financing and deals
+• 🎨 **Filter by Color** - Narrow to your preferred colors
+• 🏭 **Filter by Brand** - Focus on specific manufacturers  
+• 📏 **Check Dimensions** - Ensure it fits your space
+• 📞 **Talk to Expert** - Get personalized advice
 
-Which items interest you most?"""
+Which items interest you?"""
         else:
             return f"""No {category} items found in the ${min_price}-${max_price} range.
 
@@ -2206,7 +2241,29 @@ What would you prefer to try?"""
 
 @agent.tool
 async def get_product_photos(ctx: RunContext, sku: str) -> str:
-    """📸 GET PRODUCT PHOTOS: Retrieve product images and media. Use when customer asks 'see photos', 'show me images', or wants to see pictures of specific products."""
+    """Retrieve product images and photo gallery for a specific product.
+    
+    Use this function when user wants to see photos, images, or pictures of a product.
+    User might reference product by position ("the second one"), name, or SKU.
+    You should extract the SKU from ProductContextManager if user references by position.
+    
+    Args:
+        sku: Product SKU code (e.g., '694056266', 'SIK3955PC')
+             If user says "the second one", use get_product_by_position(2) first to get SKU
+    
+    Returns:
+        HTML image gallery with 3-6 product photos and full image URLs
+        
+    Examples:
+        - "see photos of SKU 694056266" → sku='694056266'
+        - After product search, "show me the first one" → get_product_by_position(1) first, then use its SKU
+        - "detailed description of Newport Camel" → extract SKU from previous search, then use this
+        - "images of the second product" → get_product_by_position(2) first, then use its SKU
+        
+    Note:
+        This function requires a SKU. If user references by position or name,
+        you must first get the SKU from ProductContextManager using the previous search results.
+    """
     try:
         print(f"🔧 Getting product media for SKU: {sku}")
         
@@ -2275,7 +2332,25 @@ Ready to learn more about this item?"""
 
 @agent.tool
 async def get_featured_best_seller_products(ctx: RunContext, category: str = "all") -> str:
-    """⭐ BEST SELLERS: Show featured and best-selling products. Use when customer asks 'what's popular', 'best sellers', 'most recommended', or wants to see top items."""
+    """Show featured and best-selling furniture products.
+    
+    Use this function when user asks for popular items, best sellers, featured products,
+    top-rated items, or wants to see what other customers are buying. Returns products
+    marked as 'featured' in the Magento catalog.
+    
+    Args:
+        category: Product type to filter like 'sectional', 'recliner', 'mattress', or 'all' for everything
+    
+    Returns:
+        Product carousel with 8-12 featured items including CAROUSEL_DATA JSON,
+        product names, prices, SKUs, and images
+        
+    Examples:
+        - "show featured products" → Use this function
+        - "what are your best sellers" → Use this function
+        - "show me popular sectionals" → category='sectional'
+        - "most recommended mattresses" → category='mattress'
+    """
     try:
         print(f"🔧 Getting featured/best seller products: {category}")
         
@@ -2304,7 +2379,7 @@ async def get_featured_best_seller_products(ctx: RunContext, category: str = "al
         response = await httpx.AsyncClient().get(
             url,
             headers={'Authorization': f'Bearer {token}'},
-            timeout=15.0
+            timeout=25.0
         )
         
         if response.status_code != 200:
@@ -2314,29 +2389,61 @@ async def get_featured_best_seller_products(ctx: RunContext, category: str = "al
         products = data.get('items', [])
         
         if products:
+            # Format products with images like search_magento_products
+            formatted_products = []
+            for product in products[:12]:
+                image_url = 'https://via.placeholder.com/400x300/002147/FFFFFF?text=Woodstock+Furniture'
+                
+                if product.get('media_gallery_entries'):
+                    media_entries = product['media_gallery_entries']
+                    if len(media_entries) > 0 and media_entries[0].get('file'):
+                        raw_path = str(media_entries[0]['file']).strip()
+                        if raw_path:
+                            if raw_path.startswith('http'):
+                                image_url = raw_path.replace('http://', 'https://').replace('woodstockoutlet.com', 'www.woodstockoutlet.com')
+                            else:
+                                path = raw_path
+                                if not path.startswith('/media/catalog/product'):
+                                    if not path.startswith('/'):
+                                        path = '/' + path
+                                    path = '/media/catalog/product' + path
+                                image_url = f"https://www.woodstockoutlet.com{path}"
+                
+                formatted_products.append({
+                    'name': product.get('name', 'Product'),
+                    'sku': product.get('sku', 'N/A'),
+                    'price': product.get('price', 0),
+                    'status': product.get('status', 1),
+                    'image_url': image_url,
+                    'media_gallery_entries': product.get('media_gallery_entries', []),
+                    'custom_attributes': product.get('custom_attributes', [])
+                })
+            
             category_display = category if category != "all" else "furniture"
+            json_data = json.dumps({'products': formatted_products})
+            
             return f"""**Function Result (get_featured_best_seller_products):**
-{{
+{json.dumps({
     "function": "get_featured_best_seller_products",
     "status": "success",
-    "data": {{"category": "{category}", "featured_products": {len(products)}}},
-    "message": "Retrieved {len(products)} featured {category_display} items"
-}}
+    "data": {"category": category, "products": formatted_products, "total_found": len(formatted_products)},
+    "message": f"Retrieved {len(formatted_products)} featured {category_display} items"
+})}
 
 <div class="featured-products">
   <h3 class="featured-title">⭐ OUR BEST-SELLING {category_display.upper()}</h3>
   <div class="featured-subtitle">These are our customers' favorites!</div>
 </div>
 
-{chr(10).join([f"{i+1}. **{p.get('name', 'Product')}** - ${p.get('price', 'Call for price')} ⭐" for i, p in enumerate(products[:8])])}
+{chr(10).join([f"{i+1}. **{p['name']}** - ${p['price']} ⭐" for i, p in enumerate(formatted_products[:8])])}
+
+**CAROUSEL_DATA:** {json_data}
 
 **These are proven winners! What interests you?**
 • 🔍 **See Full Details** - Get complete specs on any item
 • 💰 **Check Financing** - Payment options for these items
-• 📏 **Verify Room Fit** - Make sure dimensions work
-• 🎨 **See Color Options** - Available colors for these items
-• 📞 **Customer Reviews** - Hear what buyers say about these
-• 🏪 **See in Store** - Experience these bestsellers in person
+• 📏 **Verify Dimensions** - Make sure it fits your space
+• 📞 **Talk to Expert** - Get personalized recommendations
 
 Which ones catch your eye?"""
         else:
@@ -2391,7 +2498,31 @@ async def get_magento_token(force_refresh=False):
 
 @agent.tool
 async def search_magento_products(ctx: RunContext, query: str, page_size: int = 8) -> str:
-    """🛒 CONVERSATIONAL PRODUCT DISCOVERY: Search products when customers want to BUY or VIEW products. Enhanced with psychological UX - makes discovery EASY by suggesting brands, colors, sizes after showing results. Use for: 'show me sectionals', 'I want to buy a recliner', 'looking for dining sets'."""
+    """Search furniture catalog for products matching a search term.
+    
+    Use this function when user wants to browse, search, or view products by name,
+    type, or description. This is the primary product discovery function for general
+    searches (not price-specific or brand-specific - use specialized functions for those).
+    
+    Args:
+        query: Search term like 'grey sofa', 'sectional', 'recliner', 'leather chair', 'dining table'
+        page_size: Number of results to return (default 8, max 20)
+    
+    Returns:
+        Product carousel with images, prices, SKUs, and CAROUSEL_DATA JSON for frontend.
+        Includes product details and suggested filtering options.
+        
+    Examples:
+        - "show me sectionals" → query='sectional'
+        - "looking for grey sofas" → query='grey sofa'
+        - "I want recliners" → query='recliner'
+        - "show me leather accent chairs" → query='leather accent chair'
+        - "dining room furniture" → query='dining'
+        
+    Note:
+        Results are stored in ProductContextManager for follow-up queries like
+        "show me the second one" or "get photos of the first product".
+    """
     try:
         print(f"🔧 Searching Magento products: {query}")
         
@@ -2832,7 +2963,6 @@ async def get_magento_products_by_category(ctx: RunContext, category_id: int, pa
             product_list.append(f"{i}. {product['name']} - ${product['price']}")
         
         return f"""🛒 Found {len(products)} products in category {category_id}!
-
 {chr(10).join(product_list)}
 
 **CAROUSEL_DATA:** {json.dumps(carousel_data)}"""
@@ -3026,8 +3156,8 @@ async def health_check():
         else:
             mcp_status = "not_initialized"
 
-        # Count native agent tools (14 LOFT functions)
-        native_tool_count = 19  # We now have 19 @agent.tool decorated functions including start_demo_call
+        # Count native agent tools
+        native_tool_count = 29  # After removing handle_loyalty_upgrade and handle_order_confirmation_cross_sell
 
         return {
             "status": "ok",
